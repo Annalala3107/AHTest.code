@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Play, 
@@ -14,13 +14,16 @@ import {
   AlertCircle, 
   CheckCircle2, 
   XCircle, 
-  MessageSquare,
-  Lightbulb,
-  Maximize2,
-  ChevronDown,
-  Terminal,
-  Lock,
-  Columns2
+  MessageSquare, 
+  Lightbulb, 
+  Maximize2, 
+  ChevronDown, 
+  Terminal, 
+  Lock, 
+  Columns2,
+  Save,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
@@ -103,6 +106,103 @@ fn main() {
   const [customInput, setCustomInput] = useState<string>(problem.samples[0]?.input || '');
   const [customOutput, setCustomOutput] = useState<string>('');
   const [customExpected, setCustomExpected] = useState<string>('');
+  const [isZenMode, setIsZenMode] = useState<boolean>(false);
+  const [splitRatio, setSplitRatio] = useState<'40-60' | '50-50' | '60-40'>('50-50');
+  const workbenchGutterRef = useRef<HTMLDivElement>(null);
+
+  // Helper for unique localStorage draft key per problem & language
+  const getWorkbenchDraftKey = (probId: string, lang: string) => {
+    return `ahtest_draft_workbench_${probId}_${lang}`;
+  };
+
+  const [draftSaved, setDraftSaved] = useState<boolean>(false);
+
+  // Load draft on mount / problem or lang change
+  useEffect(() => {
+    const key = getWorkbenchDraftKey(problem.id, language);
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+      setCode(saved);
+      setDraftSaved(true);
+    } else {
+      setCode(defaultCodes[language] || '');
+      setDraftSaved(false);
+    }
+  }, [problem.id, language]);
+
+  const handleCodeChange = (newCode: string) => {
+    setCode(newCode);
+    const key = getWorkbenchDraftKey(problem.id, language);
+    localStorage.setItem(key, newCode);
+    setDraftSaved(true);
+  };
+
+  const handleResetCode = () => {
+    const key = getWorkbenchDraftKey(problem.id, language);
+    localStorage.removeItem(key);
+    setCode(defaultCodes[language] || '');
+    setDraftSaved(false);
+  };
+
+  // Keyboard shortcut & indentation handler for code editor
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 1. Ctrl + Enter or Cmd + Enter: Trigger Submit Solution
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!isGrading) {
+        handleSubmitSolution();
+      }
+      return;
+    }
+
+    // 2. F9: Trigger Run Sample
+    if (e.key === 'F9') {
+      e.preventDefault();
+      if (!isGrading) {
+        handleRunSample();
+      }
+      return;
+    }
+
+    // 3. Tab key indentation (2 spaces)
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const currentVal = target.value;
+      const newVal = currentVal.substring(0, start) + '  ' + currentVal.substring(end);
+      handleCodeChange(newVal);
+      setTimeout(() => {
+        target.selectionStart = target.selectionEnd = start + 2;
+      }, 0);
+      return;
+    }
+
+    // 4. Enter key: Auto-indent matching previous line
+    if (e.key === 'Enter') {
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const currentVal = target.value;
+      const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
+      const lineText = currentVal.substring(lineStart, start);
+      const indentMatch = lineText.match(/^(\s*)/);
+      let indent = indentMatch ? indentMatch[1] : '';
+
+      if (lineText.trim().endsWith('{')) {
+        indent += '  ';
+      }
+
+      if (indent.length > 0) {
+        e.preventDefault();
+        const newVal = currentVal.substring(0, start) + '\n' + indent + currentVal.substring(start);
+        handleCodeChange(newVal);
+        setTimeout(() => {
+          target.selectionStart = target.selectionEnd = start + 1 + indent.length;
+        }, 0);
+      }
+    }
+  };
   
   // Grading & Execution State
   const [isGrading, setIsGrading] = useState<boolean>(false);
@@ -330,6 +430,47 @@ fn main() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Zen Mode Toggle */}
+          <button
+            onClick={() => setIsZenMode(!isZenMode)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+              isZenMode
+                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+            title={isZenMode ? "Thoát chế độ Zen (Mở lại cửa sổ đề bài)" : "Bật chế độ Zen Code (Mở rộng 100% khung gõ)"}
+          >
+            {isZenMode ? <PanelLeft className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{isZenMode ? 'Hiện Đề' : 'Zen Mode'}</span>
+          </button>
+
+          {/* Quick Split Ratio Selector */}
+          {!isZenMode && (
+            <div className="hidden xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setSplitRatio('40-60')}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitRatio === '40-60' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                title="Tỷ lệ: Đề bài 40% - Code 60%"
+              >
+                4:6
+              </button>
+              <button
+                onClick={() => setSplitRatio('50-50')}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitRatio === '50-50' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                title="Tỷ lệ: Đề bài 50% - Code 50%"
+              >
+                5:5
+              </button>
+              <button
+                onClick={() => setSplitRatio('60-40')}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitRatio === '60-40' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                title="Tỷ lệ: Đề bài 60% - Code 40%"
+              >
+                6:4
+              </button>
+            </div>
+          )}
+
           {/* AI Hint Trigger */}
           <button
             onClick={requestAiHint}
@@ -339,31 +480,47 @@ fn main() {
             <span className="hidden sm:inline">Gợi ý AI</span>
           </button>
 
-          {/* Run & Submit CTAs */}
+          {/* Run & Submit CTAs with Keyboard Shortcut Badges */}
           <button
             onClick={handleRunSample}
             disabled={isGrading}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors cursor-pointer"
+            title="Phím tắt: F9"
           >
             <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500" />
             <span>Chạy thử</span>
+            <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
+              F9
+            </kbd>
           </button>
 
           <button
             onClick={handleSubmitSolution}
             disabled={isGrading}
             className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-xs shadow-rose-600/30 disabled:opacity-50 transition-all cursor-pointer"
+            title="Phím tắt: Ctrl + Enter"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Nộp bài</span>
+            <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1.5 py-0.2 rounded bg-rose-700 text-rose-200 border border-rose-500/40 font-mono">
+              Ctrl+↵
+            </kbd>
           </button>
         </div>
       </div>
 
-      {/* Main Split-Screen Workspace (50% Left / 50% Right) */}
+      {/* Main Split-Screen Workspace */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* LEFT COLUMN: Problem Statement & Documentation */}
-        <div className="w-full lg:w-1/2 flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+        {/* LEFT COLUMN: Problem Statement & Documentation (Collapsible in Zen Mode) */}
+        <div className={`${
+          isZenMode 
+            ? 'hidden' 
+            : splitRatio === '40-60' 
+            ? 'w-full lg:w-[40%]' 
+            : splitRatio === '60-40' 
+            ? 'w-full lg:w-[60%]' 
+            : 'w-full lg:w-1/2'
+        } flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200`}>
           {/* Tabs */}
           <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/50 dark:bg-slate-800/40">
             <button
@@ -582,7 +739,15 @@ fn main() {
         </div>
 
         {/* RIGHT COLUMN: Code Editor & Execution Console */}
-        <div className="w-full lg:w-1/2 flex flex-col bg-slate-900 text-white overflow-hidden">
+        <div className={`${
+          isZenMode 
+            ? 'w-full' 
+            : splitRatio === '40-60' 
+            ? 'w-full lg:w-[60%]' 
+            : splitRatio === '60-40' 
+            ? 'w-full lg:w-[40%]' 
+            : 'w-full lg:w-1/2'
+        } flex flex-col bg-slate-900 text-white overflow-hidden transition-all duration-200`}>
           {/* Editor Controls Bar */}
           <div className="h-10 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between shrink-0 text-xs">
             <div className="flex items-center gap-3">
@@ -593,23 +758,29 @@ fn main() {
                 onChange={(e) => {
                   const newLang = e.target.value as any;
                   setLanguage(newLang);
-                  setCode(defaultCodes[newLang] || '');
                 }}
-                className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none"
+                className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer"
               >
-                <option value="c17">C17 (GCC 16.2 - Dev-C++ Standard)</option>
-                <option value="cpp20">C++20 (GCC 16.2 - O3 FastIO)</option>
-                <option value="cpp17">C++17 (g++ 16.2)</option>
-                <option value="py3">Python 3 (PyPy 3.10)</option>
-                <option value="java">Java 21 LTS</option>
-                <option value="rust">Rust 1.82</option>
+                <option value="cpp20">C++20 (GCC 16.2 FastIO) • Khuyên Dùng</option>
+                <option value="c17">C17 (GCC 16.2 Dev-C++) • Sẵn sàng</option>
+                <option value="cpp17">C++17 (g++ 16.2) • Sẵn sàng</option>
+                <option value="py3" disabled className="text-slate-500">Python 3 (PyPy 3.10) • Sắp ra mắt (Wasm VM)</option>
+                <option value="java" disabled className="text-slate-500">Java 21 LTS • Sắp ra mắt</option>
+                <option value="rust" disabled className="text-slate-500">Rust 1.82 • Sắp ra mắt</option>
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              {draftSaved && (
+                <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
+                  <Save className="w-3 h-3 text-emerald-400" />
+                  <span>Đã lưu nháp</span>
+                </span>
+              )}
+
               <button
-                onClick={() => setCode(defaultCodes[language] || '')}
-                title="Khôi phục code mẫu ban đầu"
+                onClick={handleResetCode}
+                title="Khôi phục code mẫu ban đầu (Xóa bản nháp đã lưu)"
                 className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -617,14 +788,32 @@ fn main() {
             </div>
           </div>
 
-          {/* Code Textarea Editor */}
-          <div className="flex-1 relative overflow-hidden bg-slate-950 font-mono-code text-sm">
+          {/* Enhanced Code Textarea Editor with Line Numbers Gutter */}
+          <div className="flex-1 relative flex overflow-hidden bg-slate-950 font-mono text-xs sm:text-sm">
+            {/* Line Numbers Gutter */}
+            <div 
+              ref={workbenchGutterRef}
+              className="select-none py-4 pl-3 pr-2.5 text-right text-slate-600 bg-slate-950/90 border-r border-slate-800/80 font-mono text-xs leading-6 min-w-[2.75rem] overflow-hidden"
+              aria-hidden="true"
+            >
+              {(code || ' ').split('\n').map((_, i) => (
+                <div key={i}>{i + 1}</div>
+              ))}
+            </div>
+
+            {/* Main Code Textarea */}
             <textarea
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => handleCodeChange(e.target.value)}
+              onKeyDown={handleEditorKeyDown}
+              onScroll={(e) => {
+                if (workbenchGutterRef.current) {
+                  workbenchGutterRef.current.scrollTop = e.currentTarget.scrollTop;
+                }
+              }}
               spellCheck={false}
-              className="w-full h-full p-4 bg-transparent text-slate-100 resize-none focus:outline-none leading-relaxed font-mono-code"
-              placeholder="// Viết code giải của bạn tại đây..."
+              className="flex-1 p-4 bg-transparent text-slate-100 resize-none focus:outline-none leading-6 font-mono text-xs sm:text-sm overflow-y-auto"
+              placeholder="// Viết code giải của bạn tại đây (Nhấn Ctrl + Enter để nộp bài, F9 để chạy thử)..."
             />
           </div>
 

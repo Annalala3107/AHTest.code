@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Play, 
   RotateCcw, 
@@ -19,7 +19,8 @@ import {
   Terminal,
   ExternalLink,
   Target,
-  Lock
+  Lock,
+  Save
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/mockAcademy';
@@ -43,16 +44,55 @@ export const AcademyView: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
   const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
+  const academyGutterRef = useRef<HTMLDivElement>(null);
+
+  // Helper for unique localStorage draft key per lesson / exercise
+  const getDraftKey = (courseId: string, lessonId: string, exerciseId?: string | null) => {
+    return `ahtest_draft_academy_${courseId}_${lessonId}_${exerciseId || 'theory'}`;
+  };
+
+  const [draftSaved, setDraftSaved] = useState<boolean>(() => {
+    const key = `ahtest_draft_academy_${mockCourses[0]?.id}_${mockCourses[0]?.modules[0]?.lessons[0]?.id}_theory`;
+    return typeof window !== 'undefined' && localStorage.getItem(key) !== null;
+  });
+
+  // Load draft on initial mount
+  useEffect(() => {
+    const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+      setUserCode(saved);
+      setDraftSaved(true);
+    }
+  }, []);
 
   const handleToggleLang = (lang: 'vi' | 'en') => {
     setDocLang(lang);
     localStorage.setItem('ahtest_academy_lang', lang);
   };
 
+  const handleCodeChange = (newCode: string) => {
+    setUserCode(newCode);
+    const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
+    localStorage.setItem(key, newCode);
+    setDraftSaved(true);
+  };
+
+  const handleResetCode = () => {
+    const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
+    localStorage.removeItem(key);
+    const defaultCode = activeExercise ? activeExercise.initialCode : activeLesson.initialCode;
+    setUserCode(defaultCode);
+    setDraftSaved(false);
+  };
+
   const handleSelectLesson = (lesson: AcademyLesson) => {
     setActiveLesson(lesson);
     setActiveExercise(null);
-    setUserCode(lesson.initialCode);
+    const key = getDraftKey(selectedCourse.id, lesson.id, null);
+    const saved = localStorage.getItem(key);
+    setUserCode(saved !== null ? saved : lesson.initialCode);
+    setDraftSaved(saved !== null);
     setExecutionOutput(null);
     setExercisePassed(false);
     setShowHintIndex(-1);
@@ -61,7 +101,10 @@ export const AcademyView: React.FC = () => {
 
   const handleSelectExercise = (exercise: AppliedExercise) => {
     setActiveExercise(exercise);
-    setUserCode(exercise.initialCode);
+    const key = getDraftKey(selectedCourse.id, activeLesson.id, exercise.id);
+    const saved = localStorage.getItem(key);
+    setUserCode(saved !== null ? saved : exercise.initialCode);
+    setDraftSaved(saved !== null);
     setExecutionOutput(null);
     setExercisePassed(false);
     setShowHintIndex(-1);
@@ -73,7 +116,10 @@ export const AcademyView: React.FC = () => {
 
   const handleBackToLesson = () => {
     setActiveExercise(null);
-    setUserCode(activeLesson.initialCode);
+    const key = getDraftKey(selectedCourse.id, activeLesson.id, null);
+    const saved = localStorage.getItem(key);
+    setUserCode(saved !== null ? saved : activeLesson.initialCode);
+    setDraftSaved(saved !== null);
     setExecutionOutput(null);
     setExercisePassed(false);
     setShowHintIndex(-1);
@@ -83,6 +129,57 @@ export const AcademyView: React.FC = () => {
     navigator.clipboard.writeText(input);
     setCopiedTestIdx(idx);
     setTimeout(() => setCopiedTestIdx(null), 2000);
+  };
+
+  // Keyboard shortcut & indentation handler for code editor
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 1. Ctrl + Enter or Cmd + Enter: Trigger Run
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!isRunning) {
+        handleRunCode();
+      }
+      return;
+    }
+
+    // 2. Tab key indentation (2 spaces)
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const currentVal = target.value;
+      const newVal = currentVal.substring(0, start) + '  ' + currentVal.substring(end);
+      handleCodeChange(newVal);
+      setTimeout(() => {
+        target.selectionStart = target.selectionEnd = start + 2;
+      }, 0);
+      return;
+    }
+
+    // 3. Enter key: Auto-indent matching previous line
+    if (e.key === 'Enter') {
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const currentVal = target.value;
+      const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
+      const lineText = currentVal.substring(lineStart, start);
+      const indentMatch = lineText.match(/^(\s*)/);
+      let indent = indentMatch ? indentMatch[1] : '';
+
+      if (lineText.trim().endsWith('{')) {
+        indent += '  ';
+      }
+
+      if (indent.length > 0) {
+        e.preventDefault();
+        const newVal = currentVal.substring(0, start) + '\n' + indent + currentVal.substring(start);
+        handleCodeChange(newVal);
+        setTimeout(() => {
+          target.selectionStart = target.selectionEnd = start + 1 + indent.length;
+        }, 0);
+      }
+    }
   };
 
   const handleRunCode = () => {
@@ -730,26 +827,50 @@ export const AcademyView: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  {draftSaved && (
+                    <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
+                      <Save className="w-3 h-3 text-emerald-400" />
+                      <span>{docLang === 'en' ? 'Draft Saved' : 'Đã lưu nháp'}</span>
+                    </span>
+                  )}
                   <button
-                    onClick={() => setUserCode(activeExercise ? activeExercise.initialCode : activeLesson.initialCode)}
-                    className="p-1 text-slate-400 hover:text-white cursor-pointer"
-                    title="Đặt lại code ban đầu"
+                    onClick={handleResetCode}
+                    className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
+                    title={docLang === 'en' ? 'Reset to default code (Clears saved draft)' : 'Đặt lại code ban đầu (Xóa bản nháp đã lưu)'}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
-              {/* Editor Area */}
-              <div className="p-4 bg-slate-950 font-mono-code text-sm">
+              {/* Enhanced Editor Area with Line Numbers Gutter */}
+              <div className="flex bg-slate-950 font-mono text-xs sm:text-sm border-b border-slate-800/80 min-h-[220px]">
+                {/* Line Numbers Gutter */}
+                <div 
+                  ref={academyGutterRef}
+                  className="select-none py-3.5 pl-3 pr-2.5 text-right text-slate-600 bg-slate-950/90 border-r border-slate-800/60 font-mono text-xs leading-6 min-w-[2.75rem] overflow-hidden"
+                  aria-hidden="true"
+                >
+                  {(userCode || ' ').split('\n').map((_, i) => (
+                    <div key={i}>{i + 1}</div>
+                  ))}
+                </div>
+
+                {/* Main Code Textarea */}
                 <textarea
                   value={userCode}
-                  onChange={(e) => setUserCode(e.target.value)}
-                  rows={10}
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  onKeyDown={handleEditorKeyDown}
+                  onScroll={(e) => {
+                    if (academyGutterRef.current) {
+                      academyGutterRef.current.scrollTop = e.currentTarget.scrollTop;
+                    }
+                  }}
+                  rows={12}
                   spellCheck={false}
-                  className="w-full bg-transparent text-slate-100 resize-none focus:outline-none leading-relaxed font-mono-code"
-                  placeholder={docLang === 'en' ? '// Write your C/C++ solution code here...' : '// Viết code giải thử thách tại đây...'}
+                  className="flex-1 p-3.5 bg-transparent text-slate-100 resize-none focus:outline-none leading-6 font-mono text-xs sm:text-sm overflow-y-auto"
+                  placeholder={docLang === 'en' ? '// Write your C/C++ solution code here (Ctrl + Enter to run)...' : '// Viết code giải thử thách tại đây (Nhấn Ctrl + Enter để chạy)...'}
                 />
               </div>
 
@@ -769,9 +890,13 @@ export const AcademyView: React.FC = () => {
                   onClick={handleRunCode}
                   disabled={isRunning}
                   className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+                  title="Phím tắt: Ctrl + Enter"
                 >
                   <Play className="w-3.5 h-3.5 fill-white" />
                   <span>{isRunning ? 'Đang chấm bài...' : (docLang === 'en' ? 'Run & Check Test Cases' : 'Chạy & Kiểm tra nghiệm')}</span>
+                  <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-700/70 text-indigo-200 border border-indigo-500/40 font-mono">
+                    Ctrl + ↵
+                  </kbd>
                 </button>
               </div>
 
