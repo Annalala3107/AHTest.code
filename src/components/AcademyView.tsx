@@ -19,7 +19,9 @@ import {
   Lock,
   Save,
   PanelLeft,
-  PanelLeftClose
+  PanelLeftClose,
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
@@ -47,6 +49,23 @@ export const AcademyView: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
   const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
+
+  // Lesson Completion State & Gamification
+  const [completedLessons, setCompletedLessons] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(`ahtest_completed_${mockCourses[0]?.id}`);
+      return saved ? JSON.parse(saved) : ['c-1-compile'];
+    } catch {
+      return ['c-1-compile'];
+    }
+  });
+
+  const activeModule = selectedCourse.modules.find(m => 
+    m.lessons.some(l => l.id === activeLesson.id)
+  ) || selectedCourse.modules[0];
+
+  const completedCount = completedLessons.length;
+  const progressPercent = Math.min(100, Math.round((completedCount / (selectedCourse.totalLessons || 1)) * 100));
   
   // Splitter & Workspace Responsive States
   const [splitPercent, setSplitPercent] = useState<number>(() => {
@@ -295,6 +314,14 @@ export const AcademyView: React.FC = () => {
           }
           setExecutionOutput(output);
           setExercisePassed(true);
+          setCompletedLessons((prev) => {
+            if (!prev.includes(activeLesson.id)) {
+              const updated = [...prev, activeLesson.id];
+              localStorage.setItem(`ahtest_completed_${selectedCourse.id}`, JSON.stringify(updated));
+              return updated;
+            }
+            return prev;
+          });
           setDiffState({
             actual: targetTestcases[0].expectedOutput,
             expected: targetTestcases[0].expectedOutput,
@@ -336,6 +363,14 @@ export const AcademyView: React.FC = () => {
           }
           setExecutionOutput(output);
           setExercisePassed(true);
+          setCompletedLessons((prev) => {
+            if (!prev.includes(activeLesson.id)) {
+              const updated = [...prev, activeLesson.id];
+              localStorage.setItem(`ahtest_completed_${selectedCourse.id}`, JSON.stringify(updated));
+              return updated;
+            }
+            return prev;
+          });
         }
       }
     }, 350);
@@ -354,14 +389,14 @@ export const AcademyView: React.FC = () => {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
       
-      {/* 1. TOP NAVIGATION & WORKSPACE TOOLBAR (Compact ~52px) */}
-      <div className="h-13 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between shrink-0 z-30 select-none">
+      {/* 1. COMPACT BREADCRUMB BAR (Height ~46px, Ultra-Sleek & Space-Efficient) */}
+      <div className="h-11 sm:h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 flex items-center justify-between shrink-0 z-30 select-none text-xs">
         
-        {/* Left: Curriculum Toggle & Breadcrumb / Track Switcher */}
-        <div className="flex items-center gap-3 min-w-0">
+        {/* Left: Drawer Toggle & Interactive Breadcrumb Trail */}
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
               isSidebarOpen
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -369,52 +404,72 @@ export const AcademyView: React.FC = () => {
             title="Đóng / Mở danh mục lộ trình bài học"
           >
             {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Lộ trình ({selectedCourse.totalLessons})</span>
+            <span className="hidden md:inline">Lộ trình</span>
           </button>
 
-          {/* Track Switcher */}
-          <div className="hidden sm:flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-xs">
-            {mockCourses.map((c) => {
-              const isSelected = selectedCourse.id === c.id;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => {
-                    setSelectedCourse(c);
-                    setActiveExercise(null);
-                    if (!c.isComingSoon && c.modules[0]?.lessons[0]) {
-                      setActiveLesson(c.modules[0].lessons[0]);
-                      setUserCode(c.modules[0].lessons[0].initialCode);
-                      setExecutionOutput(null);
-                      setExercisePassed(false);
-                    }
-                  }}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span>
-                    {c.language === 'c' 
-                      ? 'C Track' 
-                      : c.language === 'cpp' 
-                      ? 'C++ Track' 
-                      : 'Python'}
-                  </span>
-                  {c.isComingSoon && (
-                    <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-amber-500/20 text-amber-500">
-                      Sắp có
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Breadcrumb Trail */}
+          <div className="flex items-center gap-1.5 text-xs min-w-0">
+            {/* Level 1: Academy Root */}
+            <div className="hidden sm:flex items-center gap-1 text-slate-400 font-medium shrink-0">
+              <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Học viện</span>
+            </div>
 
-          {/* Active Lesson Breadcrumb */}
-          <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate pl-2 border-l border-slate-200 dark:border-slate-800">
-            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+            <ChevronRight className="hidden sm:inline w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
+
+            {/* Level 2: Track Selector (Dropdown / Pills) */}
+            <div className="flex items-center gap-1 shrink-0">
+              {mockCourses.map((c) => {
+                const isSelected = selectedCourse.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      setSelectedCourse(c);
+                      setActiveExercise(null);
+                      if (!c.isComingSoon && c.modules[0]?.lessons[0]) {
+                        setActiveLesson(c.modules[0].lessons[0]);
+                        setUserCode(c.modules[0].lessons[0].initialCode);
+                        setExecutionOutput(null);
+                        setExercisePassed(false);
+                      }
+                    }}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
+                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <span>
+                      {c.language === 'c' 
+                        ? 'C Track' 
+                        : c.language === 'cpp' 
+                        ? 'C++ Track' 
+                        : 'Python'}
+                    </span>
+                    {c.isComingSoon && (
+                      <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-amber-500/20 text-amber-500">
+                        Sắp có
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Level 3: Active Module (Desktop only) */}
+            {activeModule && (
+              <>
+                <ChevronRight className="hidden lg:inline w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
+                <span className="hidden lg:inline text-slate-500 dark:text-slate-400 truncate max-w-[140px] xl:max-w-[180px]" title={activeModule.title}>
+                  {docLang === 'en' && activeModule.titleEn ? activeModule.titleEn : activeModule.title}
+                </span>
+              </>
+            )}
+
+            {/* Level 4: Active Lesson / Exercise Title */}
+            <ChevronRight className="hidden sm:inline w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
+            <span className="font-bold text-slate-900 dark:text-white truncate max-w-[180px] sm:max-w-[240px] xl:max-w-[320px]">
               {activeExercise
                 ? `[${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
                 : docLang === 'en' && activeLesson.titleEn ? activeLesson.titleEn : activeLesson.title}
@@ -422,22 +477,39 @@ export const AcademyView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Bilingual Switcher, Split Presets, Zen Mode, Run Button */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Right: Progress Meter, Bilingual Switcher, Split Presets, Zen Mode, Run Button */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           
+          {/* Progress Meter Bar */}
+          <div 
+            className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 text-[11px]"
+            title={`Bạn đã hoàn thành ${completedCount} trên tổng số ${selectedCourse.totalLessons} bài học`}
+          >
+            <span className="text-slate-500 dark:text-slate-400 font-medium">Tiến độ:</span>
+            <div className="w-14 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div 
+                className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                style={{ width: `${progressPercent}%` }} 
+              />
+            </div>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+              {completedCount}/{selectedCourse.totalLessons} ({progressPercent}%)
+            </span>
+          </div>
+
           {/* Draft Saved Status */}
           {draftSaved && (
-            <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
+            <span className="hidden 2xl:inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
               <Save className="w-3 h-3 text-emerald-500" />
-              <span>Đã lưu nháp</span>
+              <span>Đã lưu</span>
             </span>
           )}
 
           {/* Single Bilingual Switcher (VI / EN) */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl text-xs">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs">
             <button
               onClick={() => handleToggleLang('vi')}
-              className={`px-2 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 docLang === 'vi'
                   ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -448,7 +520,7 @@ export const AcademyView: React.FC = () => {
             </button>
             <button
               onClick={() => handleToggleLang('en')}
-              className={`px-2 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
                 docLang === 'en'
                   ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -462,7 +534,7 @@ export const AcademyView: React.FC = () => {
           {/* Zen Mode Button */}
           <button
             onClick={() => setIsZenMode(!isZenMode)}
-            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
               isZenMode
                 ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-300 dark:border-indigo-800 shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -474,7 +546,7 @@ export const AcademyView: React.FC = () => {
 
           {/* Quick Split Ratio Selector */}
           {!isZenMode && (
-            <div className="hidden xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200 dark:border-slate-700">
+            <div className="hidden lg:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200 dark:border-slate-700">
               <button
                 onClick={() => setSplitPercent(40)}
                 className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 40 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
@@ -512,12 +584,12 @@ export const AcademyView: React.FC = () => {
           <button
             onClick={handleRunCode}
             disabled={isRunning}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
             title="Phím tắt: Ctrl + Enter"
           >
-            <Play className="w-3.5 h-3.5 fill-white" />
+            <Play className="w-3 h-3 fill-white" />
             <span className="hidden sm:inline">{isRunning ? 'Đang chấm...' : 'Chạy thử'}</span>
-            <kbd className="hidden md:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-indigo-700 text-indigo-200 font-mono">
+            <kbd className="hidden sm:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-indigo-700 text-indigo-200 font-mono">
               Ctrl+↵
             </kbd>
           </button>
@@ -602,11 +674,15 @@ export const AcademyView: React.FC = () => {
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                                isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                              }`}>
-                                {idx + 1}
-                              </span>
+                              {completedLessons.includes(lesson.id) ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                              ) : (
+                                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                  isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                }`}>
+                                  {idx + 1}
+                                </span>
+                              )}
                               <span className="truncate">
                                 {docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}
                               </span>
