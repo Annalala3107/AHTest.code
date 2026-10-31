@@ -13,15 +13,21 @@ import { Problem } from './types';
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('ahtest_theme');
+    if (saved !== null) return saved === 'dark';
+    return true; // Default to dark on initial visit
+  });
   const [streakCount] = useState<number>(7);
 
-  // Synchronize dark mode class on HTML element
+  // Synchronize dark mode class on HTML element and persist preference
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('ahtest_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('ahtest_theme', 'light');
     }
   }, [isDarkMode]);
 

@@ -48,7 +48,31 @@ export const AcademyView: React.FC = () => {
       let outputText = '';
       let isSuccess = false;
 
-      if (activeLesson.id === 'cpp-1-1') {
+      if (activeLesson.id === 'c-1-1') {
+        if (userCode.includes('Hello Dev-Cpp & AHtest.code!')) {
+          outputText = 'Hello Dev-Cpp & AHtest.code!\n[Biên dịch thành công với chuẩn MinGW TDM-GCC Dev-C++]\n[Thực thi hoàn tất trong 0.001s - Client-Side Wasm Sandbox]';
+          isSuccess = true;
+        } else {
+          outputText = 'Lỗi: Output không khớp với "Hello Dev-Cpp & AHtest.code!"!\nHãy kiểm tra lại câu lệnh printf().';
+          isSuccess = false;
+        }
+      } else if (activeLesson.id === 'c-1-2') {
+        if (userCode.includes('scanf') && userCode.includes('&a') && userCode.includes('&b')) {
+          outputText = 'Input: 15 25\nOutput: Tong = 40\n[Test 1: Passed]\nInput: 100 -30\nOutput: Tong = 70\n[Test 2: Passed - Nhập dữ liệu định dạng với scanf thành công!]';
+          isSuccess = true;
+        } else {
+          outputText = 'Cảnh báo: Bạn chưa sử dụng đúng hàm scanf("%d %d", &a, &b) hoặc thiếu toán tử lấy địa chỉ &!';
+          isSuccess = false;
+        }
+      } else if (activeLesson.id === 'c-1-3') {
+        if (userCode.includes('*p = 999') || userCode.includes('*p=999')) {
+          outputText = 'Output: 999\n[Test 1: Passed - Đã gán giá trị biến val thành công thông qua con trỏ *p]';
+          isSuccess = true;
+        } else {
+          outputText = 'Lỗi: Giá trị val chưa được gán thành 999 thông qua toán tử giải tham chiếu *p = 999;';
+          isSuccess = false;
+        }
+      } else if (activeLesson.id === 'cpp-1-1') {
         if (userCode.includes('AHtest.code Academy 2026') || userCode.includes('AHtest.code')) {
           outputText = 'AHtest.code Academy 2026\n[Execution completed in 0.002s - In-Browser Wasm Runner]';
           isSuccess = true;
@@ -121,7 +145,7 @@ export const AcademyView: React.FC = () => {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {c.language.toUpperCase()} Track
+                {c.language === 'c' ? 'C Track (Dev-Cpp)' : c.language.toUpperCase() + ' Track'}
               </button>
             ))}
           </div>
@@ -145,6 +169,28 @@ export const AcademyView: React.FC = () => {
               {selectedCourse.level}
             </span>
           </div>
+
+          {selectedCourse.language === 'c' && (
+            <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
+              <div className="font-bold flex items-center justify-between">
+                <span>Trình biên dịch Dev-C++ IDE</span>
+                <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold bg-blue-600 text-white rounded">
+                  Open Source
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Hệ thống mô phỏng chuẩn compiler GCC MinGW của <strong>Embarcadero Dev-C++</strong>.
+              </p>
+              <a
+                href="https://github.com/Embarcadero/Dev-Cpp"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+              >
+                Mã nguồn Embarcadero/Dev-Cpp trên GitHub ↗
+              </a>
+            </div>
+          )}
 
           <div className="space-y-4">
             {selectedCourse.modules.map((module) => (
@@ -210,7 +256,13 @@ export const AcademyView: React.FC = () => {
             <div className="h-10 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 font-mono text-slate-300">
                 <Code2 className="w-4 h-4 text-indigo-400" />
-                <span>Trình Thực Thi C++20 Sandbox (Client-Side Wasm)</span>
+                <span>
+                  {selectedCourse.language === 'c'
+                    ? 'Trình Thực Thi C (Dev-C++ / MinGW GCC Wasm Sandbox)'
+                    : selectedCourse.language === 'cpp'
+                    ? 'Trình Thực Thi C++20 Sandbox (Client-Side Wasm)'
+                    : 'Trình Thực Thi Python 3 Sandbox (Pyodide Wasm)'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">

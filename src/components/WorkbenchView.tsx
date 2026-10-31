@@ -30,11 +30,22 @@ interface WorkbenchViewProps {
 
 export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ problem, onBack }) => {
   const [activeTab, setActiveTab] = useState<'statement' | 'editorial' | 'submissions' | 'comments'>('statement');
-  const [language, setLanguage] = useState<'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust'>('cpp20');
+  const [language, setLanguage] = useState<'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust'>('cpp20');
   const [copiedSample, setCopiedSample] = useState<number | null>(null);
 
   // Code editor state
   const defaultCodes: Record<string, string> = {
+    c17: `#include <stdio.h>
+#include <stdlib.h>
+
+// Problem: ${problem.title} (${problem.slug})
+// Environment: C17 (GCC 16.2 / Embarcadero Dev-C++ Standard)
+
+int main() {
+    // TODO: Viết thuật toán giải bằng ngôn ngữ C tại đây
+    
+    return 0;
+}`,
     cpp20: `#include <bits/stdc++.h>
 using namespace std;
 
@@ -455,6 +466,7 @@ fn main() {
                 }}
                 className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none"
               >
+                <option value="c17">C17 (GCC 16.2 - Dev-C++ Standard)</option>
                 <option value="cpp20">C++20 (GCC 16.2 - O3 FastIO)</option>
                 <option value="cpp17">C++17 (g++ 16.2)</option>
                 <option value="py3">Python 3 (PyPy 3.10)</option>

@@ -1,7 +1,17 @@
 <!doctype html>
-<html lang="vi" class="dark">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        var theme = localStorage.getItem('ahtest_theme');
+        if (theme === 'dark' || theme === null) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23e11d48'/><text x='50%' y='65%' font-size='48' font-weight='900' fill='white' text-anchor='middle' font-family='sans-serif'>AH</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="AHtest.code - Nền tảng Luyện tập Thuật toán, Đấu trường Lập trình thi đấu & Interactive Academy thế hệ mới." />

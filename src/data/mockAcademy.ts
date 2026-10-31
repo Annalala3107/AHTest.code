@@ -2,6 +2,168 @@ import { AcademyCourse } from '../types';
 
 export const mockCourses: AcademyCourse[] = [
   {
+    id: 'c-fundamentals',
+    slug: 'c-dev-cpp',
+    title: 'Ngôn Ngữ C Chuẩn Dev-C++ (Embarcadero Dev-Cpp & GCC)',
+    language: 'c',
+    level: 'Beginner',
+    description: 'Khoá học lập trình ngôn ngữ C căn bản đến nâng cao theo chuẩn môi trường Embarcadero Dev-C++ (TDM-GCC). Tối ưu cho sinh viên nhập môn Kỹ thuật lập trình và học sinh THPT.',
+    totalLessons: 10,
+    estimatedHours: 4,
+    modules: [
+      {
+        id: 'c-mod-1',
+        title: 'Chương 1: Cấu Trúc Ngôn Ngữ C & Nhập Xuất Chuẩn stdio.h',
+        description: 'Làm quen với cú pháp C chuẩn ANSI/C17, hàm printf, scanf và cấu hình Dev-C++.',
+        lessons: [
+          {
+            id: 'c-1-1',
+            title: 'Bài 1: Khung chương trình C chuẩn Dev-C++ & printf()',
+            durationMinutes: 5,
+            summary: 'Cấu trúc file mã nguồn C kinh điển trong Dev-C++, thư viện stdio.h và hàm printf.',
+            content: `### 1. Khung chương trình C trong Dev-C++
+[Embarcadero Dev-C++](https://github.com/Embarcadero/Dev-Cpp) là IDE mã nguồn mở nổi tiếng sử dụng trình biên dịch MinGW / TDM-GCC. Mọi chương trình C tiêu chuẩn đều bắt đầu với:
+
+\`\`\`c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    printf("Chao mung ban den voi AHtest.code!\n");
+    return 0;
+}
+\`\`\`
+
+> [!NOTE]
+> Trong ngôn ngữ C thuần, chúng ta dùng thư viện \`<stdio.h>\` và hàm \`printf()\` thay cho \`std::cout\` của C++.
+
+### 2. Nhiệm vụ của bạn:
+Hãy hoàn thiện chương trình C bên cạnh để in ra chính xác dòng chữ:
+\`Hello Dev-Cpp & AHtest.code!\`
+kèm theo một ký tự xuống dòng (\`\\n\`).`,
+            initialCode: `#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // TODO: Dùng printf() in ra: Hello Dev-Cpp & AHtest.code!
+    
+    return 0;
+}`,
+            solutionCode: `#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    printf("Hello Dev-Cpp & AHtest.code!\n");
+    return 0;
+}`,
+            hints: [
+              'Sử dụng lệnh `printf("Hello Dev-Cpp & AHtest.code!\\n");`',
+              'Đừng quên dấu chấm phẩy `;` ở cuối câu lệnh.'
+            ],
+            testcases: [
+              { input: '', expectedOutput: 'Hello Dev-Cpp & AHtest.code!' }
+            ]
+          },
+          {
+            id: 'c-1-2',
+            title: 'Bài 2: Nhập dữ liệu định dạng với scanf()',
+            durationMinutes: 7,
+            summary: 'Làm chủ định dạng %d, %f, %s và toán tử lấy địa chỉ & trong hàm scanf.',
+            content: `### 1. Hàm scanf() và toán tử địa chỉ \`&\`
+Trong ngôn ngữ C, để đọc dữ liệu từ bàn phím, ta truyền **địa chỉ ô nhớ** của biến vào hàm \`scanf()\`:
+\`\`\`c
+int a, b;
+// Truyền địa chỉ &a và &b
+scanf("%d %d", &a, &b);
+printf("Tong = %d\n", a + b);
+\`\`\`
+
+> [!WARNING]
+> Quên dấu \`&\` trước tên biến trong \`scanf()\` là lỗi phổ biến nhất khiến chương trình bị crash (Segmentation Fault / Runtime Error)!
+
+### 2. Thử thách:
+Nhập vào 2 số nguyên $A$ và $B$. Tính và in ra tổng của chúng theo định dạng:
+\`Tong = <gia_tri>\``,
+            initialCode: `#include <stdio.h>
+
+int main() {
+    int a, b;
+    // Nhập a, b và in ra: Tong = <ket_qua>
+    
+    return 0;
+}`,
+            solutionCode: `#include <stdio.h>
+
+int main() {
+    int a, b;
+    if (scanf("%d %d", &a, &b) == 2) {
+        printf("Tong = %d\n", a + b);
+    }
+    return 0;
+}`,
+            hints: [
+              'Sử dụng `scanf("%d %d", &a, &b);`',
+              'In ra bằng `printf("Tong = %d\\n", a + b);`'
+            ],
+            testcases: [
+              { input: '15 25', expectedOutput: 'Tong = 40' },
+              { input: '100 -30', expectedOutput: 'Tong = 70' }
+            ]
+          },
+          {
+            id: 'c-1-3',
+            title: 'Bài 3: Con trỏ (Pointers) & Bộ nhớ động (malloc / free)',
+            durationMinutes: 10,
+            summary: 'Trọng tâm của ngôn ngữ C: Hiểu bản chất con trỏ, toán tử giải tham chiếu * và cấp phát vùng nhớ động trên Heap.',
+            content: `### 1. Con trỏ trong C
+Con trỏ là biến lưu trữ địa chỉ của một biến khác:
+\`\`\`c
+int x = 42;
+int *ptr = &x; // ptr chứa địa chỉ của x
+printf("Gia tri: %d, Dia chi: %p\n", *ptr, (void*)ptr);
+\`\`\`
+
+### 2. Cấp phát động với \`malloc()\`
+\`\`\`c
+int *arr = (int*)malloc(n * sizeof(int));
+// Luôn giải phóng vùng nhớ sau khi sử dụng:
+free(arr);
+\`\`\`
+
+### 3. Nhiệm vụ:
+Khai báo một con trỏ kiểu \`int*\`, trỏ tới biến \`val = 100\`, thay đổi giá trị của \`val\` thông qua con trỏ thành \`999\` và in ra giá trị mới của \`val\`.`,
+            initialCode: `#include <stdio.h>
+
+int main() {
+    int val = 100;
+    int *p = &val;
+    
+    // TODO: Gán giá trị 999 thông qua con trỏ *p
+    
+    printf("%d\n", val);
+    return 0;
+}`,
+            solutionCode: `#include <stdio.h>
+
+int main() {
+    int val = 100;
+    int *p = &val;
+    *p = 999;
+    printf("%d\n", val);
+    return 0;
+}`,
+            hints: [
+              'Dùng toán tử giải tham chiếu: `*p = 999;`'
+            ],
+            testcases: [
+              { input: '', expectedOutput: '999' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
     id: 'cpp-fundamentals',
     slug: 'cpp-chuyen-tin',
     title: 'C++ Chuyên Tin: Từ Số 0 Đến Thuật Toán',

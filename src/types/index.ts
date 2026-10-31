@@ -117,7 +117,7 @@ export interface AcademyCourse {
   id: string;
   title: string;
   slug: string;
-  language: 'cpp' | 'python';
+  language: 'c' | 'cpp' | 'python';
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   description: string;
   totalLessons: number;
