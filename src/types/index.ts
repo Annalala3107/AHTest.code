@@ -46,6 +46,11 @@ export interface TestResult {
   score: number;
   maxScore: number;
   message?: string;
+  isHidden?: boolean;
+  testName?: string;
+  input?: string;
+  actualOutput?: string;
+  expectedOutput?: string;
 }
 
 export interface Submission {
@@ -98,6 +103,7 @@ export interface AppliedTestCase {
   expectedOutput: string;
   explanationVi?: string;
   explanationEn?: string;
+  isHidden?: boolean;
 }
 
 export interface AppliedExercise {

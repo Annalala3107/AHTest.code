@@ -18,11 +18,13 @@ import {
   ArrowLeft,
   Terminal,
   ExternalLink,
-  Target
+  Target,
+  Lock
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/mockAcademy';
 import { KaTeXRenderer } from './KaTeXRenderer';
+import { DiffViewer } from './DiffViewer';
 
 export const AcademyView: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<AcademyCourse>(mockCourses[0]);
@@ -39,6 +41,7 @@ export const AcademyView: React.FC = () => {
   const [showHintIndex, setShowHintIndex] = useState<number>(-1);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
+  const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
 
   const handleToggleLang = (lang: 'vi' | 'en') => {
     setDocLang(lang);
@@ -52,6 +55,7 @@ export const AcademyView: React.FC = () => {
     setExecutionOutput(null);
     setExercisePassed(false);
     setShowHintIndex(-1);
+    setDiffState(null);
   };
 
   const handleSelectExercise = (exercise: AppliedExercise) => {
@@ -84,6 +88,7 @@ export const AcademyView: React.FC = () => {
     setIsRunning(true);
     setExecutionOutput(null);
     setExercisePassed(false);
+    setDiffState(null);
 
     setTimeout(() => {
       setIsRunning(false);
@@ -384,6 +389,36 @@ export const AcademyView: React.FC = () => {
 
       setExecutionOutput(outputText);
       setExercisePassed(isSuccess);
+
+      // Generate Diff Inspection data for student feedback
+      const targetTc = activeExercise 
+        ? activeExercise.testcases[0] 
+        : (activeLesson.testcases ? activeLesson.testcases[0] : null);
+
+      if (targetTc) {
+        if (isSuccess) {
+          setDiffState({
+            actual: targetTc.expectedOutput,
+            expected: targetTc.expectedOutput,
+            input: targetTc.input,
+            isFailed: false
+          });
+        } else {
+          // Compute realistic actual output to show what went wrong
+          let simulatedActual = 'Lỗi thực thi: Không có output phù hợp';
+          if (userCode.includes('printf(') || userCode.includes('cout <<')) {
+            simulatedActual = targetTc.expectedOutput.length > 2 
+              ? targetTc.expectedOutput.slice(0, Math.floor(targetTc.expectedOutput.length / 2)) + ' ...'
+              : '0';
+          }
+          setDiffState({
+            actual: simulatedActual,
+            expected: targetTc.expectedOutput,
+            input: targetTc.input,
+            isFailed: true
+          });
+        }
+      }
     }, 500);
   };
 
@@ -740,9 +775,21 @@ export const AcademyView: React.FC = () => {
                       className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="px-2 py-0.5 rounded-md font-bold text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          Test Case #{idx + 1}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-md font-bold text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            Test #{idx + 1}
+                          </span>
+                          {idx === 0 ? (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                              {docLang === 'en' ? 'Public Sample' : 'Test Mẫu'}
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-0.5">
+                              <Lock className="w-2.5 h-2.5" />
+                              {docLang === 'en' ? 'Hidden System' : 'Test Ẩn'}
+                            </span>
+                          )}
+                        </div>
                         {tc.input && (
                           <button
                             onClick={() => handleCopyInput(tc.input, idx)}
@@ -943,6 +990,19 @@ export const AcademyView: React.FC = () => {
                     )}
                   </div>
                   <pre className="text-slate-200 whitespace-pre-wrap">{executionOutput}</pre>
+
+                  {/* Embedded Interactive DiffViewer */}
+                  {diffState && (
+                    <div className="pt-2 animate-fadeIn font-sans">
+                      <DiffViewer
+                        actual={diffState.actual}
+                        expected={diffState.expected}
+                        input={diffState.input}
+                        title={docLang === 'en' ? 'Detailed Output Comparison (Diff Inspector)' : 'Bảng So Sánh Chi Tiết Output (Diff Inspector)'}
+                        testId={1}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

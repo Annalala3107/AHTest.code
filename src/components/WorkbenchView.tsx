@@ -18,10 +18,13 @@ import {
   Lightbulb,
   Maximize2,
   ChevronDown,
-  Terminal
+  Terminal,
+  Lock,
+  Columns2
 } from 'lucide-react';
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
+import { DiffViewer } from './DiffViewer';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -98,11 +101,13 @@ fn main() {
   const [code, setCode] = useState<string>(defaultCodes['cpp20']);
   const [customInput, setCustomInput] = useState<string>(problem.samples[0]?.input || '');
   const [customOutput, setCustomOutput] = useState<string>('');
+  const [customExpected, setCustomExpected] = useState<string>('');
   
   // Grading & Execution State
   const [isGrading, setIsGrading] = useState<boolean>(false);
   const [gradingProgress, setGradingProgress] = useState<number>(0);
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
+  const [selectedTestResult, setSelectedTestResult] = useState<TestResult | null>(null);
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
   const [showConsole, setShowConsole] = useState<boolean>(true);
   const [consoleTab, setConsoleTab] = useState<'testcase' | 'custom' | 'result'>('testcase');
@@ -120,13 +125,35 @@ fn main() {
     setIsGrading(true);
     setFinalVerdict(null);
     setTestResults(null);
+    setSelectedTestResult(null);
 
-    // Simulate compilation and local sample run
     setTimeout(() => {
       setIsGrading(false);
-      setCustomOutput(problem.samples[0]?.output || '0');
-      setFinalVerdict('AC');
-    }, 600);
+      const sample = problem.samples[0];
+      const hasOutputLogic = (code.includes('cout') || code.includes('printf') || code.includes('print'));
+      const sampleAct = hasOutputLogic ? (sample?.output || '3') : 'Error: Không có output nào được xuất ra stdout.';
+      const sampleExp = sample?.output || '3';
+      const isAC = sampleAct.trim() === sampleExp.trim();
+      
+      const singleResult: TestResult = {
+        testId: 1,
+        testName: 'Sample Case #1 (Ví dụ đề bài)',
+        verdict: isAC ? 'AC' : 'WA',
+        time: 12,
+        memory: 4280,
+        score: problem.points,
+        maxScore: problem.points,
+        isHidden: false,
+        input: sample?.input || '',
+        actualOutput: sampleAct,
+        expectedOutput: sampleExp
+      };
+
+      setCustomOutput(sampleAct);
+      setTestResults([singleResult]);
+      setSelectedTestResult(singleResult);
+      setFinalVerdict(isAC ? 'AC' : 'WA');
+    }, 450);
   };
 
   const handleSubmitSolution = () => {
@@ -136,23 +163,76 @@ fn main() {
     setGradingProgress(0);
     setFinalVerdict(null);
     setTestResults(null);
+    setSelectedTestResult(null);
     setAiHint(null);
 
-    const mockTotalTests = 5;
+    // 2-Tier Testcases: 2 Public Samples + 3 Hidden System Edge Cases
+    const testDefinitions = [
+      {
+        id: 1,
+        testName: 'Sample 1',
+        input: problem.samples[0]?.input || '5 3\n4 2 1 5 3',
+        expectedOutput: problem.samples[0]?.output || '3',
+        isHidden: false,
+        weight: 20
+      },
+      {
+        id: 2,
+        testName: 'Sample 2',
+        input: problem.samples[1]?.input || '3 1\n10 1 5',
+        expectedOutput: problem.samples[1]?.output || '-1',
+        isHidden: false,
+        weight: 20
+      },
+      {
+        id: 3,
+        testName: 'Hidden Case 3 (Ràng buộc biên K = 0)',
+        input: '4 0\n2 2 2 2',
+        expectedOutput: '0',
+        isHidden: true,
+        weight: 20
+      },
+      {
+        id: 4,
+        testName: 'Hidden Case 4 (Số âm & Nghịch thế cực đại)',
+        input: '5 5\n10 8 6 4 2',
+        expectedOutput: '10',
+        isHidden: true,
+        weight: 20
+      },
+      {
+        id: 5,
+        testName: 'Hidden Case 5 (Stress Test quy mô lớn N = 200,000)',
+        input: '[Bộ dữ liệu lớn: 200,000 phần tử ngẫu nhiên]',
+        expectedOutput: '142857',
+        isHidden: true,
+        weight: 20
+      }
+    ];
+
+    const mockTotalTests = testDefinitions.length;
     const simulatedTests: TestResult[] = [];
 
-    // Simulate real-time grading step-by-step
     const interval = setInterval(() => {
-      const currentTestId = simulatedTests.length + 1;
+      const currentIdx = simulatedTests.length;
+      const tDef = testDefinitions[currentIdx];
       
-      const isAC = true; // In our demo, default submission reaches AC
+      const hasAlgorithm = (code.includes('cin') || code.includes('scanf')) && (code.includes('cout') || code.includes('printf'));
+      const isAC = hasAlgorithm;
+      const act = isAC ? tDef.expectedOutput : '0';
+
       const mockResult: TestResult = {
-        testId: currentTestId,
+        testId: tDef.id,
+        testName: tDef.testName,
         verdict: isAC ? 'AC' : 'WA',
-        time: Math.floor(Math.random() * 30) + 10,
+        time: Math.floor(Math.random() * 25) + 10,
         memory: Math.floor(Math.random() * 1024) + 4096,
-        score: problem.points / mockTotalTests,
-        maxScore: problem.points / mockTotalTests
+        score: isAC ? tDef.weight : 0,
+        maxScore: tDef.weight,
+        isHidden: tDef.isHidden,
+        input: tDef.isHidden ? '[Test ẩn được bảo vệ]' : tDef.input,
+        actualOutput: act,
+        expectedOutput: tDef.expectedOutput
       };
 
       simulatedTests.push(mockResult);
@@ -162,16 +242,22 @@ fn main() {
       if (simulatedTests.length === mockTotalTests) {
         clearInterval(interval);
         setIsGrading(false);
-        setFinalVerdict('AC');
+        const allAC = simulatedTests.every(t => t.verdict === 'AC');
+        setFinalVerdict(allAC ? 'AC' : 'WA');
+        
+        // Auto-select first failing test, or test 1
+        const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
+        setSelectedTestResult(firstFail || simulatedTests[0]);
 
-        // Confetti celebration on full AC!
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
+        if (allAC) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+        }
       }
-    }, 350);
+    }, 280);
   };
 
   const requestAiHint = () => {
@@ -535,71 +621,200 @@ fn main() {
 
             {/* Drawer Content */}
             {showConsole && (
-              <div className="p-4 h-44 overflow-y-auto font-mono-code text-xs space-y-3">
+              <div className="p-4 h-80 sm:h-96 overflow-y-auto font-mono-code text-xs space-y-4">
                 {consoleTab === 'testcase' && (
-                  <div>
-                    <span className="text-[10px] text-slate-400 block mb-1">Dữ liệu test mẫu:</span>
-                    <pre className="text-slate-300 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                      {problem.samples[0]?.input}
-                    </pre>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-300 font-sans">
+                      <div className="flex items-center gap-2">
+                        <Terminal className="w-4 h-4 text-rose-500" />
+                        <span className="font-bold">Bảng Kiểm Thử 2 Tầng: Công khai & Test Ẩn</span>
+                      </div>
+                      <span className="text-xs text-slate-400">
+                        {problem.samples.length} Test mẫu • 3 Test ẩn của hệ thống
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {problem.samples.map((sample, idx) => (
+                        <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                              Test #{idx + 1} (Công khai)
+                            </span>
+                            <button
+                              onClick={() => handleCopySample(sample.input, idx)}
+                              className="text-[11px] text-slate-400 hover:text-white cursor-pointer"
+                            >
+                              Sao chép
+                            </button>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 uppercase block">Input:</span>
+                            <pre className="text-slate-200 whitespace-pre-wrap">{sample.input}</pre>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-emerald-400 uppercase block">Expected:</span>
+                            <pre className="text-emerald-300 whitespace-pre-wrap">{sample.output}</pre>
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 border-dashed space-y-2 flex flex-col justify-center text-center">
+                        <Lock className="w-6 h-6 text-amber-500/70 mx-auto" />
+                        <span className="font-bold text-slate-300 text-xs">3 Testcases Ẩn (Hidden System Cases)</span>
+                        <p className="text-[11px] text-slate-500">
+                          Bao gồm các ca kiểm tra biên ranh giới (K=0), số âm và Stress Test N = 200,000. Chỉ được chấm khi bạn bấm "Nộp bài".
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {consoleTab === 'custom' && (
-                  <div className="space-y-2">
-                    <span className="text-[10px] text-slate-400 block">Nhập dữ liệu kiểm tra tùy ý (Custom Input):</span>
-                    <textarea
-                      value={customInput}
-                      onChange={(e) => setCustomInput(e.target.value)}
-                      rows={3}
-                      className="w-full p-2 bg-slate-950 text-slate-200 rounded-lg border border-slate-800 text-xs font-mono-code focus:outline-none"
-                    />
+                  <div className="space-y-3 font-sans">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          Custom Input (Dữ liệu vào):
+                        </span>
+                        <textarea
+                          value={customInput}
+                          onChange={(e) => setCustomInput(e.target.value)}
+                          rows={4}
+                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none"
+                          placeholder="Nhập input tùy ý..."
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          Expected Output (Tùy chọn so sánh Diff):
+                        </span>
+                        <textarea
+                          value={customExpected}
+                          onChange={(e) => setCustomExpected(e.target.value)}
+                          rows={4}
+                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none"
+                          placeholder="Nhập output chuẩn bạn mong đợi (nếu muốn so sánh)..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleRunSample}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Chạy thử Custom Test
+                      </button>
+                    </div>
+
+                    {customOutput && (
+                      <div className="pt-2">
+                        <DiffViewer
+                          actual={customOutput}
+                          expected={customExpected || problem.samples[0]?.output || ''}
+                          title="Kết quả Custom Test vs Mẫu"
+                          input={customInput}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {consoleTab === 'result' && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {isGrading ? (
-                      <div className="flex flex-col items-center justify-center py-4 space-y-2">
-                        <div className="w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-slate-300 font-semibold animate-pulse">
+                      <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                        <div className="w-8 h-8 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-slate-300 font-semibold animate-pulse text-xs">
                           Đang biên dịch và thực thi trên cụm Judge Sandbox... ({Math.round(gradingProgress)}%)
                         </span>
+                        <div className="w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-linear-to-r from-rose-500 to-amber-500 transition-all duration-200"
+                            style={{ width: `${gradingProgress}%` }}
+                          />
+                        </div>
                       </div>
                     ) : testResults ? (
-                      <div>
-                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                              {finalVerdict} • {problem.points}/{problem.points}
+                      <div className="space-y-4 font-sans">
+                        {/* Overall Verdict Banner */}
+                        <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
+                              finalVerdict === 'AC' 
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
+                                : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                            }`}>
+                              {finalVerdict === 'AC' ? 'ACCEPTED (100/100)' : 'WRONG ANSWER'}
                             </span>
-                            <span className="text-slate-400 font-sans text-xs">Tất cả {testResults.length} test cases chính xác!</span>
+                            <span className="text-slate-300 text-xs font-bold">
+                              {testResults.filter(t => t.verdict === 'AC').length}/{testResults.length} Test cases đạt yêu cầu
+                            </span>
                           </div>
+                          <span className="text-xs text-slate-400">
+                            Bấm vào từng testcase bên dưới để xem so sánh Diff chi tiết
+                          </span>
                         </div>
 
-                        {/* Test by test breakdown */}
+                        {/* Interactive Test Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                          {testResults.map((tr) => (
-                            <div key={tr.testId} className="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
-                              <span className="text-slate-400">Test #{tr.testId}</span>
-                              <div className="text-right">
-                                <span className="font-bold text-emerald-400 text-xs">AC</span>
-                                <p className="text-[10px] text-slate-500">{tr.time}ms</p>
-                              </div>
-                            </div>
-                          ))}
+                          {testResults.map((tr) => {
+                            const isSelected = selectedTestResult?.testId === tr.testId;
+                            return (
+                              <button
+                                key={tr.testId}
+                                onClick={() => setSelectedTestResult(tr)}
+                                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 ${
+                                  isSelected
+                                    ? 'bg-slate-800/90 border-indigo-500 ring-2 ring-indigo-500/40 shadow-md'
+                                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between text-[11px] font-bold">
+                                  <span className="flex items-center gap-1 text-slate-300">
+                                    {tr.isHidden && <Lock className="w-3 h-3 text-amber-400" />}
+                                    Test #{tr.testId}
+                                  </span>
+                                  <span className={tr.verdict === 'AC' ? 'text-emerald-400' : 'text-rose-400'}>
+                                    {tr.verdict}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[10px] text-slate-500">
+                                  <span>{tr.score}/{tr.maxScore}đ</span>
+                                  <span>{tr.time}ms</span>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
+
+                        {/* Diff Inspector for the Selected Testcase */}
+                        {selectedTestResult && (
+                          <div className="pt-2 animate-fadeIn">
+                            <DiffViewer
+                              actual={selectedTestResult.actualOutput || ''}
+                              expected={selectedTestResult.expectedOutput || ''}
+                              title={`Chi tiết: ${selectedTestResult.testName || `Test #${selectedTestResult.testId}`}`}
+                              testId={selectedTestResult.testId}
+                              input={selectedTestResult.input}
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : customOutput ? (
-                      <div>
-                        <span className="text-[10px] text-emerald-400 font-bold block mb-1">✓ Chạy thử thành công! Output:</span>
-                        <pre className="text-slate-200 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                          {customOutput}
-                        </pre>
+                      <div className="space-y-3">
+                        <DiffViewer
+                          actual={customOutput}
+                          expected={problem.samples[0]?.output || ''}
+                          title="Kết quả chạy thử mẫu (Sample Output)"
+                          testId={1}
+                          input={problem.samples[0]?.input}
+                        />
                       </div>
                     ) : (
-                      <p className="text-slate-500 text-center py-6">
-                        Chưa có kết quả. Bấm "Chạy thử" hoặc "Nộp bài" để kiểm tra nghiệm.
+                      <p className="text-slate-500 text-center py-10 font-sans">
+                        Chưa có kết quả. Bấm "Chạy thử" hoặc "Nộp bài" để kiểm tra nghiệm với bộ Diff Inspector.
                       </p>
                     )}
                   </div>
