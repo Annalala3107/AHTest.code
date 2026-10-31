@@ -399,7 +399,7 @@ export const AcademyView: React.FC = () => {
             spread: 70,
             origin: { y: 0.6 }
           });
-          let output = `[FPTU Auto-Grading Verdict: ACCEPTED (100/100)]\n` + resultsSummary.join('\n');
+          let output = `[Auto-Grading Verdict: ACCEPTED (100/100)]\n` + resultsSummary.join('\n');
           output += `\n\nThời gian thực thi: ${totalTime}ms | Bộ nhớ tối đa: ${maxMemory}KB`;
           if (lastExecResult?.heapReport) {
             if (lastExecResult.heapReport.hasMemoryLeak) {
@@ -428,7 +428,7 @@ export const AcademyView: React.FC = () => {
           setActiveDocTab('testcases');
           const failedTc = firstFailed ? firstFailed.tc : targetTestcases[0];
           const failedExec = firstFailed ? firstFailed.exec : (lastExecResult || executeCCode(userCode, failedTc.input));
-          let output = `[FPTU Auto-Grading Verdict: WRONG ANSWER]\n` + resultsSummary.join('\n');
+          let output = `[Auto-Grading Verdict: WRONG ANSWER]\n` + resultsSummary.join('\n');
           output += `\n\n❌ Test case thất bại đầu tiên: Input "${failedTc.input}"`;
           setExecutionOutput(output);
           setExercisePassed(false);
@@ -1047,7 +1047,7 @@ export const AcademyView: React.FC = () => {
                                                     [{ex.questionCode}] {docLang === 'en' ? ex.titleEn : ex.titleVi}
                                                   </span>
                                                 </div>
-                                                <span className="text-[9px] text-slate-400 shrink-0 ml-1">FPTU</span>
+                                                <span className="text-[9px] text-slate-400 shrink-0 ml-1">Test</span>
                                               </button>
                                             );
                                           })}
@@ -1149,7 +1149,7 @@ export const AcademyView: React.FC = () => {
                     }`}
                   >
                     <Target className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Bài tập FPTU</span>
+                    <span>Bài tập Thực hành</span>
                     <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-900">
                       {activeLesson.appliedExercises.length}
                     </span>
@@ -1168,7 +1168,7 @@ export const AcademyView: React.FC = () => {
                         {activeExercise.questionCode}
                       </span>
                       <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
-                        FPT University Practical Exam
+                        Applied Practical Challenge
                       </span>
                     </div>
 
@@ -1198,7 +1198,7 @@ export const AcademyView: React.FC = () => {
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                               {activeExercise.difficulty}
                             </span>
-                            <span className="text-slate-400">Nguồn: FPT University C/C++ Grading</span>
+                            <span className="text-slate-400">Nguồn: Đề thi Thực hành C/C++ Chuẩn Quốc Tế</span>
                           </div>
                         </div>
 
@@ -1309,13 +1309,13 @@ export const AcademyView: React.FC = () => {
                   </div>
                 )}
 
-                {/* TAB 3: CURATED APPLIED EXERCISES (FPTU) */}
+                {/* TAB 3: CURATED APPLIED EXERCISES */}
                 {activeDocTab === 'exercises' && (
                   <div className="space-y-4">
                     <div className="border-b border-slate-100 dark:border-slate-800 pb-2">
                       <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                         <Target className="w-4 h-4 text-rose-500" />
-                        Bài Tập Thực Chiến FPT University
+                        Bài Tập Thực Chiến & Khảo Thí
                       </h3>
                       <p className="text-xs text-slate-500">
                         Chọn một câu hỏi để gõ code và nộp bài trực tiếp vào Monaco Editor:
@@ -1392,7 +1392,7 @@ export const AcademyView: React.FC = () => {
                 <Code2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                 <span className="truncate">
                   {activeExercise
-                    ? `FPTU Auto-Grading: [${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
+                    ? `Auto-Grading: [${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
                     : selectedCourse.language === 'c'
                     ? 'Trình Thực Thi C (Dev-C++ / MinGW GCC Wasm Sandbox)'
                     : 'Client-Side Wasm Sandbox'}
@@ -1654,7 +1654,7 @@ export const AcademyView: React.FC = () => {
                         </div>
                         <div>
                           <span className="font-bold text-xs text-white block">
-                            🎉 {docLang === 'en' ? 'Challenge Passed (100/100 Accepted)!' : 'Xuất sắc! Đạt 100/100 điểm FPTU Accepted!'}
+                            🎉 {docLang === 'en' ? 'Challenge Passed (100/100 Accepted)!' : 'Xuất sắc! Đạt 100/100 điểm Accepted!'}
                           </span>
                           <span className="text-[10px] text-emerald-300/80">
                             {nextLessonCandidate 
@@ -1789,7 +1789,7 @@ export const AcademyView: React.FC = () => {
                 🎓 Tốt Nghiệp Khóa Học
               </span>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-2">
-                Chúc Mừng Bạn Đã Hoàn Thành C Track Chuẩn FPTU!
+                Chúc Mừng Bạn Đã Hoàn Thành C Track Tiêu Chuẩn Quốc Tế!
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed max-w-sm mx-auto">
                 Bạn đã vượt qua xuất sắc toàn bộ 14 bài học và bài tập thực hành con trỏ, cấp phát bộ nhớ động & cấu trúc dữ liệu!

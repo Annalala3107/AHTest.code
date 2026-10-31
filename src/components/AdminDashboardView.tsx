@@ -18,7 +18,7 @@ import {
   Edit3, 
   ArrowUpRight
 } from 'lucide-react';
-import { Problem, AuthUser } from '../types';
+import { AuthUser } from '../types';
 import { mockProblems } from '../data/mockProblems';
 
 interface AdminDashboardViewProps {
@@ -77,7 +77,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     {
       id: 'usr_02',
       name: 'ThS. Nguyễn Thanh Tùng',
-      email: 'thay.tung@fpt.edu.vn',
+      email: 'thay.tung@academy.edu',
       avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100',
       role: 'educator',
       provider: 'google',
@@ -89,7 +89,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     {
       id: 'usr_03',
       name: 'Nguyễn Hà An (fextivity)',
-      email: 'fextivity@fpt.edu.vn',
+      email: 'fextivity@gmail.com',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
       role: 'student',
       provider: 'google',
@@ -101,7 +101,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     {
       id: 'usr_04',
       name: 'Lê Hoàng Long',
-      email: 'longlh.se17@fpt.edu.vn',
+      email: 'longlh@gmail.com',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
       role: 'student',
       provider: 'google',
@@ -698,7 +698,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <CheckCircle2 className="w-4 h-4" /> RLS Enabled: ON
                   </span>
                   <span className="text-slate-500">•</span>
-                  <span className="text-indigo-400">Domain Whitelist: @fpt.edu.vn</span>
+                  <span className="text-indigo-400">Domain Whitelist: Toàn bộ Email Google hợp lệ</span>
                 </div>
               </div>
 

@@ -45,7 +45,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     },
     {
       id: 'usr_educator_02',
-      email: 'thay.tung@fpt.edu.vn',
+      email: 'thay.tung@academy.edu',
       name: 'ThS. Nguyễn Thanh Tùng',
       avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&auto=format&fit=crop&q=80',
       role: 'educator',
@@ -57,7 +57,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     },
     {
       id: 'usr_student_03',
-      email: 'fextivity@fpt.edu.vn',
+      email: 'fextivity@gmail.com',
       name: 'Nguyễn Hà An (fextivity)',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
       role: 'student',
@@ -92,13 +92,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      const isFPTAdmin = emailInput.includes('admin') || emailInput.endsWith('@ahtest.code');
+      const isAdminUser = emailInput.includes('admin') || emailInput.endsWith('@ahtest.code');
       const newUser: AuthUser = {
         id: `usr_${Date.now()}`,
         email: emailInput.trim(),
         name: emailInput.split('@')[0],
         avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${emailInput}`,
-        role: isFPTAdmin ? 'super_admin' : 'student',
+        role: isAdminUser ? 'super_admin' : 'student',
         provider: 'email',
         streakDays: 1,
         rating: 1500,
@@ -147,7 +147,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div className="pt-4">
               <h3 className="text-lg font-bold text-white leading-snug">
-                Nền tảng Luyện Thuật Toán & Quản Trị Khảo Thí Chuẩn FPTU
+                Nền tảng Luyện Thuật Toán & Khảo Thí Lập Trình Chuyên Nghiệp
               </h3>
               <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Đăng nhập để đồng bộ tiến độ học tập trên đám mây, nộp bài chấm thi thời gian thực và quản lý kho đề bài.
@@ -230,7 +230,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                       />
                     </svg>
-                    <span>Tiếp tục với Google (@fpt.edu.vn / @gmail)</span>
+                    <span>Tiếp tục với Google</span>
                   </>
                 )}
               </button>
@@ -290,12 +290,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {/* Divider */}
-            <div className="relative flex items-center justify-center">
-              <div className="border-t border-slate-800 w-full" />
-              <span className="bg-slate-900 px-3 text-[11px] uppercase tracking-wider text-slate-500 font-mono">
+            <div className="relative flex items-center justify-center my-3 w-full">
+              <div className="flex-1 border-t border-slate-800" />
+              <span className="px-3 text-[11px] uppercase tracking-wider text-slate-500 font-mono whitespace-nowrap shrink-0 select-none">
                 hoặc dùng Email quản trị
               </span>
-              <div className="border-t border-slate-800 w-full" />
+              <div className="flex-1 border-t border-slate-800" />
             </div>
 
             {/* Form Email / Password */}
@@ -310,7 +310,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="admin@ahtest.code hoặc yourname@fpt.edu.vn"
+                    placeholder="admin@ahtest.code hoặc yourname@gmail.com"
                     className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 font-mono transition-colors"
                   />
                 </div>
