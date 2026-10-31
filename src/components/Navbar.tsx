@@ -32,7 +32,6 @@ interface NavbarProps {
   currentUser: AuthUser;
   onOpenAuthModal: (mode?: 'login' | 'register') => void;
   onLogout: () => void;
-  onQuickLogin?: (user: AuthUser) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -43,51 +42,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   streakCount = 7,
   currentUser,
   onOpenAuthModal,
-  onLogout,
-  onQuickLogin
+  onLogout
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const isGuest = !currentUser || currentUser.id === 'usr_guest';
-
-  // Demo accounts for instant 1-click role testing directly inside dropdown
-  const demoAccounts: AuthUser[] = [
-    {
-      id: 'usr_admin_01',
-      email: 'admin.truong@ahtest.code',
-      name: 'Trương Quốc Anh',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-      role: 'super_admin',
-      provider: 'google',
-      streakDays: 45,
-      rating: 2450,
-      rankClass: 'Grandmaster'
-    },
-    {
-      id: 'usr_educator_02',
-      email: 'thay.tung@academy.edu',
-      name: 'ThS. Nguyễn Thanh Tùng',
-      avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&auto=format&fit=crop&q=80',
-      role: 'educator',
-      provider: 'google',
-      streakDays: 21,
-      rating: 1980,
-      rankClass: 'Master'
-    },
-    {
-      id: 'usr_student_03',
-      email: 'fextivity@gmail.com',
-      name: 'Nguyễn Hà An (fextivity)',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-      role: 'student',
-      provider: 'google',
-      streakDays: 7,
-      rating: 1540,
-      rankClass: 'Pupil'
-    }
-  ];
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -110,13 +71,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'leaderboard', label: 'Xếp hạng', icon: Users },
     { id: 'admin', label: 'Quản trị', icon: Shield },
   ];
-
-  const handleSelectDemoAccount = (acc: AuthUser) => {
-    if (onQuickLogin) {
-      onQuickLogin(acc);
-    }
-    setIsProfileMenuOpen(false);
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 transition-colors shadow-xs">
@@ -326,40 +280,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <UserPlus className="w-3.5 h-3.5" />
                           <span>Đăng ký mới</span>
                         </button>
-                      </div>
-
-                      {/* Quick Demo Selector */}
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 font-mono block">
-                          Trải nghiệm nhanh các vai trò:
-                        </span>
-                        <div className="space-y-1">
-                          {demoAccounts.map((acc) => (
-                            <button
-                              key={acc.id}
-                              onClick={() => handleSelectDemoAccount(acc)}
-                              className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-left transition-colors cursor-pointer group"
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <img
-                                  src={acc.avatarUrl}
-                                  alt={acc.name}
-                                  className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-slate-300 dark:ring-slate-700"
-                                />
-                                <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-rose-500">
-                                  {acc.name}
-                                </span>
-                              </div>
-                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold shrink-0 uppercase ${
-                                acc.role === 'super_admin' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400' :
-                                acc.role === 'educator' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400' :
-                                'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
-                              }`}>
-                                {acc.role === 'super_admin' ? 'Admin' : acc.role === 'educator' ? 'Giảng viên' : 'Học viên'}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     </div>
                   ) : (

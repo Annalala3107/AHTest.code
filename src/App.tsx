@@ -108,7 +108,6 @@ export function App() {
         currentUser={currentUser}
         onOpenAuthModal={handleOpenAuthModal}
         onLogout={handleLogout}
-        onQuickLogin={handleLoginSuccess}
       />
 
       {/* Main View Container: Full viewport edge-to-edge for IDE Workspaces and Admin, max-w-7xl for browsing */}
