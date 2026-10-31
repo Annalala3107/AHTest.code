@@ -83,8 +83,8 @@ export function App() {
         )}
       </main>
 
-      {/* Footer (hidden on Workbench split mode to maximize vertical space) */}
-      {!selectedProblem && <Footer />}
+      {/* Footer (hidden on Workbench and Academy split mode to maximize vertical space) */}
+      {!selectedProblem && currentTab !== 'academy' && <Footer />}
     </div>
   );
 }

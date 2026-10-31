@@ -9,7 +9,6 @@ import {
   BookOpen, 
   Code2, 
   Layers, 
-  Sparkles,
   Trophy,
   Copy,
   Check,
@@ -18,7 +17,9 @@ import {
   Terminal,
   Target,
   Lock,
-  Save
+  Save,
+  PanelLeft,
+  PanelLeftClose
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
@@ -33,9 +34,12 @@ export const AcademyView: React.FC = () => {
     mockCourses[0].modules[0]?.lessons[0] || ({} as AcademyLesson)
   );
   const [activeExercise, setActiveExercise] = useState<AppliedExercise | null>(null);
+  const [activeDocTab, setActiveDocTab] = useState<'theory' | 'testcases' | 'exercises'>('theory');
+
   const [docLang, setDocLang] = useState<'vi' | 'en'>(() => {
     return (localStorage.getItem('ahtest_academy_lang') as 'vi' | 'en') || 'vi';
   });
+
   const [userCode, setUserCode] = useState<string>(activeLesson.initialCode || '');
   const [executionOutput, setExecutionOutput] = useState<string | null>(null);
   const [exercisePassed, setExercisePassed] = useState<boolean>(false);
@@ -43,6 +47,17 @@ export const AcademyView: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
   const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
+  
+  // Splitter & Workspace Responsive States
+  const [splitPercent, setSplitPercent] = useState<number>(() => {
+    const saved = localStorage.getItem('ahtest_academy_split');
+    return saved ? Math.min(75, Math.max(25, Number(saved))) : 46;
+  });
+  const [isZenMode, setIsZenMode] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+
+  const workspaceContainerRef = useRef<HTMLDivElement>(null);
   const academyMonacoRef = useRef<any>(null);
 
   // Helper for unique localStorage draft key per lesson / exercise
@@ -54,6 +69,35 @@ export const AcademyView: React.FC = () => {
     const key = `ahtest_draft_academy_${mockCourses[0]?.id}_${mockCourses[0]?.modules[0]?.lessons[0]?.id}_theory`;
     return typeof window !== 'undefined' && localStorage.getItem(key) !== null;
   });
+
+  // Mouse drag event listeners for resizing splitter
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSplitter || !workspaceContainerRef.current) return;
+      const rect = workspaceContainerRef.current.getBoundingClientRect();
+      const newPercent = ((e.clientX - rect.left) / rect.width) * 100;
+      if (newPercent >= 25 && newPercent <= 75) {
+        setSplitPercent(Math.round(newPercent));
+        localStorage.setItem('ahtest_academy_split', Math.round(newPercent).toString());
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isDraggingSplitter) {
+        setIsDraggingSplitter(false);
+      }
+    };
+
+    if (isDraggingSplitter) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingSplitter]);
 
   // Load draft on initial mount
   useEffect(() => {
@@ -88,6 +132,7 @@ export const AcademyView: React.FC = () => {
   const handleSelectLesson = (lesson: AcademyLesson) => {
     setActiveLesson(lesson);
     setActiveExercise(null);
+    setActiveDocTab('theory');
     const key = getDraftKey(selectedCourse.id, lesson.id, null);
     const saved = localStorage.getItem(key);
     setUserCode(saved !== null ? saved : lesson.initialCode);
@@ -100,6 +145,7 @@ export const AcademyView: React.FC = () => {
 
   const handleSelectExercise = (exercise: AppliedExercise) => {
     setActiveExercise(exercise);
+    setActiveDocTab('theory');
     const key = getDraftKey(selectedCourse.id, activeLesson.id, exercise.id);
     const saved = localStorage.getItem(key);
     setUserCode(saved !== null ? saved : exercise.initialCode);
@@ -107,14 +153,12 @@ export const AcademyView: React.FC = () => {
     setExecutionOutput(null);
     setExercisePassed(false);
     setShowHintIndex(-1);
-    const sandboxEl = document.getElementById('academy-sandbox');
-    if (sandboxEl) {
-      sandboxEl.scrollIntoView({ behavior: 'smooth' });
-    }
+    setDiffState(null);
   };
 
   const handleBackToLesson = () => {
     setActiveExercise(null);
+    setActiveDocTab('theory');
     const key = getDraftKey(selectedCourse.id, activeLesson.id, null);
     const saved = localStorage.getItem(key);
     setUserCode(saved !== null ? saved : activeLesson.initialCode);
@@ -122,12 +166,36 @@ export const AcademyView: React.FC = () => {
     setExecutionOutput(null);
     setExercisePassed(false);
     setShowHintIndex(-1);
+    setDiffState(null);
   };
 
   const handleCopyInput = (input: string, idx: number) => {
     navigator.clipboard.writeText(input);
     setCopiedTestIdx(idx);
     setTimeout(() => setCopiedTestIdx(null), 2000);
+  };
+
+  // Find next lesson helper
+  const getNextLesson = (): AcademyLesson | null => {
+    for (let mIdx = 0; mIdx < selectedCourse.modules.length; mIdx++) {
+      const mod = selectedCourse.modules[mIdx];
+      const lIdx = mod.lessons.findIndex(l => l.id === activeLesson.id);
+      if (lIdx !== -1) {
+        if (lIdx + 1 < mod.lessons.length) {
+          return mod.lessons[lIdx + 1];
+        } else if (mIdx + 1 < selectedCourse.modules.length && selectedCourse.modules[mIdx + 1].lessons.length > 0) {
+          return selectedCourse.modules[mIdx + 1].lessons[0];
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleNextLesson = () => {
+    const next = getNextLesson();
+    if (next) {
+      handleSelectLesson(next);
+    }
   };
 
   const handleRunCode = () => {
@@ -138,32 +206,30 @@ export const AcademyView: React.FC = () => {
 
     setTimeout(() => {
       setIsRunning(false);
-
+      
       const targetTestcases = activeExercise 
         ? activeExercise.testcases 
-        : (activeLesson.testcases || []);
+        : (activeLesson.testcases && activeLesson.testcases.length > 0 ? activeLesson.testcases : []);
 
-      // If testcases exist, execute code against each testcase!
       if (targetTestcases.length > 0) {
         let allPassed = true;
-        let firstFailed: { tc: any; exec: ExecutionResult } | null = null;
-        const resultsSummary: string[] = [];
         let totalTime = 0;
         let maxMemory = 0;
+        const resultsSummary: string[] = [];
+        let firstFailed: { tc: any; exec: ExecutionResult } | null = null;
         let lastExecResult: ExecutionResult | null = null;
 
         for (let i = 0; i < targetTestcases.length; i++) {
           const tc = targetTestcases[i];
           const exec = executeCCode(userCode, tc.input);
           lastExecResult = exec;
+
           totalTime += exec.executionTimeMs;
-          maxMemory = Math.max(maxMemory, exec.memoryKb);
+          if (exec.memoryKb > maxMemory) maxMemory = exec.memoryKb;
 
           // If Compile Error
           if (exec.status === 'CE') {
-            setExecutionOutput(
-              `[Biên dịch thất bại: COMPILE ERROR]\n${exec.stderr}\n\n[Gợi ý]: Hãy sửa lỗi cú pháp trước khi chạy.`
-            );
+            setExecutionOutput(`[Biên dịch thất bại: COMPILE ERROR]\n${exec.stderr}`);
             setExercisePassed(false);
             setDiffState(null);
             return;
@@ -171,12 +237,10 @@ export const AcademyView: React.FC = () => {
 
           // If Runtime Error
           if (exec.status === 'RTE') {
-            setExecutionOutput(
-              `[Lỗi thực thi: RUNTIME ERROR]\n${exec.stderr}\n[Gợi ý]: Kiểm tra giải phóng con trỏ, truy cập mảng ngoài biên hoặc chia cho 0.`
-            );
+            setExecutionOutput(`[Lỗi thực thi: RUNTIME ERROR]\n${exec.stderr}`);
             setExercisePassed(false);
             setDiffState({
-              actual: exec.stdout || exec.stderr,
+              actual: `RUNTIME ERROR:\n${exec.stderr}`,
               expected: tc.expectedOutput,
               input: tc.input,
               isFailed: true,
@@ -285,66 +349,31 @@ export const AcademyView: React.FC = () => {
     ? activeExercise.testcases 
     : (activeLesson.testcases || []);
 
+  const nextLessonCandidate = getNextLesson();
+
   return (
-    <div className="space-y-6 pb-16">
-      {/* Academy Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 p-6 md:p-8 text-white shadow-xl">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
+      
+      {/* 1. TOP NAVIGATION & WORKSPACE TOOLBAR (Compact ~52px) */}
+      <div className="h-13 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between shrink-0 z-30 select-none">
         
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                <Sparkles className="w-3.5 h-3.5" />
-                Micro-Learning Interactive Academy
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                FPTU Auto-Grading & Dev-Cpp
-              </span>
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {docLang === 'en'
-                ? 'Interactive Coding & Algorithmic Academy'
-                : 'Học Lập Trình Thi Đấu & Ngôn Ngữ Tương Tác'}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              {docLang === 'en'
-                ? 'Bite-sized 3-minute theory, hands-on challenges right in your browser with WebAssembly. Integrated with official FPT University C/C++ Practical Exam questions with full test cases.'
-                : 'Học lý thuyết ngắn gọn 3 phút, giải thử thách ngay trên trình duyệt với công nghệ WebAssembly. Tích hợp bộ câu hỏi thi thực hành chuẩn FPT University C/C++ với đầy đủ testcases và chế độ song ngữ (VI/EN).'}
-            </p>
-          </div>
+        {/* Left: Curriculum Toggle & Breadcrumb / Track Switcher */}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              isSidebarOpen
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+            title="Đóng / Mở danh mục lộ trình bài học"
+          >
+            {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Lộ trình ({selectedCourse.totalLessons})</span>
+          </button>
 
-          {/* Controls: Quick Bilingual Switcher & Track Switcher */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 self-start md:self-auto shrink-0">
-            {/* Quick Bilingual Switcher */}
-            <div className="flex items-center bg-slate-950/80 border border-slate-800 p-1 rounded-xl text-xs backdrop-blur-md">
-              <button
-                onClick={() => handleToggleLang('vi')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                  docLang === 'vi'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                title="Giao diện Tiếng Việt"
-              >
-                <span>🇻🇳 VI</span>
-              </button>
-              <button
-                onClick={() => handleToggleLang('en')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                  docLang === 'en'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                title="Switch to English (Exam Mode)"
-              >
-                <span>🇬🇧 EN</span>
-              </button>
-            </div>
-
-            {/* Track Switcher */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-950/60 border border-slate-800/80 backdrop-blur-md">
+          {/* Track Switcher */}
+          <div className="hidden sm:flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-xs">
             {mockCourses.map((c) => {
               const isSelected = selectedCourse.id === c.id;
               return (
@@ -360,585 +389,690 @@ export const AcademyView: React.FC = () => {
                       setExercisePassed(false);
                     }
                   }}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span>
                     {c.language === 'c' 
-                      ? 'C Track (Dev-Cpp)' 
+                      ? 'C Track' 
                       : c.language === 'cpp' 
                       ? 'C++ Track' 
-                      : 'Python Track'}
+                      : 'Python'}
                   </span>
                   {c.isComingSoon && (
-                    <span className="px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-amber-500/20 text-amber-500">
                       Sắp có
                     </span>
                   )}
                 </button>
               );
             })}
-            </div>
           </div>
+
+          {/* Active Lesson Breadcrumb */}
+          <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate pl-2 border-l border-slate-200 dark:border-slate-800">
+            <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+              {activeExercise
+                ? `[${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
+                : docLang === 'en' && activeLesson.titleEn ? activeLesson.titleEn : activeLesson.title}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Bilingual Switcher, Split Presets, Zen Mode, Run Button */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          
+          {/* Draft Saved Status */}
+          {draftSaved && (
+            <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">
+              <Save className="w-3 h-3 text-emerald-500" />
+              <span>Đã lưu nháp</span>
+            </span>
+          )}
+
+          {/* Single Bilingual Switcher (VI / EN) */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl text-xs">
+            <button
+              onClick={() => handleToggleLang('vi')}
+              className={`px-2 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                docLang === 'vi'
+                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Tiếng Việt"
+            >
+              🇻🇳 VI
+            </button>
+            <button
+              onClick={() => handleToggleLang('en')}
+              className={`px-2 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                docLang === 'en'
+                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="English (Exam Mode)"
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+
+          {/* Zen Mode Button */}
+          <button
+            onClick={() => setIsZenMode(!isZenMode)}
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+              isZenMode
+                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-300 dark:border-indigo-800 shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+            title={isZenMode ? "Thoát Zen Mode (Hiện lại Lý thuyết)" : "Bật Zen Mode (Toàn màn hình Code)"}
+          >
+            <span className="text-[11px] font-bold">{isZenMode ? 'Hiện Lý thuyết' : 'Zen Code'}</span>
+          </button>
+
+          {/* Quick Split Ratio Selector */}
+          {!isZenMode && (
+            <div className="hidden xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setSplitPercent(40)}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 40 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                title="Tỷ lệ: Lý thuyết 40% - Code 60%"
+              >
+                4:6
+              </button>
+              <button
+                onClick={() => setSplitPercent(50)}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 50 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                title="Tỷ lệ: Lý thuyết 50% - Code 50%"
+              >
+                5:5
+              </button>
+              <button
+                onClick={() => setSplitPercent(60)}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 60 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                title="Tỷ lệ: Lý thuyết 60% - Code 40%"
+              >
+                6:4
+              </button>
+            </div>
+          )}
+
+          {/* Reset Code */}
+          <button
+            onClick={handleResetCode}
+            className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Đặt lại code ban đầu"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Run Code / Submit Button */}
+          <button
+            onClick={handleRunCode}
+            disabled={isRunning}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+            title="Phím tắt: Ctrl + Enter"
+          >
+            <Play className="w-3.5 h-3.5 fill-white" />
+            <span className="hidden sm:inline">{isRunning ? 'Đang chấm...' : 'Chạy thử'}</span>
+            <kbd className="hidden md:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-indigo-700 text-indigo-200 font-mono">
+              Ctrl+↵
+            </kbd>
+          </button>
         </div>
       </div>
 
-      {/* Main Learning Body */}
+      {/* 2. MAIN SPLIT-SCREEN WORKSPACE WITH REAL DRAGGABLE SPLITTER */}
       {selectedCourse.isComingSoon ? (
-        /* Python Coming Soon Placeholder */
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center shadow-xs space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
-            <Clock className="w-8 h-8" />
-          </div>
-          <div className="space-y-2 max-w-md mx-auto">
+        /* Coming Soon Screen */
+        <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-900">
+          <div className="max-w-md text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+              <Clock className="w-8 h-8" />
+            </div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              Giáo Trình Python Đang Được Biên Soạn
+              Giáo Trình {selectedCourse.title} Đang Được Biên Soạn
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Khóa học Python cho Lập trình thi đấu và Tin học trẻ sẽ được cập nhật trong phiên bản tiếp theo. 
-              Hiện tại bạn hãy trải nghiệm đầy đủ **Giáo trình C/C++ (Cơ bản đến Trung cấp)** đã có sẵn giáo trình chi tiết!
+              Khóa học này sẽ sớm ra mắt với các bài giảng tương tác và thử thách Wasm sandbox độc quyền. Hãy trải nghiệm Giáo trình C Track chuẩn chỉnh có sẵn ngay hôm nay!
             </p>
+            <button
+              onClick={() => {
+                setSelectedCourse(mockCourses[0]);
+                setActiveExercise(null);
+                setActiveLesson(mockCourses[0].modules[0].lessons[0]);
+                setUserCode(mockCourses[0].modules[0].lessons[0].initialCode);
+              }}
+              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 cursor-pointer"
+            >
+              Chuyển sang C Track (Dev-Cpp) →
+            </button>
           </div>
-          <button
-            onClick={() => {
-              setSelectedCourse(mockCourses[0]);
-              setActiveExercise(null);
-              setActiveLesson(mockCourses[0].modules[0].lessons[0]);
-              setUserCode(mockCourses[0].modules[0].lessons[0].initialCode);
-            }}
-            className="px-5 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 cursor-pointer"
-          >
-            Chuyển sang học Ngôn ngữ C ngay →
-          </button>
         </div>
       ) : (
-        /* Active 2-Column Learning Workbench */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left 4 Cols: Curriculum Navigation List */}
-          <div className="lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                  {docLang === 'en'
-                    ? (selectedCourse.titleEn || selectedCourse.title)
-                    : `Lộ trình ${selectedCourse.title}`}
-                </h3>
-                <span className="text-xs text-slate-500">
-                  {docLang === 'en'
-                    ? `${selectedCourse.totalLessons} lessons • ${selectedCourse.estimatedHours} hrs to complete`
-                    : `${selectedCourse.totalLessons} bài học • ${selectedCourse.estimatedHours} giờ hoàn thành`}
-                </span>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                {selectedCourse.level}
-              </span>
-            </div>
-
-
-            <div className="space-y-4 max-h-[680px] overflow-y-auto pr-1">
-              {selectedCourse.modules.map((module) => (
-                <div key={module.id} className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                    {docLang === 'en' && module.titleEn ? module.titleEn : module.title}
-                  </h4>
-                  <div className="space-y-1">
-                    {module.lessons.map((lesson, idx) => {
-                      const isCurrent = activeLesson.id === lesson.id && !activeExercise;
-                      return (
-                        <button
-                          key={lesson.id}
-                          onClick={() => handleSelectLesson(lesson)}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-all cursor-pointer ${
-                            isCurrent
-                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800'
-                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                              isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                            }`}>
-                              {idx + 1}
-                            </span>
-                            <span className="truncate">
-                              {docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 shrink-0 ml-2">{lesson.durationMinutes}m</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right 8 Cols: Interactive Micro-Lesson & Code Sandbox */}
-          <div className="lg:col-span-8 space-y-6">
-            
-            {/* Active Exercise Indicator Bar (If currently in Applied Exercise mode) */}
-            {activeExercise ? (
-              <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-indigo-600 text-white">
-                    {activeExercise.questionCode}
+        <div 
+          ref={workspaceContainerRef}
+          className={`flex-1 flex flex-col lg:flex-row overflow-hidden relative ${isDraggingSplitter ? 'cursor-col-resize select-none' : ''}`}
+        >
+          {/* COLLAPSIBLE SIDEBAR: Curriculum Drawer */}
+          {isSidebarOpen && (
+            <div className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 z-20 shadow-md">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                    {docLang === 'en' ? selectedCourse.titleEn : selectedCourse.title}
+                  </h3>
+                  <span className="text-[11px] text-slate-500">
+                    {selectedCourse.totalLessons} bài học • {selectedCourse.estimatedHours} giờ học
                   </span>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      {docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Đang luyện tập bài tập ứng dụng thực tế (FPT University Practical Exam)
-                    </p>
-                  </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Language Toggle */}
-                  <div className="flex items-center bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-                    <button
-                      onClick={() => handleToggleLang('vi')}
-                      className={`px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                        docLang === 'vi' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      🇻🇳 VI
-                    </button>
-                    <button
-                      onClick={() => handleToggleLang('en')}
-                      className={`px-2 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                        docLang === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      🇬🇧 EN
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={handleBackToLesson}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Quay lại lý thuyết</span>
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Lesson Content Card (Or Exercise Statement) */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
-              <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-3">
-                <div className="flex items-center gap-2.5">
-                  {activeExercise ? (
-                    <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  ) : (
-                    <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  )}
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {activeExercise
-                      ? (docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi)
-                      : (docLang === 'en' && activeLesson.titleEn ? activeLesson.titleEn : activeLesson.title)}
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Language Switcher Button (VI / EN) */}
-                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
-                    <button
-                      onClick={() => handleToggleLang('vi')}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                        docLang === 'vi'
-                          ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                      title="Chuyển sang đề tiếng Việt"
-                    >
-                      <span>🇻🇳 Tiếng Việt</span>
-                    </button>
-                    <button
-                      onClick={() => handleToggleLang('en')}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
-                        docLang === 'en'
-                          ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                      title="Switch to English (Exam mode)"
-                    >
-                      <span>🇬🇧 English</span>
-                    </button>
-                  </div>
-
-                  {!activeExercise && (
-                    <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                      {activeLesson.durationMinutes} phút
-                    </span>
-                  )}
-                </div>
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <PanelLeftClose className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Lesson Body Rendered with KaTeX */}
-              <div className="text-sm">
-                {activeExercise ? (
-                  <div className="space-y-4">
-                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {docLang === 'en' ? activeExercise.descriptionEn : activeExercise.descriptionVi}
-                    </p>
-                    <div className="flex items-center gap-2 pt-2">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                        {activeExercise.category}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        Độ khó: {activeExercise.difficulty}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        Nguồn: FPT University C/C++ Auto Grading
-                      </span>
+              {/* Module & Lesson List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                {selectedCourse.modules.map((module) => (
+                  <div key={module.id} className="space-y-1.5">
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 px-2">
+                      <Layers className="w-3 h-3 text-indigo-500" />
+                      <span>{docLang === 'en' && module.titleEn ? module.titleEn : module.title}</span>
+                    </h4>
+                    
+                    <div className="space-y-1">
+                      {module.lessons.map((lesson, idx) => {
+                        const isCurrent = activeLesson.id === lesson.id && !activeExercise;
+                        return (
+                          <button
+                            key={lesson.id}
+                            onClick={() => {
+                              handleSelectLesson(lesson);
+                              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                            }}
+                            className={`w-full text-left p-2.5 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer ${
+                              isCurrent
+                                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800/80'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                              }`}>
+                                {idx + 1}
+                              </span>
+                              <span className="truncate">
+                                {docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 shrink-0 ml-1.5">{lesson.durationMinutes}m</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LEFT COLUMN: Document & Theory Panel (Collapsible in Zen Mode) */}
+          {!isZenMode && (
+            <div 
+              style={{ width: `${splitPercent}%` }}
+              className="w-full lg:flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
+            >
+              {/* Document Tabs */}
+              <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/60 dark:bg-slate-950/40 text-xs shrink-0">
+                <button
+                  onClick={() => setActiveDocTab('theory')}
+                  className={`py-2.5 px-3 font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    activeDocTab === 'theory'
+                      ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {activeExercise ? (
+                    <>
+                      <Target className="w-3.5 h-3.5" />
+                      <span>Bài tập [{activeExercise.questionCode}]</span>
+                    </>
+                  ) : (
+                    <>
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Lý thuyết bài học</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveDocTab('testcases')}
+                  className={`py-2.5 px-3 font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    activeDocTab === 'testcases'
+                      ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>Test cases</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    {currentTestcases.length}
+                  </span>
+                </button>
+
+                {!activeExercise && activeLesson.appliedExercises && activeLesson.appliedExercises.length > 0 && (
+                  <button
+                    onClick={() => setActiveDocTab('exercises')}
+                    className={`py-2.5 px-3 font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      activeDocTab === 'exercises'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Target className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Bài tập FPTU</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-900">
+                      {activeLesson.appliedExercises.length}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* Document Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+                
+                {/* Active Exercise Indicator Bar if practicing an exercise */}
+                {activeExercise && (
+                  <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 flex items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-600 text-white">
+                        {activeExercise.questionCode}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
+                        FPT University Practical Exam
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={handleBackToLesson}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer shrink-0"
+                    >
+                      <ArrowLeft className="w-3 h-3" />
+                      <span>Quay lại lý thuyết</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* TAB 1: THEORY / EXERCISE STATEMENT */}
+                {activeDocTab === 'theory' && (
+                  <div className="space-y-4">
+                    {activeExercise ? (
+                      <div className="space-y-4">
+                        <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                          <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                            {docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}
+                          </h2>
+                          <div className="flex items-center gap-2 pt-2 text-xs">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                              {activeExercise.category}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              {activeExercise.difficulty}
+                            </span>
+                            <span className="text-slate-400">Nguồn: FPT University C/C++ Grading</span>
+                          </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800/80 text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+                          <KaTeXRenderer
+                            content={docLang === 'en' ? activeExercise.descriptionEn : activeExercise.descriptionVi}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
+                          <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                            {docLang === 'en' && activeLesson.titleEn ? activeLesson.titleEn : activeLesson.title}
+                          </h2>
+                          <span className="text-xs text-slate-400 font-medium">
+                            {activeLesson.durationMinutes} phút
+                          </span>
+                        </div>
+
+                        <div className="text-sm">
+                          <KaTeXRenderer 
+                            content={docLang === 'en' && activeLesson.contentEn ? activeLesson.contentEn : activeLesson.content} 
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 2: TEST CASES EXPLORER */}
+                {activeDocTab === 'testcases' && (
+                  <div className="space-y-4">
+                    <div className="border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                        {docLang === 'en' ? 'Sample Test Cases & Criteria' : 'Bảng Test Cases Mẫu & Tiêu Chí Đánh Giá'}
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Hệ thống sẽ chạy code của bạn qua {currentTestcases.length} trường hợp kiểm thử sau:
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {currentTestcases.map((tc, idx) => (
+                        <div 
+                          key={idx}
+                          className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-md font-bold text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                Test #{idx + 1}
+                              </span>
+                              {idx === 0 ? (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                                  {docLang === 'en' ? 'Public Sample' : 'Test Mẫu'}
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-0.5">
+                                  <Lock className="w-2.5 h-2.5" />
+                                  {docLang === 'en' ? 'Hidden System' : 'Test Ẩn'}
+                                </span>
+                              )}
+                            </div>
+
+                            {tc.input && (
+                              <button
+                                onClick={() => handleCopyInput(tc.input, idx)}
+                                className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer font-medium"
+                              >
+                                {copiedTestIdx === idx ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-500" />
+                                    <span className="text-emerald-500 font-bold">Đã chép!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    <span>Sao chép input</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Input</span>
+                            <pre className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-mono-code whitespace-pre-wrap">
+                              {tc.input || '(Không có input)'}
+                            </pre>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block mb-1">Expected Output</span>
+                            <pre className="p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-mono-code whitespace-pre-wrap">
+                              {tc.expectedOutput}
+                            </pre>
+                          </div>
+
+                          {(tc.explanationVi || tc.explanationEn) && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                              💡 {docLang === 'en' && tc.explanationEn ? tc.explanationEn : tc.explanationVi}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: CURATED APPLIED EXERCISES (FPTU) */}
+                {activeDocTab === 'exercises' && (
+                  <div className="space-y-4">
+                    <div className="border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Target className="w-4 h-4 text-rose-500" />
+                        Bài Tập Thực Chiến FPT University
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Chọn một câu hỏi để gõ code và nộp bài trực tiếp vào Monaco Editor:
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {activeLesson.appliedExercises?.map((ex) => (
+                        <div 
+                          key={ex.id}
+                          className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all space-y-2.5"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white">
+                                {ex.questionCode}
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                {ex.category}
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                {ex.difficulty}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleSelectExercise(ex)}
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <span>Luyện bài này</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <h4 className="font-bold text-xs text-slate-900 dark:text-white">
+                            {docLang === 'en' ? ex.titleEn : ex.titleVi}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                            {docLang === 'en' ? ex.descriptionEn : ex.descriptionVi}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
+          {/* DRAGGABLE SPLITTER HANDLE */}
+          {!isZenMode && (
+            <div
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDraggingSplitter(true);
+              }}
+              className="hidden lg:flex items-center justify-center w-2 hover:w-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-indigo-500 dark:hover:bg-indigo-500 transition-colors cursor-col-resize group shrink-0 relative z-20 select-none"
+              title="Kéo sang trái hoặc phải để điều chỉnh tỷ lệ khung làm việc (25% - 75%)"
+            >
+              <div className="w-0.5 h-8 rounded-full bg-slate-400 dark:bg-slate-600 group-hover:bg-white" />
+            </div>
+          )}
+
+          {/* RIGHT COLUMN: Monaco Code Editor & Terminal Sandbox */}
+          <div 
+            style={{ width: isZenMode ? '100%' : `${100 - splitPercent}%` }}
+            className="flex-1 flex flex-col bg-slate-900 text-white overflow-hidden"
+          >
+            {/* Editor Status Bar */}
+            <div className="h-10 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
+              <div className="flex items-center gap-2 font-mono text-slate-300 truncate">
+                <Code2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <span className="truncate">
+                  {activeExercise
+                    ? `FPTU Auto-Grading: [${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
+                    : selectedCourse.language === 'c'
+                    ? 'Trình Thực Thi C (Dev-C++ / MinGW GCC Wasm Sandbox)'
+                    : 'Client-Side Wasm Sandbox'}
+                </span>
+              </div>
+
+              {/* Action Toolbar: Hints */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowHintIndex((prev) => (prev + 1) % (currentHints?.length || 1))}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                >
+                  <Lightbulb className="w-3 h-3 text-amber-400" />
+                  <span>Gợi ý ({currentHints?.length || 0})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Monaco Code Editor Area (Top Portion) */}
+            <div className="flex-1 min-h-[280px] relative overflow-hidden bg-slate-950">
+              <CodeEditor
+                value={userCode}
+                onChange={handleCodeChange}
+                language={selectedCourse.language || 'c'}
+                onRun={handleRunCode}
+                onSubmit={handleRunCode}
+                onMount={(editor) => {
+                  academyMonacoRef.current = editor;
+                }}
+              />
+            </div>
+
+            {/* Hints Banner if shown */}
+            {showHintIndex >= 0 && currentHints && (
+              <div className="px-4 py-2.5 bg-amber-950/60 border-t border-amber-900/60 text-xs text-amber-200 shrink-0 flex items-center justify-between">
+                <span>
+                  <strong>{docLang === 'en' ? `Hint #${showHintIndex + 1}:` : `Gợi ý #${showHintIndex + 1}:`}</strong> {currentHints[showHintIndex]}
+                </span>
+                <button 
+                  onClick={() => setShowHintIndex(-1)}
+                  className="text-amber-400 hover:text-white cursor-pointer ml-2"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {/* Terminal Console Output & Diagnostics (Bottom Portion) */}
+            <div className="h-48 sm:h-56 border-t border-slate-800 bg-slate-950/95 flex flex-col shrink-0 overflow-hidden">
+              <div className="h-8 px-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
+                <div className="flex items-center gap-2 font-mono">
+                  <Terminal className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Console & Test Output</span>
+                </div>
+
+                {executionOutput && (
+                  <div>
+                    {exercisePassed ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
+                        <CheckCircle2 className="w-3 h-3" /> {docLang === 'en' ? 'Passed!' : 'Đạt 100/100!'}
+                      </span>
+                    ) : (
+                      <span className="text-rose-400 font-bold flex items-center gap-1 text-[11px]">
+                        <AlertCircle className="w-3 h-3" /> {docLang === 'en' ? 'Failed' : 'Chưa đạt'}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Console Body with Scroll */}
+              <div className="flex-1 overflow-y-auto p-3.5 font-mono-code text-xs space-y-2">
+                {/* Jump-to-line diagnostic button if compile error */}
+                {executionOutput && (() => {
+                  const match = executionOutput.match(/(?:solution\.c)?:?(\d+):(\d+):\s*(error|warning)/i) || executionOutput.match(/:(\d+):(\d+):/);
+                  if (match) {
+                    const line = parseInt(match[1], 10);
+                    const col = parseInt(match[2], 10);
+                    return (
+                      <div className="p-2 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-2xs font-sans">
+                        <span className="text-rose-200 text-xs">
+                          Lỗi tại <strong className="text-rose-400">Dòng {line}</strong>, Cột <strong className="text-rose-400">{col}</strong>
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (academyMonacoRef.current) {
+                              academyMonacoRef.current.revealLineInCenter(line);
+                              academyMonacoRef.current.setPosition({ lineNumber: line, column: col });
+                              academyMonacoRef.current.focus();
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                        >
+                          👉 Nhảy đến dòng lỗi
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {executionOutput ? (
+                  <pre className="text-slate-200 whitespace-pre-wrap leading-relaxed">
+                    {executionOutput}
+                  </pre>
                 ) : (
-                  <KaTeXRenderer 
-                    content={docLang === 'en' && activeLesson.contentEn ? activeLesson.contentEn : activeLesson.content} 
-                  />
+                  <p className="text-slate-500 italic text-[11px]">
+                    Nhấn "Chạy thử" hoặc bấm phím Ctrl + Enter để biên dịch và kiểm tra bài làm.
+                  </p>
+                )}
+
+                {/* DiffViewer if output mismatch */}
+                {diffState && (
+                  <div className="pt-2 font-sans">
+                    <DiffViewer
+                      actual={diffState.actual}
+                      expected={diffState.expected}
+                      input={diffState.input}
+                      title="Bảng So Sánh Output (Diff Inspector)"
+                      testId={1}
+                    />
+                  </div>
+                )}
+
+                {/* Celebratory Alert when Passed */}
+                {exercisePassed && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/70 to-indigo-950/70 border border-emerald-500/40 font-sans space-y-2.5 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-emerald-400" />
+                        <span className="font-bold text-xs text-white">
+                          🎉 {docLang === 'en' ? 'Challenge Passed!' : 'Tuyệt vời! Bạn đã vượt qua thử thách!'}
+                        </span>
+                      </div>
+                      
+                      {nextLessonCandidate && (
+                        <button
+                          onClick={handleNextLesson}
+                          className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Sang bài tiếp theo</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* VISIBLE TESTCASES EXPLORER (User requirement: 'hiện thêm phần testcase để người dùng biết mình phải làm gì') */}
-            {currentTestcases.length > 0 && (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      {docLang === 'en' ? 'Sample Test Cases & Specifications' : 'Bảng Test Cases Mẫu & Tiêu Chí Đánh Giá'}
-                    </h3>
-                  </div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                    {currentTestcases.length} {docLang === 'en' ? 'test cases' : 'trường hợp kiểm thử'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {currentTestcases.map((tc, idx) => (
-                    <div 
-                      key={idx}
-                      className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-md font-bold text-[10px] uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            Test #{idx + 1}
-                          </span>
-                          {idx === 0 ? (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                              {docLang === 'en' ? 'Public Sample' : 'Test Mẫu'}
-                            </span>
-                          ) : (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-0.5">
-                              <Lock className="w-2.5 h-2.5" />
-                              {docLang === 'en' ? 'Hidden System' : 'Test Ẩn'}
-                            </span>
-                          )}
-                        </div>
-                        {tc.input && (
-                          <button
-                            onClick={() => handleCopyInput(tc.input, idx)}
-                            className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-                            title="Sao chép đầu vào"
-                          >
-                            {copiedTestIdx === idx ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-500" />
-                                <span className="text-emerald-500 font-bold">Đã chép!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Sao chép</span>
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Input Box */}
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                          {docLang === 'en' ? 'Input:' : 'Đầu vào (Input):'}
-                        </span>
-                        <pre className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-mono-code whitespace-pre-wrap">
-                          {tc.input || '(Không có input)'}
-                        </pre>
-                      </div>
-
-                      {/* Expected Output Box */}
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
-                          {docLang === 'en' ? 'Expected Output:' : 'Đầu ra kỳ vọng (Expected Output):'}
-                        </span>
-                        <pre className="p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-mono-code whitespace-pre-wrap">
-                          {tc.expectedOutput}
-                        </pre>
-                      </div>
-
-                      {/* Explanation */}
-                      {(tc.explanationVi || tc.explanationEn) && (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 italic pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-                          💡 {docLang === 'en' && tc.explanationEn ? tc.explanationEn : tc.explanationVi}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* CURATED APPLIED EXERCISES (RECOMMENDED AFTER LESSON) */}
-            {!activeExercise && activeLesson.appliedExercises && activeLesson.appliedExercises.length > 0 && (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                        {docLang === 'en' ? 'FPTU Applied Practice & Practical Exam' : 'Bài Tập Ứng Dụng Thực Chiến (FPTU PRF192)'}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {docLang === 'en' 
-                          ? 'Apply your knowledge immediately with authentic university exam questions.' 
-                          : 'Rèn luyện phản xạ thi thực hành với các đề thi chuẩn FPT University bám sát lý thuyết vừa học.'}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
-                    {activeLesson.appliedExercises.length} bài tập
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {activeLesson.appliedExercises.map((ex) => (
-                    <div 
-                      key={ex.id}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white">
-                            {ex.questionCode}
-                          </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            {ex.category}
-                          </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                            {ex.difficulty}
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                          {docLang === 'en' ? ex.titleEn : ex.titleVi}
-                        </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                          {docLang === 'en' ? ex.descriptionEn : ex.descriptionVi}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => handleSelectExercise(ex)}
-                        className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <span>{docLang === 'en' ? 'Solve Now' : 'Luyện tập bài này'}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Interactive In-Browser Sandbox */}
-            <div id="academy-sandbox" className="bg-slate-900 rounded-2xl border border-slate-800 shadow-md overflow-hidden text-white scroll-mt-6">
-              <div className="h-10 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-mono text-slate-300">
-                  <Code2 className="w-4 h-4 text-indigo-400" />
-                  <span>
-                    {activeExercise
-                      ? `Trình Chấm FPTU Auto-Grading: [${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
-                      : selectedCourse.language === 'c'
-                      ? 'Trình Thực Thi C (Dev-C++ / MinGW GCC Wasm Sandbox)'
-                      : selectedCourse.language === 'cpp'
-                      ? 'Trình Thực Thi C++20 Sandbox (Client-Side Wasm)'
-                      : 'Trình Thực Thi Python 3 Sandbox (Pyodide Wasm)'}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {draftSaved && (
-                    <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
-                      <Save className="w-3 h-3 text-emerald-400" />
-                      <span>{docLang === 'en' ? 'Draft Saved' : 'Đã lưu nháp'}</span>
-                    </span>
-                  )}
-                  <button
-                    onClick={handleResetCode}
-                    className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
-                    title={docLang === 'en' ? 'Reset to default code (Clears saved draft)' : 'Đặt lại code ban đầu (Xóa bản nháp đã lưu)'}
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Professional Monaco Code Editor */}
-              <div className="relative overflow-hidden bg-slate-950 border-b border-slate-800/80 h-72 sm:h-80 min-h-[260px]">
-                <CodeEditor
-                  value={userCode}
-                  onChange={handleCodeChange}
-                  language={selectedCourse.language || 'c'}
-                  onRun={handleRunCode}
-                  onSubmit={handleRunCode}
-                  onMount={(editor) => {
-                    academyMonacoRef.current = editor;
-                  }}
-                />
-              </div>
-
-              {/* Action Bar */}
-              <div className="p-4 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowHintIndex((prev) => (prev + 1) % (currentHints?.length || 1))}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{docLang === 'en' ? 'Hint' : 'Xem gợi ý'} ({currentHints?.length || 0})</span>
-                  </button>
-                </div>
-
-                <button
-                  onClick={handleRunCode}
-                  disabled={isRunning}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
-                  title="Phím tắt: Ctrl + Enter"
-                >
-                  <Play className="w-3.5 h-3.5 fill-white" />
-                  <span>{isRunning ? 'Đang chấm bài...' : (docLang === 'en' ? 'Run & Check Test Cases' : 'Chạy & Kiểm tra nghiệm')}</span>
-                  <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-700/70 text-indigo-200 border border-indigo-500/40 font-mono">
-                    Ctrl + ↵
-                  </kbd>
-                </button>
-              </div>
-
-              {/* Hints Box */}
-              {showHintIndex >= 0 && currentHints && (
-                <div className="px-4 py-3 bg-amber-950/40 border-t border-amber-900/60 text-xs text-amber-200">
-                  <strong>{docLang === 'en' ? `Hint #${showHintIndex + 1}:` : `Gợi ý #${showHintIndex + 1}:`}</strong> {currentHints[showHintIndex]}
-                </div>
-              )}
-
-              {/* Output Terminal */}
-              {executionOutput && (
-                <div className="p-4 bg-slate-950/90 border-t border-slate-800 font-mono-code text-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">
-                      Console Output:
-                    </span>
-                    {exercisePassed ? (
-                      <span className="text-emerald-400 font-bold flex items-center gap-1 text-xs">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> {docLang === 'en' ? 'Accepted! Challenge Completed!' : 'Xuất sắc! Thử thách hoàn thành!'}
-                      </span>
-                    ) : (
-                      <span className="text-rose-400 font-bold flex items-center gap-1 text-xs">
-                        <AlertCircle className="w-3.5 h-3.5" /> {docLang === 'en' ? 'Test failed, please try again!' : 'Chưa đạt yêu cầu, hãy thử lại!'}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Jump-to-line diagnostic button if compile error */}
-                  {(() => {
-                    const match = executionOutput.match(/(?:solution\.c)?:?(\d+):(\d+):\s*(error|warning)/i) || executionOutput.match(/:(\d+):(\d+):/);
-                    if (match) {
-                      const line = parseInt(match[1], 10);
-                      const col = parseInt(match[2], 10);
-                      return (
-                        <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-xs">
-                          <span className="text-rose-200 text-xs font-mono">
-                            Phát hiện lỗi cú pháp tại <strong className="text-rose-400 font-bold">Dòng {line}</strong>, Cột <strong className="text-rose-400 font-bold">{col}</strong>
-                          </span>
-                          <button
-                            onClick={() => {
-                              if (academyMonacoRef.current) {
-                                academyMonacoRef.current.revealLineInCenter(line);
-                                academyMonacoRef.current.setPosition({ lineNumber: line, column: col });
-                                academyMonacoRef.current.focus();
-                              }
-                            }}
-                            className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
-                          >
-                            <span>👉 Nhảy đến dòng lỗi trong Monaco</span>
-                          </button>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
-                  <pre className="text-slate-200 whitespace-pre-wrap">{executionOutput}</pre>
-
-                  {/* Embedded Interactive DiffViewer */}
-                  {diffState && (
-                    <div className="pt-2 animate-fadeIn font-sans">
-                      <DiffViewer
-                        actual={diffState.actual}
-                        expected={diffState.expected}
-                        input={diffState.input}
-                        title={docLang === 'en' ? 'Detailed Output Comparison (Diff Inspector)' : 'Bảng So Sánh Chi Tiết Output (Diff Inspector)'}
-                        testId={1}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* CELEBRATORY CALLOUT WHEN LESSON PASSED: PROMPTING APPLIED PRACTICE */}
-            {exercisePassed && !activeExercise && activeLesson.appliedExercises && activeLesson.appliedExercises.length > 0 && (
-              <div className="p-5 rounded-2xl bg-linear-to-r from-emerald-500/10 via-indigo-500/10 to-emerald-500/10 border-2 border-emerald-500/30 shadow-lg space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <Trophy className="w-6 h-6 text-emerald-500 animate-bounce" />
-                  <div>
-                    <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-                      🎉 {docLang === 'en' ? 'Awesome! You passed the theory challenge!' : 'Xuất sắc! Bạn đã vượt qua bài học lý thuyết!'}
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-300">
-                      {docLang === 'en'
-                        ? 'Solidify your knowledge by solving the authentic FPT University practical exam question below!'
-                        : 'Để hiểu sâu hơn và luyện phản xạ thi thực tế, hãy giải ngay bài tập ứng dụng liên quan dưới đây!'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  <button
-                    onClick={() => handleSelectExercise(activeLesson.appliedExercises![0])}
-                    className="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 flex items-center gap-2 cursor-pointer"
-                  >
-                    <span>
-                      {docLang === 'en' 
-                        ? `Practice Applied Question: ${activeLesson.appliedExercises[0].questionCode} →` 
-                        : `Làm bài tập ứng dụng ngay: ${activeLesson.appliedExercises[0].questionCode} (${activeLesson.appliedExercises[0].titleVi}) →`}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
-
           </div>
         </div>
       )}
+
     </div>
   );
 };
