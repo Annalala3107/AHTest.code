@@ -25,6 +25,7 @@ import {
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
+import { executeCCode } from '../services/cExecutionEngine';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -130,30 +131,36 @@ fn main() {
     setTimeout(() => {
       setIsGrading(false);
       const sample = problem.samples[0];
-      const hasOutputLogic = (code.includes('cout') || code.includes('printf') || code.includes('print'));
-      const sampleAct = hasOutputLogic ? (sample?.output || '3') : 'Error: Không có output nào được xuất ra stdout.';
-      const sampleExp = sample?.output || '3';
-      const isAC = sampleAct.trim() === sampleExp.trim();
-      
+      const input = sample?.input || '';
+      const exec = executeCCode(code, input);
+
+      let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
+      if (exec.status === 'CE') verdict = 'CE';
+      else if (exec.status === 'RTE') verdict = 'RTE';
+      else if (exec.status === 'TLE') verdict = 'TLE';
+      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === (sample?.output || '').replace(/\r\n/g, '\n').trim()) {
+        verdict = 'AC';
+      }
+
       const singleResult: TestResult = {
         testId: 1,
         testName: 'Sample Case #1 (Ví dụ đề bài)',
-        verdict: isAC ? 'AC' : 'WA',
-        time: 12,
-        memory: 4280,
-        score: problem.points,
+        verdict,
+        time: exec.executionTimeMs,
+        memory: exec.memoryKb,
+        score: verdict === 'AC' ? problem.points : 0,
         maxScore: problem.points,
         isHidden: false,
         input: sample?.input || '',
-        actualOutput: sampleAct,
-        expectedOutput: sampleExp
+        actualOutput: exec.status === 'CE' ? exec.stderr : (exec.stdout || '(Không có output ra stdout)'),
+        expectedOutput: sample?.output || '3'
       };
 
-      setCustomOutput(sampleAct);
+      setCustomOutput(exec.status === 'CE' ? exec.stderr : (exec.stdout || 'Chương trình thực thi không có output.'));
       setTestResults([singleResult]);
       setSelectedTestResult(singleResult);
-      setFinalVerdict(isAC ? 'AC' : 'WA');
-    }, 450);
+      setFinalVerdict(verdict);
+    }, 350);
   };
 
   const handleSubmitSolution = () => {
@@ -165,6 +172,29 @@ fn main() {
     setTestResults(null);
     setSelectedTestResult(null);
     setAiHint(null);
+
+    // Check for Compile Error once first
+    const syntaxCheck = executeCCode(code, '');
+    if (syntaxCheck.status === 'CE') {
+      setIsGrading(false);
+      const ceResult: TestResult = {
+        testId: 1,
+        testName: 'Compilation Check',
+        verdict: 'CE',
+        time: 0,
+        memory: 0,
+        score: 0,
+        maxScore: 100,
+        isHidden: false,
+        input: 'gcc solution.c',
+        actualOutput: syntaxCheck.stderr,
+        expectedOutput: 'Biên dịch không lỗi'
+      };
+      setTestResults([ceResult]);
+      setSelectedTestResult(ceResult);
+      setFinalVerdict('CE');
+      return;
+    }
 
     // 2-Tier Testcases: 2 Public Samples + 3 Hidden System Edge Cases
     const testDefinitions = [
@@ -194,7 +224,7 @@ fn main() {
       },
       {
         id: 4,
-        testName: 'Hidden Case 4 (Số âm & Nghịch thế cực đại)',
+        testName: 'Hidden Case 4 (Số âm & Nghịch thế)',
         input: '5 5\n10 8 6 4 2',
         expectedOutput: '10',
         isHidden: true,
@@ -202,9 +232,9 @@ fn main() {
       },
       {
         id: 5,
-        testName: 'Hidden Case 5 (Stress Test quy mô lớn N = 200,000)',
-        input: '[Bộ dữ liệu lớn: 200,000 phần tử ngẫu nhiên]',
-        expectedOutput: '142857',
+        testName: 'Hidden Case 5 (Stress Test quy mô lớn)',
+        input: '5 2\n1 2 3 4 5',
+        expectedOutput: '2',
         isHidden: true,
         weight: 20
       }
@@ -217,21 +247,26 @@ fn main() {
       const currentIdx = simulatedTests.length;
       const tDef = testDefinitions[currentIdx];
       
-      const hasAlgorithm = (code.includes('cin') || code.includes('scanf')) && (code.includes('cout') || code.includes('printf'));
-      const isAC = hasAlgorithm;
-      const act = isAC ? tDef.expectedOutput : '0';
+      const exec = executeCCode(code, tDef.input);
+      let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
+      if (exec.status === 'CE') verdict = 'CE';
+      else if (exec.status === 'RTE') verdict = 'RTE';
+      else if (exec.status === 'TLE') verdict = 'TLE';
+      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === tDef.expectedOutput.replace(/\r\n/g, '\n').trim()) {
+        verdict = 'AC';
+      }
 
       const mockResult: TestResult = {
         testId: tDef.id,
         testName: tDef.testName,
-        verdict: isAC ? 'AC' : 'WA',
-        time: Math.floor(Math.random() * 25) + 10,
-        memory: Math.floor(Math.random() * 1024) + 4096,
-        score: isAC ? tDef.weight : 0,
+        verdict,
+        time: exec.executionTimeMs,
+        memory: exec.memoryKb,
+        score: verdict === 'AC' ? tDef.weight : 0,
         maxScore: tDef.weight,
         isHidden: tDef.isHidden,
         input: tDef.isHidden ? '[Test ẩn được bảo vệ]' : tDef.input,
-        actualOutput: act,
+        actualOutput: exec.stdout || exec.stderr,
         expectedOutput: tDef.expectedOutput
       };
 
@@ -243,7 +278,17 @@ fn main() {
         clearInterval(interval);
         setIsGrading(false);
         const allAC = simulatedTests.every(t => t.verdict === 'AC');
-        setFinalVerdict(allAC ? 'AC' : 'WA');
+        const hasCE = simulatedTests.some(t => t.verdict === 'CE');
+        const hasRTE = simulatedTests.some(t => t.verdict === 'RTE');
+        const hasTLE = simulatedTests.some(t => t.verdict === 'TLE');
+        
+        let finalV: Verdict = 'WA';
+        if (allAC) finalV = 'AC';
+        else if (hasCE) finalV = 'CE';
+        else if (hasTLE) finalV = 'TLE';
+        else if (hasRTE) finalV = 'RTE';
+
+        setFinalVerdict(finalV);
         
         // Auto-select first failing test, or test 1
         const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
@@ -251,13 +296,13 @@ fn main() {
 
         if (allAC) {
           confetti({
-            particleCount: 100,
+            particleCount: 80,
             spread: 70,
             origin: { y: 0.6 }
           });
         }
       }
-    }, 280);
+    }, 120);
   };
 
   const requestAiHint = () => {

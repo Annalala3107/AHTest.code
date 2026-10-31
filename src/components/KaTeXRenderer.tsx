@@ -135,6 +135,15 @@ function normalizeMarkdown(raw: string): string {
     return `___MATH_BLOCK_${mathBlocks.length - 1}___`;
   });
 
+  // Ensure squashed tables with double pipes || get broken into proper newlines
+  text = text.replace(/\|\|\s*([:\-a-zA-Z0-9`\*\(\\\$])/g, '|\n| $1');
+
+  // Ensure squashed inline numbered lists (e.g. "1. Step A. 2. Step B.") split into lines
+  text = text.replace(/([^\n])\s+(\d+\.\s+[A-ZÀ-Ỹa-ỹ\*\$])/g, '$1\n\n$2');
+
+  // Ensure alerts starting with [!TAG] without > are formatted with >
+  text = text.replace(/(^|\n)\s*\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]/gim, '$1> [!$2]');
+
   // Ensure headings have blank lines around them
   text = text.replace(/([^\n])\n(#{1,4}\s+[^\n]+)/g, '$1\n\n$2');
   text = text.replace(/(#{1,4}\s+[^\n]+)\n([^\n#])/g, '$1\n\n$2');
@@ -358,21 +367,30 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
             }
 
             // Alert Box: > [!CAUTION], > [!TIP], > [!WARNING], > [!NOTE], etc.
-            if (trimmed.startsWith('>')) {
-              const isCaution = trimmed.includes('[!CAUTION]');
-              const isWarning = trimmed.includes('[!WARNING]');
-              const isTip = trimmed.includes('[!TIP]');
-              const isNote = trimmed.includes('[!NOTE]') || trimmed.includes('[!INFO]');
+            const isAlert = trimmed.startsWith('>') || /^\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]/i.test(trimmed);
+            if (isAlert) {
+              const isCaution = /\[!CAUTION\]/i.test(trimmed);
+              const isWarning = /\[!WARNING\]/i.test(trimmed);
+              const isTip = /\[!TIP\]/i.test(trimmed);
+              const isNote = /\[!(NOTE|INFO|IMPORTANT)\]/i.test(trimmed);
 
               const cleanText = trimmed
-                .replace(/^>\s*\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]\s*/gim, '')
+                .replace(/^>*\s*\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]\s*/gim, '')
                 .replace(/^>\s*/gm, '')
                 .trim();
+
+              const alertTitle = isCaution
+                ? 'Lưu ý An toàn & Bảo mật'
+                : isWarning
+                ? 'Cảnh báo Lỗi thường gặp'
+                : isTip
+                ? 'Mẹo Lập trình Tối ưu'
+                : 'Ghi chú Kỹ thuật';
 
               return (
                 <div
                   key={`alert-${paraIdx}`}
-                  className={`my-3 p-3.5 rounded-xl border flex items-start gap-3 text-xs sm:text-sm leading-relaxed ${
+                  className={`my-3 p-3.5 sm:p-4 rounded-xl border flex items-start gap-3 text-xs sm:text-sm leading-relaxed ${
                     isCaution
                       ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60 text-rose-950 dark:text-rose-200'
                       : isWarning
@@ -384,17 +402,22 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
                 >
                   <div className="shrink-0 mt-0.5">
                     {isCaution ? (
-                      <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                      <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400" />
                     ) : isWarning ? (
-                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" />
                     ) : isTip ? (
-                      <Lightbulb className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                     ) : (
-                      <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <Info className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 dark:text-indigo-400" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    {renderInlineFormatted(cleanText)}
+                  <div className="flex-1 space-y-1">
+                    <div className="font-bold text-[11px] sm:text-xs uppercase tracking-wider opacity-90">
+                      {alertTitle}
+                    </div>
+                    <div>
+                      {renderInlineFormatted(cleanText)}
+                    </div>
                   </div>
                 </div>
               );
