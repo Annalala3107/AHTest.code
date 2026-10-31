@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 
 export interface CodeEditorProps {
@@ -8,6 +8,7 @@ export interface CodeEditorProps {
   height?: string;
   onRun?: () => void;
   onSubmit?: () => void;
+  onNextLesson?: () => void;
   onMount?: (editor: any, monaco: any) => void;
   readOnly?: boolean;
   className?: string;
@@ -21,11 +22,21 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   height = '100%',
   onRun,
   onSubmit,
+  onNextLesson,
   onMount,
   readOnly = false,
   className = '',
 }) => {
   const editorRef = useRef<any>(null);
+  const onNextLessonRef = useRef(onNextLesson);
+  const onRunRef = useRef(onRun);
+  const onSubmitRef = useRef(onSubmit);
+
+  useEffect(() => {
+    onNextLessonRef.current = onNextLesson;
+    onRunRef.current = onRun;
+    onSubmitRef.current = onSubmit;
+  }, [onNextLesson, onRun, onSubmit]);
 
   // Map internal language identifiers to Monaco supported languages
   const getMonacoLanguage = (lang: string): string => {
@@ -42,17 +53,24 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
     // Register Ctrl+Enter or Cmd+Enter for Submit / Run
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      if (onSubmit) {
-        onSubmit();
-      } else if (onRun) {
-        onRun();
+      if (onSubmitRef.current) {
+        onSubmitRef.current();
+      } else if (onRunRef.current) {
+        onRunRef.current();
+      }
+    });
+
+    // Register Shift+Enter for Next Lesson (when passed)
+    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+      if (onNextLessonRef.current) {
+        onNextLessonRef.current();
       }
     });
 
     // Register F9 for Run Sample
     editor.addCommand(monaco.KeyCode.F9, () => {
-      if (onRun) {
-        onRun();
+      if (onRunRef.current) {
+        onRunRef.current();
       }
     });
 

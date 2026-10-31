@@ -10,6 +10,7 @@ export const cppCourse: AcademyCourse = {
     description: 'Khoá học tương tác thực chiến dành riêng cho học sinh chuyên Tin và sinh viên nhập môn. Không nhồi nhét lý thuyết suông: mỗi bài học chỉ 3 phút lý thuyết kèm 1 thử thách gõ code trực tiếp trên trình duyệt!',
     totalLessons: 12,
     estimatedHours: 4,
+    isComingSoon: true,
     modules: [
       {
         id: 'mod-1',

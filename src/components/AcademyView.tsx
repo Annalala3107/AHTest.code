@@ -32,6 +32,7 @@ import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult } from '../services/cExecutionEngine';
 import { CodeEditor } from './CodeEditor';
+import confetti from 'canvas-confetti';
 
 export const AcademyView: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<AcademyCourse>(mockCourses[0]);
@@ -81,6 +82,9 @@ export const AcademyView: React.FC = () => {
   });
   const [searchLessonQuery, setSearchLessonQuery] = useState<string>('');
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+  const [comingSoonTrack, setComingSoonTrack] = useState<AcademyCourse | null>(null);
+  const [lessonSwitchToast, setLessonSwitchToast] = useState<string | null>(null);
+  const [showGraduationModal, setShowGraduationModal] = useState<boolean>(false);
 
   const toggleSidebarExpanded = (val?: boolean) => {
     setIsSidebarExpanded((prev) => {
@@ -244,12 +248,36 @@ export const AcademyView: React.FC = () => {
     return null;
   };
 
+  const nextLessonCandidate = getNextLesson();
+
   const handleNextLesson = () => {
     const next = getNextLesson();
     if (next) {
       handleSelectLesson(next);
+      const title = docLang === 'en' && next.titleEn ? next.titleEn : next.title;
+      setLessonSwitchToast(`Đã chuyển sang Bài: ${title}`);
+      setTimeout(() => setLessonSwitchToast(null), 3000);
+    } else if (exercisePassed) {
+      setShowGraduationModal(true);
     }
   };
+
+  const handleNextLessonRef = useRef(handleNextLesson);
+  useEffect(() => {
+    handleNextLessonRef.current = handleNextLesson;
+  });
+
+  // Global Shift+Enter shortcut to advance to next lesson when exercise is passed
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'Enter' && exercisePassed) {
+        e.preventDefault();
+        handleNextLessonRef.current();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [exercisePassed]);
 
   const handleRunCode = () => {
     setIsRunning(true);
@@ -337,6 +365,11 @@ export const AcademyView: React.FC = () => {
         }
 
         if (allPassed) {
+          confetti({
+            particleCount: 90,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
           let output = `[FPTU Auto-Grading Verdict: ACCEPTED (100/100)]\n` + resultsSummary.join('\n');
           output += `\n\nThời gian thực thi: ${totalTime}ms | Bộ nhớ tối đa: ${maxMemory}KB`;
           if (lastExecResult?.heapReport) {
@@ -363,6 +396,7 @@ export const AcademyView: React.FC = () => {
             isFailed: false,
           });
         } else {
+          setActiveDocTab('testcases');
           const failedTc = firstFailed ? firstFailed.tc : targetTestcases[0];
           const failedExec = firstFailed ? firstFailed.exec : (lastExecResult || executeCCode(userCode, failedTc.input));
           let output = `[FPTU Auto-Grading Verdict: WRONG ANSWER]\n` + resultsSummary.join('\n');
@@ -389,6 +423,11 @@ export const AcademyView: React.FC = () => {
           setExecutionOutput(`[Vượt quá thời gian: TIME LIMIT EXCEEDED]\n${exec.stderr}`);
           setExercisePassed(false);
         } else {
+          confetti({
+            particleCount: 75,
+            spread: 60,
+            origin: { y: 0.6 }
+          });
           let output = `[Biên dịch & Thực thi Thành Công (exit code 0)]\n`;
           output += exec.stdout ? `Output:\n${exec.stdout}\n` : `(Chương trình không xuất output ra stdout)\n`;
           output += `Thời gian: ${exec.executionTimeMs}ms | Bộ nhớ: ${exec.memoryKb}KB`;
@@ -417,8 +456,6 @@ export const AcademyView: React.FC = () => {
   const currentTestcases = activeExercise 
     ? activeExercise.testcases 
     : (activeLesson.testcases || []);
-
-  const nextLessonCandidate = getNextLesson();
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
@@ -459,20 +496,27 @@ export const AcademyView: React.FC = () => {
                   <button
                     key={c.id}
                     onClick={() => {
+                      if (c.isComingSoon) {
+                        setComingSoonTrack(c);
+                        return;
+                      }
                       setSelectedCourse(c);
                       setActiveExercise(null);
-                      if (!c.isComingSoon && c.modules[0]?.lessons[0]) {
+                      if (c.modules[0]?.lessons[0]) {
                         setActiveLesson(c.modules[0].lessons[0]);
                         setUserCode(c.modules[0].lessons[0].initialCode);
                         setExecutionOutput(null);
                         setExercisePassed(false);
                       }
                     }}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
-                        : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                        ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-2xs'
+                        : c.isComingSoon
+                        ? 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
+                    title={c.isComingSoon ? `${c.title} (Sắp ra mắt - Nhấn để xem lộ trình dự kiến)` : c.title}
                   >
                     <span>
                       {c.language === 'c' 
@@ -482,8 +526,9 @@ export const AcademyView: React.FC = () => {
                         : 'Python'}
                     </span>
                     {c.isComingSoon && (
-                      <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-amber-500/20 text-amber-500">
-                        Sắp có
+                      <span className="flex items-center gap-0.5 px-1 py-0.2 text-[8px] font-bold rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <Lock className="w-2 h-2" />
+                        <span>Sắp có</span>
                       </span>
                     )}
                   </button>
@@ -627,6 +672,33 @@ export const AcademyView: React.FC = () => {
               Ctrl+↵
             </kbd>
           </button>
+
+          {/* Next Lesson Pulsating Quick Button (Shift + Enter) */}
+          {exercisePassed && nextLessonCandidate && (
+            <button
+              onClick={handleNextLesson}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 animate-pulse transition-all cursor-pointer"
+              title="Phím tắt: Shift + Enter để sang bài tiếp theo"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <span className="hidden sm:inline">Bài tiếp theo</span>
+              <kbd className="hidden sm:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-emerald-700 text-emerald-100 font-mono">
+                Shift+↵
+              </kbd>
+            </button>
+          )}
+
+          {/* Graduation Badge if finished all lessons */}
+          {exercisePassed && !nextLessonCandidate && (
+            <button
+              onClick={() => setShowGraduationModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/30 transition-all cursor-pointer"
+              title="Chúc mừng bạn đã hoàn thành toàn bộ khóa học!"
+            >
+              <Trophy className="w-3.5 h-3.5 text-white" />
+              <span className="hidden sm:inline">Tốt nghiệp C Track</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1297,8 +1369,16 @@ export const AcademyView: React.FC = () => {
                 </span>
               </div>
 
-              {/* Action Toolbar: Hints */}
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Action Toolbar: Auto-save status & Hints */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div 
+                  className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono select-none"
+                  title="Code của bạn được tự động lưu liên tục trong trình duyệt"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${draftSaved ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                  <span className="text-slate-400">{draftSaved ? 'Đã lưu tự động' : 'Tự động lưu'}</span>
+                </div>
+
                 <button
                   onClick={() => setShowHintIndex((prev) => (prev + 1) % (currentHints?.length || 1))}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
@@ -1317,6 +1397,7 @@ export const AcademyView: React.FC = () => {
                 language={selectedCourse.language || 'c'}
                 onRun={handleRunCode}
                 onSubmit={handleRunCode}
+                onNextLesson={exercisePassed && nextLessonCandidate ? handleNextLesson : undefined}
                 onMount={(editor) => {
                   academyMonacoRef.current = editor;
                 }}
@@ -1417,22 +1498,43 @@ export const AcademyView: React.FC = () => {
 
                 {/* Celebratory Alert when Passed */}
                 {exercisePassed && (
-                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/70 to-indigo-950/70 border border-emerald-500/40 font-sans space-y-2.5 mt-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-emerald-400" />
-                        <span className="font-bold text-xs text-white">
-                          🎉 {docLang === 'en' ? 'Challenge Passed!' : 'Tuyệt vời! Bạn đã vượt qua thử thách!'}
-                        </span>
+                  <div className="p-3.5 rounded-xl bg-linear-to-r from-emerald-950/70 via-slate-900 to-indigo-950/70 border border-emerald-500/40 font-sans space-y-2 mt-2 shadow-lg">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-xs text-white block">
+                            🎉 {docLang === 'en' ? 'Challenge Passed (100/100 Accepted)!' : 'Xuất sắc! Đạt 100/100 điểm FPTU Accepted!'}
+                          </span>
+                          <span className="text-[10px] text-emerald-300/80">
+                            {nextLessonCandidate 
+                              ? 'Bấm nút hoặc nhấn Shift + Enter để tự động chuyển sang bài tiếp theo.' 
+                              : 'Bạn đã hoàn thành bài học cuối cùng trong giáo trình!'}
+                          </span>
+                        </div>
                       </div>
                       
-                      {nextLessonCandidate && (
+                      {nextLessonCandidate ? (
                         <button
                           onClick={handleNextLesson}
-                          className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs flex items-center gap-1 cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-linear-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-md shadow-emerald-600/40 flex items-center gap-1.5 cursor-pointer transition-all hover:scale-102"
+                          title="Phím tắt: Shift + Enter để sang bài tiếp theo"
                         >
                           <span>Sang bài tiếp theo</span>
-                          <ArrowRight className="w-3 h-3" />
+                          <kbd className="px-1 py-0.2 rounded text-[9px] bg-emerald-800 text-emerald-200 font-mono">
+                            Shift+↵
+                          </kbd>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setShowGraduationModal(true)}
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/40 flex items-center gap-1.5 cursor-pointer transition-all hover:scale-102"
+                        >
+                          <Trophy className="w-3.5 h-3.5" />
+                          <span>Xem bảng vinh danh tốt nghiệp</span>
                         </button>
                       )}
                     </div>
@@ -1444,6 +1546,142 @@ export const AcademyView: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
+
+      {/* Lesson Transition Toast Notification */}
+      {lessonSwitchToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-2xl animate-in slide-in-from-bottom duration-200 select-none">
+          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-xs font-semibold">{lessonSwitchToast}</span>
+        </div>
+      )}
+
+      {/* Coming Soon Track Preview Modal */}
+      {comingSoonTrack && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200 select-none">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Clock className="w-6 h-6" />
+              </div>
+              <button
+                onClick={() => setComingSoonTrack(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                  Sắp ra mắt • Coming Soon
+                </span>
+                <span className="text-xs text-slate-400 font-bold uppercase">{comingSoonTrack.language} Track</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {docLang === 'en' && comingSoonTrack.titleEn ? comingSoonTrack.titleEn : comingSoonTrack.title}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                {comingSoonTrack.description}
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-2">
+              <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 text-[11px]">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span>Nội dung đang được biên soạn chuẩn Wasm Sandbox:</span>
+              </div>
+              <ul className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <li className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                  <span>Trình thông dịch WebAssembly chạy trực tiếp trên client.</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                  <span>Giáo trình tương tác gắn liền đề thi Olympic & Doanh nghiệp.</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                  <span>Chấm test cases tự động và phân tích lỗi chi tiết.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between gap-3">
+              <button
+                onClick={() => setComingSoonTrack(null)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Tiếp tục học C Track
+              </button>
+              <button
+                onClick={() => {
+                  alert('Cảm ơn bạn! Hệ thống sẽ thông báo ngay khi khóa học chính thức phát hành.');
+                  setComingSoonTrack(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-colors cursor-pointer"
+              >
+                Đăng ký nhận tin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Graduation Modal */}
+      {showGraduationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 select-none">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 mx-auto flex items-center justify-center shadow-inner">
+              <Trophy className="w-8 h-8" />
+            </div>
+            <div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+                🎓 Tốt Nghiệp Khóa Học
+              </span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-2">
+                Chúc Mừng Bạn Đã Hoàn Thành C Track Chuẩn FPTU!
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed max-w-sm mx-auto">
+                Bạn đã vượt qua xuất sắc toàn bộ 14 bài học và bài tập thực hành con trỏ, cấp phát bộ nhớ động & cấu trúc dữ liệu!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 py-2">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                <div className="text-base font-black text-indigo-600 dark:text-indigo-400">14/14</div>
+                <div className="text-[10px] text-slate-400 font-medium">Bài học</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                <div className="text-base font-black text-emerald-500">100%</div>
+                <div className="text-[10px] text-slate-400 font-medium">Tỷ lệ đạt</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                <div className="text-base font-black text-amber-500">8.0h</div>
+                <div className="text-[10px] text-slate-400 font-medium">Thời lượng</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowGraduationModal(false);
+                  handleSelectLesson(selectedCourse.modules[0].lessons[0]);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Ôn tập từ Bài 1
+              </button>
+              <button
+                onClick={() => setShowGraduationModal(false)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-colors cursor-pointer"
+              >
+                Đóng & Xem lại bài
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
