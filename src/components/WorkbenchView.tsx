@@ -13,16 +13,23 @@ import {
   MessageSquare, 
   Lightbulb, 
   ChevronDown, 
+  ChevronUp,
   Terminal, 
   Lock, 
   Save,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  Maximize2,
+  Minimize2,
+  Trash2,
+  FlaskConical,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
-import { executeCCode } from '../services/cExecutionEngine';
+import { executeCCode, ExecutionResult } from '../services/cExecutionEngine';
 import { CodeEditor } from './CodeEditor';
 
 interface WorkbenchViewProps {
@@ -106,7 +113,17 @@ fn main() {
     return Number(localStorage.getItem('ahtest_workbench_split')) || 50;
   });
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+  const [consoleHeight, setConsoleHeight] = useState<number>(() => {
+    const saved = localStorage.getItem('ahtest_workbench_console_height');
+    return saved ? Math.max(36, Math.min(650, Number(saved))) : 260;
+  });
+  const [showConsole, setShowConsole] = useState<boolean>(true);
+  const [consoleTab, setConsoleTab] = useState<'testcase' | 'custom' | 'result'>('testcase');
+  const [isDraggingConsole, setIsDraggingConsole] = useState<boolean>(false);
+  const [isConsoleMaximized, setIsConsoleMaximized] = useState<boolean>(false);
+  const [customExecResult, setCustomExecResult] = useState<ExecutionResult | null>(null);
   const workspaceContainerRef = useRef<HTMLDivElement>(null);
+  const editorColumnRef = useRef<HTMLDivElement>(null);
   const monacoEditorRef = useRef<any>(null);
 
   // Jump to specific line and column in Monaco Editor
@@ -138,22 +155,41 @@ fn main() {
     return null;
   };
 
-  // Dragging handler for smooth 2-panel splitter
+  // Dragging handler for smooth 2-panel splitter and vertical console splitter
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingSplitter || !workspaceContainerRef.current) return;
-      const rect = workspaceContainerRef.current.getBoundingClientRect();
-      const offsetX = e.clientX - rect.left;
-      const newPercent = Math.min(Math.max((offsetX / rect.width) * 100, 20), 80);
-      setSplitPercent(Math.round(newPercent));
-      localStorage.setItem('ahtest_workbench_split', String(Math.round(newPercent)));
+      // 1. Horizontal Left/Right Workspace Splitter
+      if (isDraggingSplitter && workspaceContainerRef.current) {
+        const rect = workspaceContainerRef.current.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const newPercent = Math.min(Math.max((offsetX / rect.width) * 100, 20), 80);
+        setSplitPercent(Math.round(newPercent));
+        localStorage.setItem('ahtest_workbench_split', String(Math.round(newPercent)));
+      }
+
+      // 2. Vertical Up/Down Console Splitter
+      if (isDraggingConsole && editorColumnRef.current) {
+        const rect = editorColumnRef.current.getBoundingClientRect();
+        const newHeight = rect.bottom - e.clientY;
+        const maxHeight = Math.max(100, rect.height - 100);
+        const clamped = Math.max(36, Math.min(maxHeight, newHeight));
+        setConsoleHeight(Math.round(clamped));
+        if (clamped > 36 && !showConsole) {
+          setShowConsole(true);
+        }
+        if (isConsoleMaximized) {
+          setIsConsoleMaximized(false);
+        }
+        localStorage.setItem('ahtest_workbench_console_height', Math.round(clamped).toString());
+      }
     };
 
     const handleMouseUp = () => {
-      setIsDraggingSplitter(false);
+      if (isDraggingSplitter) setIsDraggingSplitter(false);
+      if (isDraggingConsole) setIsDraggingConsole(false);
     };
 
-    if (isDraggingSplitter) {
+    if (isDraggingSplitter || isDraggingConsole) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
@@ -161,7 +197,7 @@ fn main() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingSplitter]);
+  }, [isDraggingSplitter, isDraggingConsole, showConsole, isConsoleMaximized]);
 
   // Helper for unique localStorage draft key per problem & language
   const getWorkbenchDraftKey = (probId: string, lang: string) => {
@@ -203,8 +239,6 @@ fn main() {
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
   const [selectedTestResult, setSelectedTestResult] = useState<TestResult | null>(null);
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
-  const [showConsole, setShowConsole] = useState<boolean>(true);
-  const [consoleTab, setConsoleTab] = useState<'testcase' | 'custom' | 'result'>('testcase');
   const [aiHint, setAiHint] = useState<string | null>(null);
 
   const handleCopySample = (text: string, index: number) => {
@@ -254,6 +288,65 @@ fn main() {
       setSelectedTestResult(singleResult);
       setFinalVerdict(verdict);
     }, 350);
+  };
+
+  const handleRunSpecificSample = (index: number) => {
+    setConsoleTab('result');
+    setShowConsole(true);
+    setIsGrading(true);
+    setFinalVerdict(null);
+    setTestResults(null);
+    setSelectedTestResult(null);
+
+    setTimeout(() => {
+      setIsGrading(false);
+      const sample = problem.samples[index] || problem.samples[0];
+      const input = sample?.input || '';
+      const exec = executeCCode(code, input);
+
+      let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
+      if (exec.status === 'CE') verdict = 'CE';
+      else if (exec.status === 'RTE') verdict = 'RTE';
+      else if (exec.status === 'TLE') verdict = 'TLE';
+      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === (sample?.output || '').replace(/\r\n/g, '\n').trim()) {
+        verdict = 'AC';
+      }
+
+      const singleResult: TestResult = {
+        testId: index + 1,
+        testName: `Sample Case #${index + 1} (Ví dụ đề bài)`,
+        verdict,
+        time: exec.executionTimeMs,
+        memory: exec.memoryKb,
+        score: verdict === 'AC' ? problem.points : 0,
+        maxScore: problem.points,
+        isHidden: false,
+        input: sample?.input || '',
+        actualOutput: exec.status === 'CE' ? exec.stderr : (exec.stdout || '(Không có output ra stdout)'),
+        expectedOutput: sample?.output || ''
+      };
+
+      setCustomOutput(exec.status === 'CE' ? exec.stderr : (exec.stdout || 'Chương trình thực thi không có output.'));
+      setTestResults([singleResult]);
+      setSelectedTestResult(singleResult);
+      setFinalVerdict(verdict);
+    }, 350);
+  };
+
+  const handleRunCustomTest = () => {
+    setShowConsole(true);
+    setConsoleTab('custom');
+    const exec = executeCCode(code, customInput);
+    setCustomExecResult(exec);
+    if (exec.status === 'CE') {
+      setCustomOutput(exec.stderr);
+    } else if (exec.status === 'RTE') {
+      setCustomOutput(exec.stderr || exec.stdout || 'Runtime error: Chương trình dừng bất thường');
+    } else if (exec.status === 'TLE') {
+      setCustomOutput('Time Limit Exceeded: Vượt quá thời gian thực thi cho phép (vòng lặp vô hạn)');
+    } else {
+      setCustomOutput(exec.stdout || '(Chương trình thực thi thành công nhưng không in gì ra stdout)');
+    }
   };
 
   const handleSubmitSolution = () => {
@@ -747,8 +840,11 @@ fn main() {
 
         {/* RIGHT COLUMN: Professional Monaco Code Editor & Execution Console */}
         <div 
+          ref={editorColumnRef}
           style={{ width: isZenMode ? '100%' : `${100 - splitPercent}%` }}
-          className="flex-1 flex flex-col bg-slate-900 text-white overflow-hidden transition-[width] duration-75"
+          className={`flex-1 flex flex-col bg-slate-900 text-white overflow-hidden transition-[width] duration-75 relative ${
+            isDraggingConsole ? 'select-none cursor-row-resize' : ''
+          }`}
         >
           {/* Editor Controls Bar */}
           <div className="h-10 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between shrink-0 text-xs">
@@ -790,8 +886,8 @@ fn main() {
             </div>
           </div>
 
-          {/* Professional Monaco Code Editor */}
-          <div className="flex-1 relative overflow-hidden bg-slate-950 min-h-[300px]">
+          {/* Professional Monaco Code Editor (Responsive min-height) */}
+          <div className="flex-1 relative overflow-hidden bg-slate-950 min-h-[100px]">
             <CodeEditor
               value={code}
               onChange={handleCodeChange}
@@ -804,45 +900,168 @@ fn main() {
             />
           </div>
 
+          {/* DRAGGABLE CONSOLE SPLITTER (Resize Console Up/Down) */}
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsDraggingConsole(true);
+            }}
+            className={`h-2 hover:h-2.5 bg-slate-800 hover:bg-rose-500 transition-colors cursor-row-resize flex items-center justify-center shrink-0 group relative z-20 select-none ${
+              isDraggingConsole ? 'bg-rose-500' : ''
+            }`}
+            title="Kéo lên / kéo xuống để điều chỉnh độ cao khung Console & Test Cases"
+          >
+            <div className="w-12 h-1 rounded-full bg-slate-600 group-hover:bg-white transition-colors" />
+          </div>
+
           {/* Bottom Terminal / Drawer */}
-          <div className="border-t border-slate-800 bg-slate-900 shrink-0">
+          <div 
+            style={{
+              height: !showConsole 
+                ? '36px' 
+                : isConsoleMaximized 
+                ? 'calc(100% - 40px)' 
+                : `${consoleHeight}px`,
+              maxHeight: !showConsole ? '36px' : 'calc(100% - 90px)'
+            }}
+            className="border-t border-slate-800 bg-slate-900 flex flex-col shrink-0 overflow-hidden transition-all duration-75"
+          >
             {/* Drawer Header */}
-            <div className="h-9 px-4 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between text-xs">
+            <div className="h-9 px-4 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between text-xs shrink-0 select-none">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setConsoleTab('testcase')}
-                  className={`font-semibold cursor-pointer ${consoleTab === 'testcase' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'}`}
+                  onClick={() => {
+                    setConsoleTab('testcase');
+                    setShowConsole(true);
+                  }}
+                  className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors ${
+                    consoleTab === 'testcase' 
+                      ? 'text-rose-400 border-rose-500 font-bold' 
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
                 >
-                  Sample Input
+                  Sample Input ({problem.samples.length})
                 </button>
                 <button
-                  onClick={() => setConsoleTab('custom')}
-                  className={`font-semibold cursor-pointer ${consoleTab === 'custom' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'}`}
+                  onClick={() => {
+                    setConsoleTab('custom');
+                    setShowConsole(true);
+                  }}
+                  className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors ${
+                    consoleTab === 'custom' 
+                      ? 'text-rose-400 border-rose-500 font-bold' 
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
                 >
                   Custom Test
                 </button>
                 <button
-                  onClick={() => setConsoleTab('result')}
-                  className={`font-semibold cursor-pointer flex items-center gap-1.5 ${consoleTab === 'result' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'}`}
+                  onClick={() => {
+                    setConsoleTab('result');
+                    setShowConsole(true);
+                  }}
+                  className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors flex items-center gap-1.5 ${
+                    consoleTab === 'result' 
+                      ? 'text-rose-400 border-rose-500 font-bold' 
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
                 >
-                  Kết quả chấm
+                  <span>Kết quả chấm</span>
                   {finalVerdict && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${
+                      finalVerdict === 'AC' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                    }`}>
+                      {finalVerdict}
+                    </span>
                   )}
                 </button>
               </div>
 
-              <button
-                onClick={() => setShowConsole(!showConsole)}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
-              >
-                <ChevronDown className={`w-3.5 h-3.5 transform transition-transform ${showConsole ? '' : 'rotate-180'}`} />
-              </button>
+              {/* Right controls: Presets, Maximize, Collapse/Expand */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Presets */}
+                <div className="hidden sm:flex items-center bg-slate-800 rounded-md p-0.5 text-[10px] font-mono text-slate-400">
+                  <button
+                    onClick={() => {
+                      setShowConsole(true);
+                      setIsConsoleMaximized(false);
+                      setConsoleHeight(160);
+                      localStorage.setItem('ahtest_workbench_console_height', '160');
+                    }}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                      showConsole && !isConsoleMaximized && consoleHeight === 160 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                    }`}
+                    title="Thu gọn vừa phải (160px)"
+                  >
+                    Nhỏ
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowConsole(true);
+                      setIsConsoleMaximized(false);
+                      setConsoleHeight(260);
+                      localStorage.setItem('ahtest_workbench_console_height', '260');
+                    }}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                      showConsole && !isConsoleMaximized && consoleHeight === 260 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                    }`}
+                    title="Chiều cao chuẩn (260px)"
+                  >
+                    Vừa
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowConsole(true);
+                      setIsConsoleMaximized(false);
+                      setConsoleHeight(380);
+                      localStorage.setItem('ahtest_workbench_console_height', '380');
+                    }}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                      showConsole && !isConsoleMaximized && consoleHeight === 380 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                    }`}
+                    title="Mở rộng lớn (380px - xem trọn vẹn Testcase & Diff)"
+                  >
+                    Lớn
+                  </button>
+                </div>
+
+                {/* Maximize / Restore Console */}
+                <button
+                  onClick={() => {
+                    setShowConsole(true);
+                    setIsConsoleMaximized(!isConsoleMaximized);
+                  }}
+                  className={`p-1 rounded transition-colors cursor-pointer ${
+                    isConsoleMaximized 
+                      ? 'bg-rose-600 text-white' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                  title={isConsoleMaximized ? "Thu nhỏ về kích thước cũ" : "Phóng to Console toàn màn hình"}
+                >
+                  {isConsoleMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                </button>
+
+                {/* Collapse / Expand Toggle */}
+                <button
+                  onClick={() => {
+                    if (showConsole) {
+                      setShowConsole(false);
+                      setIsConsoleMaximized(false);
+                    } else {
+                      setShowConsole(true);
+                    }
+                  }}
+                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title={showConsole ? "Thu gọn Console" : "Mở rộng Console"}
+                >
+                  {showConsole ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
             {/* Drawer Content */}
             {showConsole && (
-              <div className="p-4 h-80 sm:h-96 overflow-y-auto font-mono-code text-xs space-y-4">
+              <div className="p-4 flex-1 min-h-0 overflow-y-auto font-mono-code text-xs space-y-4">
                 {consoleTab === 'testcase' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-300 font-sans">
@@ -857,25 +1076,56 @@ fn main() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {problem.samples.map((sample, idx) => (
-                        <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                        <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 flex flex-col justify-between">
+                          <div className="flex items-center justify-between flex-wrap gap-1">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/30">
                               Test #{idx + 1} (Công khai)
                             </span>
-                            <button
-                              onClick={() => handleCopySample(sample.input, idx)}
-                              className="text-[11px] text-slate-400 hover:text-white cursor-pointer"
-                            >
-                              Sao chép
-                            </button>
+                            <div className="flex items-center gap-1.5 text-[11px]">
+                              <button
+                                onClick={() => handleCopySample(sample.input, idx)}
+                                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                                title="Sao chép Input test này"
+                              >
+                                {copiedSample === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                <span>{copiedSample === idx ? 'Đã chép' : 'Sao chép'}</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setCustomInput(sample.input);
+                                  setCustomExpected(sample.output);
+                                  setConsoleTab('custom');
+                                  setShowConsole(true);
+                                }}
+                                className="px-2 py-0.5 rounded bg-indigo-950/70 hover:bg-indigo-900/80 border border-indigo-700/60 text-indigo-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                                title="Chuyển test này sang Custom Test để chỉnh sửa hoặc chạy thử riêng"
+                              >
+                                <FlaskConical className="w-3 h-3" />
+                                <span>Vào Custom Test</span>
+                              </button>
+                              <button
+                                onClick={() => handleRunSpecificSample(idx)}
+                                className="px-2 py-0.5 rounded bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-700/60 text-emerald-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer font-bold"
+                                title="Chạy thử ngay giải thuật của bạn với test này"
+                              >
+                                <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
+                                <span>Chạy</span>
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-slate-500 uppercase block">Input:</span>
-                            <pre className="text-slate-200 whitespace-pre-wrap">{sample.input}</pre>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Input (Đầu vào):</span>
+                            <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800/80 max-h-32 overflow-y-auto">
+                              <pre className="text-slate-200 whitespace-pre-wrap select-all font-mono leading-relaxed">{sample.input}</pre>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-[10px] text-emerald-400 uppercase block">Expected:</span>
-                            <pre className="text-emerald-300 whitespace-pre-wrap">{sample.output}</pre>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-emerald-400 uppercase font-semibold block">Expected Output (Đầu ra chuẩn):</span>
+                            <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-900/40 max-h-32 overflow-y-auto">
+                              <pre className="text-emerald-300 whitespace-pre-wrap select-all font-mono leading-relaxed">{sample.output}</pre>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -893,50 +1143,154 @@ fn main() {
 
                 {consoleTab === 'custom' && (
                   <div className="space-y-3 font-sans">
+                    {/* Toolbar */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-800">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs text-slate-400 font-semibold mr-1">Mẫu nhanh:</span>
+                        <button
+                          onClick={() => {
+                            setCustomInput(problem.samples[0]?.input || '');
+                            setCustomExpected(problem.samples[0]?.output || '');
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <span>📥 Nạp Test #1</span>
+                        </button>
+                        {problem.samples.length > 1 && (
+                          <button
+                            onClick={() => {
+                              setCustomInput(problem.samples[1]?.input || '');
+                              setCustomExpected(problem.samples[1]?.output || '');
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            <span>📥 Nạp Test #2</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setCustomInput('');
+                            setCustomExpected('');
+                            setCustomOutput('');
+                            setCustomExecResult(null);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400 text-xs transition-colors cursor-pointer flex items-center gap-1"
+                          title="Xóa trắng input & output"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Xóa trắng</span>
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={handleRunCustomTest}
+                        className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm shadow-rose-600/30 cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Chạy thử Custom Test</span>
+                      </button>
+                    </div>
+
+                    {/* Inputs */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <span className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Custom Input (Dữ liệu vào):
+                          Custom Input (Dữ liệu vào / stdin):
                         </span>
                         <textarea
                           value={customInput}
                           onChange={(e) => setCustomInput(e.target.value)}
                           rows={4}
-                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none"
-                          placeholder="Nhập input tùy ý..."
+                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none focus:border-rose-500 transition-colors"
+                          placeholder="Nhập input tùy ý của bạn..."
                         />
                       </div>
                       <div>
                         <span className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Expected Output (Tùy chọn so sánh Diff):
+                          Expected Output (Tùy chọn - Dữ liệu ra mong đợi để so sánh Diff):
                         </span>
                         <textarea
                           value={customExpected}
                           onChange={(e) => setCustomExpected(e.target.value)}
                           rows={4}
-                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none"
-                          placeholder="Nhập output chuẩn bạn mong đợi (nếu muốn so sánh)..."
+                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none focus:border-rose-500 transition-colors"
+                          placeholder="Nhập output chuẩn bạn mong đợi (để hệ thống tạo bảng so sánh Diff)..."
                         />
                       </div>
                     </div>
 
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleRunSample}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Chạy thử Custom Test
-                      </button>
-                    </div>
-
+                    {/* Output Section */}
                     {customOutput && (
-                      <div className="pt-2">
-                        <DiffViewer
-                          actual={customOutput}
-                          expected={customExpected || problem.samples[0]?.output || ''}
-                          title="Kết quả Custom Test vs Mẫu"
-                          input={customInput}
-                        />
+                      <div className="pt-2 space-y-2">
+                        {/* Status bar */}
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono">
+                          <div className="flex items-center gap-2">
+                            {customExecResult?.status === 'SUCCESS' ? (
+                              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Thực thi thành công
+                              </span>
+                            ) : (
+                              <span className="text-rose-400 font-bold flex items-center gap-1">
+                                <AlertCircle className="w-3.5 h-3.5" /> {customExecResult?.status || 'LỖI'}
+                              </span>
+                            )}
+                            {customExecResult && (
+                              <span className="text-slate-400 text-[11px]">
+                                • {customExecResult.executionTimeMs}ms • {customExecResult.memoryKb}KB
+                              </span>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(customOutput);
+                            }}
+                            className="text-slate-400 hover:text-white text-[11px] flex items-center gap-1 cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Sao chép Output</span>
+                          </button>
+                        </div>
+
+                        {/* Compiler / Runtime Diagnostic Jump if error */}
+                        {(() => {
+                          const err = parseDiagnosticError(customOutput);
+                          if (err) {
+                            return (
+                              <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-xs">
+                                <span className="text-rose-200 text-xs font-mono">
+                                  Lỗi cú pháp tại <strong className="text-rose-400 font-bold">Dòng {err.line}</strong>, Cột <strong className="text-rose-400 font-bold">{err.col}</strong>
+                                </span>
+                                <button
+                                  onClick={() => jumpToLine(err.line, err.col)}
+                                  className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <span>👉 Nhảy đến dòng lỗi</span>
+                                </button>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        {/* If customExpected is provided, show DiffViewer! Otherwise show clean Output block */}
+                        {customExpected.trim() ? (
+                          <DiffViewer
+                            actual={customOutput}
+                            expected={customExpected}
+                            title="Bảng So Sánh Custom Test vs Expected"
+                            input={customInput}
+                          />
+                        ) : (
+                          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">
+                              Chương trình in ra (stdout):
+                            </span>
+                            <pre className="text-slate-200 whitespace-pre-wrap font-mono text-xs leading-relaxed max-h-48 overflow-y-auto">
+                              {customOutput}
+                            </pre>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

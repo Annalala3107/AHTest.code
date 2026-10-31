@@ -26,7 +26,9 @@ import {
   X,
   Sparkles,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
@@ -90,6 +92,7 @@ export const AcademyView: React.FC = () => {
   });
   const [isDraggingConsole, setIsDraggingConsole] = useState<boolean>(false);
   const [isConsoleCollapsed, setIsConsoleCollapsed] = useState<boolean>(false);
+  const [isConsoleMaximized, setIsConsoleMaximized] = useState<boolean>(false);
   const [comingSoonTrack, setComingSoonTrack] = useState<AcademyCourse | null>(null);
   const [lessonSwitchToast, setLessonSwitchToast] = useState<string | null>(null);
   const [showGraduationModal, setShowGraduationModal] = useState<boolean>(false);
@@ -153,11 +156,14 @@ export const AcademyView: React.FC = () => {
       if (isDraggingConsole && editorColumnRef.current) {
         const rect = editorColumnRef.current.getBoundingClientRect();
         const newHeight = rect.bottom - e.clientY;
-        const maxHeight = Math.max(120, rect.height - 120);
+        const maxHeight = Math.max(100, rect.height - 100);
         const clamped = Math.max(36, Math.min(maxHeight, newHeight));
         setConsoleHeight(Math.round(clamped));
         if (clamped > 36 && isConsoleCollapsed) {
           setIsConsoleCollapsed(false);
+        }
+        if (isConsoleMaximized) {
+          setIsConsoleMaximized(false);
         }
         localStorage.setItem('ahtest_academy_console_height', Math.round(clamped).toString());
       }
@@ -177,7 +183,7 @@ export const AcademyView: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingSplitter, isDraggingConsole, isConsoleCollapsed]);
+  }, [isDraggingSplitter, isDraggingConsole, isConsoleCollapsed, isConsoleMaximized]);
 
   // Load draft on initial mount
   useEffect(() => {
@@ -1414,7 +1420,7 @@ export const AcademyView: React.FC = () => {
             </div>
 
             {/* Monaco Code Editor Area (Top Portion) */}
-            <div className="flex-1 min-h-[280px] relative overflow-hidden bg-slate-950">
+            <div className="flex-1 min-h-[100px] relative overflow-hidden bg-slate-950">
               <CodeEditor
                 value={userCode}
                 onChange={handleCodeChange}
@@ -1459,7 +1465,14 @@ export const AcademyView: React.FC = () => {
 
             {/* Terminal Console Output & Diagnostics (Bottom Portion with Dynamic Resizable Height) */}
             <div 
-              style={{ height: isConsoleCollapsed ? '36px' : `${consoleHeight}px` }}
+              style={{ 
+                height: isConsoleCollapsed 
+                  ? '36px' 
+                  : isConsoleMaximized 
+                  ? 'calc(100% - 40px)' 
+                  : `${consoleHeight}px`,
+                maxHeight: isConsoleCollapsed ? '36px' : 'calc(100% - 90px)'
+              }}
               className="border-t border-slate-800 bg-slate-950/95 flex flex-col shrink-0 overflow-hidden transition-all duration-75"
             >
               <div className="h-9 px-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs shrink-0 select-none">
@@ -1481,50 +1494,69 @@ export const AcademyView: React.FC = () => {
                   )}
                 </div>
 
-                {/* Right controls: Presets, clear, collapse/expand */}
+                {/* Right controls: Presets, Maximize, clear, collapse/expand */}
                 <div className="flex items-center gap-1 sm:gap-2">
                   {/* Preset Height Buttons */}
                   <div className="hidden sm:flex items-center bg-slate-800 rounded-md p-0.5 text-[10px] font-mono text-slate-400">
                     <button
                       onClick={() => {
                         setIsConsoleCollapsed(false);
-                        setConsoleHeight(180);
-                        localStorage.setItem('ahtest_academy_console_height', '180');
+                        setIsConsoleMaximized(false);
+                        setConsoleHeight(160);
+                        localStorage.setItem('ahtest_academy_console_height', '160');
                       }}
                       className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                        !isConsoleCollapsed && consoleHeight === 180 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                        !isConsoleCollapsed && !isConsoleMaximized && consoleHeight === 160 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
                       }`}
-                      title="Thu gọn vừa phải (180px)"
+                      title="Thu gọn vừa phải (160px)"
                     >
                       Nhỏ
                     </button>
                     <button
                       onClick={() => {
                         setIsConsoleCollapsed(false);
-                        setConsoleHeight(280);
-                        localStorage.setItem('ahtest_academy_console_height', '280');
+                        setIsConsoleMaximized(false);
+                        setConsoleHeight(260);
+                        localStorage.setItem('ahtest_academy_console_height', '260');
                       }}
                       className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                        !isConsoleCollapsed && consoleHeight === 280 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                        !isConsoleCollapsed && !isConsoleMaximized && consoleHeight === 260 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
                       }`}
-                      title="Chiều cao chuẩn (280px)"
+                      title="Chiều cao chuẩn (260px)"
                     >
                       Vừa
                     </button>
                     <button
                       onClick={() => {
                         setIsConsoleCollapsed(false);
-                        setConsoleHeight(420);
-                        localStorage.setItem('ahtest_academy_console_height', '420');
+                        setIsConsoleMaximized(false);
+                        setConsoleHeight(380);
+                        localStorage.setItem('ahtest_academy_console_height', '380');
                       }}
                       className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                        !isConsoleCollapsed && consoleHeight === 420 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                        !isConsoleCollapsed && !isConsoleMaximized && consoleHeight === 380 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
                       }`}
-                      title="Mở rộng lớn (420px - xem trọn vẹn Diff & Stack Trace lỗi)"
+                      title="Mở rộng lớn (380px - xem trọn vẹn Diff & Stack Trace lỗi)"
                     >
                       Lớn
                     </button>
                   </div>
+
+                  {/* Maximize / Restore Console Toggle */}
+                  <button
+                    onClick={() => {
+                      setIsConsoleCollapsed(false);
+                      setIsConsoleMaximized(!isConsoleMaximized);
+                    }}
+                    className={`p-1 rounded transition-colors cursor-pointer ${
+                      isConsoleMaximized 
+                        ? 'bg-indigo-600 text-white' 
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                    title={isConsoleMaximized ? "Thu nhỏ về kích thước cũ" : "Phóng to Console toàn màn hình (Xem trọn vẹn Diff & Testcases)"}
+                  >
+                    {isConsoleMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                  </button>
 
                   {/* Clear Output */}
                   {executionOutput && (
@@ -1542,7 +1574,14 @@ export const AcademyView: React.FC = () => {
 
                   {/* Collapse / Expand Toggle */}
                   <button
-                    onClick={() => setIsConsoleCollapsed(!isConsoleCollapsed)}
+                    onClick={() => {
+                      if (isConsoleCollapsed) {
+                        setIsConsoleCollapsed(false);
+                      } else {
+                        setIsConsoleCollapsed(true);
+                        setIsConsoleMaximized(false);
+                      }
+                    }}
                     className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                     title={isConsoleCollapsed ? "Mở rộng Console" : "Thu gọn Console"}
                   >
@@ -1552,7 +1591,7 @@ export const AcademyView: React.FC = () => {
               </div>
 
               {/* Console Body with Scroll */}
-              <div className="flex-1 overflow-y-auto p-3.5 font-mono-code text-xs space-y-2">
+              <div className="flex-1 min-h-0 overflow-y-auto p-3.5 font-mono-code text-xs space-y-2.5">
                 {/* Jump-to-line diagnostic button if compile error */}
                 {executionOutput && (() => {
                   const match = executionOutput.match(/(?:solution\.c)?:?(\d+):(\d+):\s*(error|warning)/i) || executionOutput.match(/:(\d+):(\d+):/);
