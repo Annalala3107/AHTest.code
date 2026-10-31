@@ -56,8 +56,8 @@ export function App() {
         streakCount={streakCount}
       />
 
-      {/* Main View Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Main View Container: Full viewport edge-to-edge for IDE Workspaces (Academy & Workbench), max-w-7xl for browsing */}
+      <main className={`flex-1 w-full ${selectedProblem || currentTab === 'academy' ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}`}>
         {selectedProblem ? (
           <WorkbenchView
             problem={selectedProblem}

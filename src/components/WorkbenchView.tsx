@@ -403,7 +403,7 @@ fn main() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.5rem)] -mx-4 sm:-mx-6 lg:-mx-8 bg-slate-50 dark:bg-slate-950">
+    <div className="flex flex-col h-[calc(100vh-4.5rem)] w-full bg-slate-50 dark:bg-slate-950">
       {/* Top Workbench Action Bar */}
       <div className="h-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">

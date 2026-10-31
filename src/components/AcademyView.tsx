@@ -24,7 +24,9 @@ import {
   GraduationCap,
   Search,
   X,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
@@ -82,6 +84,12 @@ export const AcademyView: React.FC = () => {
   });
   const [searchLessonQuery, setSearchLessonQuery] = useState<string>('');
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+  const [consoleHeight, setConsoleHeight] = useState<number>(() => {
+    const saved = localStorage.getItem('ahtest_academy_console_height');
+    return saved ? Math.max(36, Math.min(650, Number(saved))) : 240;
+  });
+  const [isDraggingConsole, setIsDraggingConsole] = useState<boolean>(false);
+  const [isConsoleCollapsed, setIsConsoleCollapsed] = useState<boolean>(false);
   const [comingSoonTrack, setComingSoonTrack] = useState<AcademyCourse | null>(null);
   const [lessonSwitchToast, setLessonSwitchToast] = useState<string | null>(null);
   const [showGraduationModal, setShowGraduationModal] = useState<boolean>(false);
@@ -115,6 +123,7 @@ export const AcademyView: React.FC = () => {
   }).filter(m => m.lessons.length > 0);
 
   const workspaceContainerRef = useRef<HTMLDivElement>(null);
+  const editorColumnRef = useRef<HTMLDivElement>(null);
   const academyMonacoRef = useRef<any>(null);
 
   // Helper for unique localStorage draft key per lesson / exercise
@@ -127,25 +136,39 @@ export const AcademyView: React.FC = () => {
     return typeof window !== 'undefined' && localStorage.getItem(key) !== null;
   });
 
-  // Mouse drag event listeners for resizing splitter
+  // Mouse drag event listeners for resizing horizontal splitter & console vertical splitter
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingSplitter || !workspaceContainerRef.current) return;
-      const rect = workspaceContainerRef.current.getBoundingClientRect();
-      const newPercent = ((e.clientX - rect.left) / rect.width) * 100;
-      if (newPercent >= 25 && newPercent <= 75) {
-        setSplitPercent(Math.round(newPercent));
-        localStorage.setItem('ahtest_academy_split', Math.round(newPercent).toString());
+      // 1. Horizontal Left/Right Workspace Splitter
+      if (isDraggingSplitter && workspaceContainerRef.current) {
+        const rect = workspaceContainerRef.current.getBoundingClientRect();
+        const newPercent = ((e.clientX - rect.left) / rect.width) * 100;
+        if (newPercent >= 25 && newPercent <= 75) {
+          setSplitPercent(Math.round(newPercent));
+          localStorage.setItem('ahtest_academy_split', Math.round(newPercent).toString());
+        }
+      }
+
+      // 2. Vertical Up/Down Console Splitter
+      if (isDraggingConsole && editorColumnRef.current) {
+        const rect = editorColumnRef.current.getBoundingClientRect();
+        const newHeight = rect.bottom - e.clientY;
+        const maxHeight = Math.max(120, rect.height - 120);
+        const clamped = Math.max(36, Math.min(maxHeight, newHeight));
+        setConsoleHeight(Math.round(clamped));
+        if (clamped > 36 && isConsoleCollapsed) {
+          setIsConsoleCollapsed(false);
+        }
+        localStorage.setItem('ahtest_academy_console_height', Math.round(clamped).toString());
       }
     };
 
     const handleMouseUp = () => {
-      if (isDraggingSplitter) {
-        setIsDraggingSplitter(false);
-      }
+      if (isDraggingSplitter) setIsDraggingSplitter(false);
+      if (isDraggingConsole) setIsDraggingConsole(false);
     };
 
-    if (isDraggingSplitter) {
+    if (isDraggingSplitter || isDraggingConsole) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
@@ -154,7 +177,7 @@ export const AcademyView: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingSplitter]);
+  }, [isDraggingSplitter, isDraggingConsole, isConsoleCollapsed]);
 
   // Load draft on initial mount
   useEffect(() => {
@@ -458,7 +481,7 @@ export const AcademyView: React.FC = () => {
     : (activeLesson.testcases || []);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
+    <div className="h-[calc(100vh-64px)] w-full flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden">
       
       {/* 1. COMPACT BREADCRUMB BAR (Height ~46px, Ultra-Sleek & Space-Efficient) */}
       <div className="h-11 sm:h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 flex items-center justify-between shrink-0 z-30 select-none text-xs">
@@ -1353,8 +1376,9 @@ export const AcademyView: React.FC = () => {
 
           {/* RIGHT COLUMN: Monaco Code Editor & Terminal Sandbox */}
           <div 
+            ref={editorColumnRef}
             style={{ width: isZenMode ? '100%' : `${100 - splitPercent}%` }}
-            className="flex-1 flex flex-col bg-slate-900 text-white overflow-hidden"
+            className={`flex-1 flex flex-col bg-slate-900 text-white overflow-hidden relative ${isDraggingConsole ? 'select-none cursor-row-resize' : ''}`}
           >
             {/* Editor Status Bar */}
             <div className="h-10 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
@@ -1419,27 +1443,112 @@ export const AcademyView: React.FC = () => {
               </div>
             )}
 
-            {/* Terminal Console Output & Diagnostics (Bottom Portion) */}
-            <div className="h-48 sm:h-56 border-t border-slate-800 bg-slate-950/95 flex flex-col shrink-0 overflow-hidden">
-              <div className="h-8 px-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">
-                <div className="flex items-center gap-2 font-mono">
+            {/* DRAGGABLE CONSOLE SPLITTER (Resize Console Up/Down) */}
+            <div
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDraggingConsole(true);
+              }}
+              className={`h-2 hover:h-2.5 bg-slate-800 hover:bg-indigo-500 transition-colors cursor-row-resize flex items-center justify-center shrink-0 group relative z-20 select-none ${
+                isDraggingConsole ? 'bg-indigo-500' : ''
+              }`}
+              title="Kéo lên / kéo xuống để điều chỉnh độ cao khung Console & Test Output"
+            >
+              <div className="w-12 h-1 rounded-full bg-slate-600 group-hover:bg-white transition-colors" />
+            </div>
+
+            {/* Terminal Console Output & Diagnostics (Bottom Portion with Dynamic Resizable Height) */}
+            <div 
+              style={{ height: isConsoleCollapsed ? '36px' : `${consoleHeight}px` }}
+              className="border-t border-slate-800 bg-slate-950/95 flex flex-col shrink-0 overflow-hidden transition-all duration-75"
+            >
+              <div className="h-9 px-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs shrink-0 select-none">
+                <div className="flex items-center gap-2.5 font-mono">
                   <Terminal className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Console & Test Output</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-300">Console & Test Output</span>
+                  {executionOutput && (
+                    <div>
+                      {exercisePassed ? (
+                        <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
+                          <CheckCircle2 className="w-3 h-3" /> {docLang === 'en' ? 'Passed!' : 'Đạt 100/100!'}
+                        </span>
+                      ) : (
+                        <span className="text-rose-400 font-bold flex items-center gap-1 text-[11px]">
+                          <AlertCircle className="w-3 h-3" /> {docLang === 'en' ? 'Failed' : 'Chưa đạt'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {executionOutput && (
-                  <div>
-                    {exercisePassed ? (
-                      <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
-                        <CheckCircle2 className="w-3 h-3" /> {docLang === 'en' ? 'Passed!' : 'Đạt 100/100!'}
-                      </span>
-                    ) : (
-                      <span className="text-rose-400 font-bold flex items-center gap-1 text-[11px]">
-                        <AlertCircle className="w-3 h-3" /> {docLang === 'en' ? 'Failed' : 'Chưa đạt'}
-                      </span>
-                    )}
+                {/* Right controls: Presets, clear, collapse/expand */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* Preset Height Buttons */}
+                  <div className="hidden sm:flex items-center bg-slate-800 rounded-md p-0.5 text-[10px] font-mono text-slate-400">
+                    <button
+                      onClick={() => {
+                        setIsConsoleCollapsed(false);
+                        setConsoleHeight(180);
+                        localStorage.setItem('ahtest_academy_console_height', '180');
+                      }}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                        !isConsoleCollapsed && consoleHeight === 180 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                      }`}
+                      title="Thu gọn vừa phải (180px)"
+                    >
+                      Nhỏ
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsConsoleCollapsed(false);
+                        setConsoleHeight(280);
+                        localStorage.setItem('ahtest_academy_console_height', '280');
+                      }}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                        !isConsoleCollapsed && consoleHeight === 280 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                      }`}
+                      title="Chiều cao chuẩn (280px)"
+                    >
+                      Vừa
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsConsoleCollapsed(false);
+                        setConsoleHeight(420);
+                        localStorage.setItem('ahtest_academy_console_height', '420');
+                      }}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                        !isConsoleCollapsed && consoleHeight === 420 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
+                      }`}
+                      title="Mở rộng lớn (420px - xem trọn vẹn Diff & Stack Trace lỗi)"
+                    >
+                      Lớn
+                    </button>
                   </div>
-                )}
+
+                  {/* Clear Output */}
+                  {executionOutput && (
+                    <button
+                      onClick={() => {
+                        setExecutionOutput(null);
+                        setDiffState(null);
+                      }}
+                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Xóa output console"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  )}
+
+                  {/* Collapse / Expand Toggle */}
+                  <button
+                    onClick={() => setIsConsoleCollapsed(!isConsoleCollapsed)}
+                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                    title={isConsoleCollapsed ? "Mở rộng Console" : "Thu gọn Console"}
+                  >
+                    {isConsoleCollapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
               {/* Console Body with Scroll */}
