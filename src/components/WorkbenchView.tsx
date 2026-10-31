@@ -1,0 +1,602 @@
+import React, { useState } from 'react';
+import confetti from 'canvas-confetti';
+import { 
+  Play, 
+  Send, 
+  RotateCcw, 
+  Copy, 
+  Check, 
+  Sparkles, 
+  FileText, 
+  Clock, 
+  HardDrive, 
+  Tag, 
+  AlertCircle, 
+  CheckCircle2, 
+  XCircle, 
+  MessageSquare,
+  Lightbulb,
+  Maximize2,
+  ChevronDown,
+  Terminal
+} from 'lucide-react';
+import { Problem, Verdict, TestResult } from '../types';
+import { KaTeXRenderer } from './KaTeXRenderer';
+
+interface WorkbenchViewProps {
+  problem: Problem;
+  onBack: () => void;
+}
+
+export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ problem, onBack }) => {
+  const [activeTab, setActiveTab] = useState<'statement' | 'editorial' | 'submissions' | 'comments'>('statement');
+  const [language, setLanguage] = useState<'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust'>('cpp20');
+  const [copiedSample, setCopiedSample] = useState<number | null>(null);
+
+  // Code editor state
+  const defaultCodes: Record<string, string> = {
+    cpp20: `#include <bits/stdc++.h>
+using namespace std;
+
+// Problem: ${problem.title} (${problem.slug})
+// Time Limit: ${problem.timeLimit}s, Memory Limit: ${problem.memoryLimit}MB
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    
+    // TODO: Viết thuật toán giải tại đây
+    
+    return 0;
+}`,
+    cpp17: `#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    // Code C++17
+    return 0;
+}`,
+    py3: `import sys
+
+def solve():
+    input = sys.stdin.readline
+    # Đọc dữ liệu và xử lý thuật toán
+    pass
+
+if __name__ == '__main__':
+    solve()`,
+    java: `import java.util.*;
+import java.io.*;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        // Code Java
+    }
+}`,
+    rust: `use std::io::{self, BufRead};
+
+fn main() {
+    // Rust CP Solution
+}`
+  };
+
+  const [code, setCode] = useState<string>(defaultCodes['cpp20']);
+  const [customInput, setCustomInput] = useState<string>(problem.samples[0]?.input || '');
+  const [customOutput, setCustomOutput] = useState<string>('');
+  
+  // Grading & Execution State
+  const [isGrading, setIsGrading] = useState<boolean>(false);
+  const [gradingProgress, setGradingProgress] = useState<number>(0);
+  const [testResults, setTestResults] = useState<TestResult[] | null>(null);
+  const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
+  const [showConsole, setShowConsole] = useState<boolean>(true);
+  const [consoleTab, setConsoleTab] = useState<'testcase' | 'custom' | 'result'>('testcase');
+  const [aiHint, setAiHint] = useState<string | null>(null);
+
+  const handleCopySample = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedSample(index);
+    setTimeout(() => setCopiedSample(null), 2000);
+  };
+
+  const handleRunSample = () => {
+    setConsoleTab('result');
+    setShowConsole(true);
+    setIsGrading(true);
+    setFinalVerdict(null);
+    setTestResults(null);
+
+    // Simulate compilation and local sample run
+    setTimeout(() => {
+      setIsGrading(false);
+      setCustomOutput(problem.samples[0]?.output || '0');
+      setFinalVerdict('AC');
+    }, 600);
+  };
+
+  const handleSubmitSolution = () => {
+    setShowConsole(true);
+    setConsoleTab('result');
+    setIsGrading(true);
+    setGradingProgress(0);
+    setFinalVerdict(null);
+    setTestResults(null);
+    setAiHint(null);
+
+    const mockTotalTests = 5;
+    const simulatedTests: TestResult[] = [];
+
+    // Simulate real-time grading step-by-step
+    const interval = setInterval(() => {
+      const currentTestId = simulatedTests.length + 1;
+      
+      const isAC = true; // In our demo, default submission reaches AC
+      const mockResult: TestResult = {
+        testId: currentTestId,
+        verdict: isAC ? 'AC' : 'WA',
+        time: Math.floor(Math.random() * 30) + 10,
+        memory: Math.floor(Math.random() * 1024) + 4096,
+        score: problem.points / mockTotalTests,
+        maxScore: problem.points / mockTotalTests
+      };
+
+      simulatedTests.push(mockResult);
+      setTestResults([...simulatedTests]);
+      setGradingProgress((simulatedTests.length / mockTotalTests) * 100);
+
+      if (simulatedTests.length === mockTotalTests) {
+        clearInterval(interval);
+        setIsGrading(false);
+        setFinalVerdict('AC');
+
+        // Confetti celebration on full AC!
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }, 350);
+  };
+
+  const requestAiHint = () => {
+    setAiHint('Gợi ý từ AI Trợ giảng: Bài toán yêu cầu tính số nghịch thế. Thay vì dùng 2 vòng lặp lồng nhau O(N^2) gây TLE, hãy áp dụng thuật toán nén tọa độ (Coordinate Compression) kết hợp Cây Fenwick (Binary Indexed Tree) hoặc Segment Tree để tính tổng trong O(N log N). Chú ý sử dụng kiểu long long cho biến đếm kết quả để tránh tràn số.');
+  };
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-4.5rem)] -mx-4 sm:-mx-6 lg:-mx-8 bg-slate-50 dark:bg-slate-950">
+      {/* Top Workbench Action Bar */}
+      <div className="h-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+          >
+            ← Danh sách bài
+          </button>
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[260px] sm:max-w-md">
+            {problem.title}
+          </h2>
+          <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
+            {problem.difficulty}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* AI Hint Trigger */}
+          <button
+            onClick={requestAiHint}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 cursor-pointer transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Gợi ý AI</span>
+          </button>
+
+          {/* Run & Submit CTAs */}
+          <button
+            onClick={handleRunSample}
+            disabled={isGrading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors cursor-pointer"
+          >
+            <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500" />
+            <span>Chạy thử</span>
+          </button>
+
+          <button
+            onClick={handleSubmitSolution}
+            disabled={isGrading}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-xs shadow-rose-600/30 disabled:opacity-50 transition-all cursor-pointer"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Nộp bài</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Split-Screen Workspace (50% Left / 50% Right) */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* LEFT COLUMN: Problem Statement & Documentation */}
+        <div className="w-full lg:w-1/2 flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+          {/* Tabs */}
+          <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/50 dark:bg-slate-800/40">
+            <button
+              onClick={() => setActiveTab('statement')}
+              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'statement'
+                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" /> Đề bài
+            </button>
+            <button
+              onClick={() => setActiveTab('editorial')}
+              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'editorial'
+                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <Lightbulb className="w-3.5 h-3.5" /> Lời giải (Editorial)
+            </button>
+            <button
+              onClick={() => setActiveTab('submissions')}
+              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'submissions'
+                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" /> Lịch sử nộp
+            </button>
+            <button
+              onClick={() => setActiveTab('comments')}
+              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'comments'
+                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" /> Thảo luận
+            </button>
+          </div>
+
+          {/* Content Area with smooth scrolling */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* AI Hint Banner if triggered */}
+            {aiHint && (
+              <div className="p-4 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-200 space-y-1.5 animate-fadeIn">
+                <div className="flex items-center justify-between font-bold text-indigo-700 dark:text-indigo-300">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-indigo-500" /> Gợi ý thuật toán AI
+                  </span>
+                  <button onClick={() => setAiHint(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
+                </div>
+                <p className="leading-relaxed">{aiHint}</p>
+              </div>
+            )}
+
+            {activeTab === 'statement' && (
+              <>
+                {/* Meta Badges */}
+                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    Giới hạn: <strong>{problem.timeLimit}s</strong>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <HardDrive className="w-4 h-4 text-slate-400" />
+                    Bộ nhớ: <strong>{problem.memoryLimit}MB</strong>
+                  </span>
+                  <span>Input: <strong>stdin</strong></span>
+                  <span>Output: <strong>stdout</strong></span>
+                  <span>Điểm: <strong className="text-rose-600 font-bold">{problem.points}đ</strong></span>
+                </div>
+
+                {/* Statement Body (Rendered with KaTeX) */}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Mô tả bài toán
+                  </h3>
+                  <KaTeXRenderer content={problem.statement} />
+                </div>
+
+                {/* Input Format */}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Dữ liệu vào (Input)
+                  </h3>
+                  <KaTeXRenderer content={problem.inputFormat} />
+                </div>
+
+                {/* Output Format */}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Dữ liệu ra (Output)
+                  </h3>
+                  <KaTeXRenderer content={problem.outputFormat} />
+                </div>
+
+                {/* Constraints & Subtasks */}
+                {problem.constraints && (
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                      Ràng buộc & Subtasks
+                    </h3>
+                    <KaTeXRenderer content={problem.constraints} />
+                  </div>
+                )}
+
+                {/* Sample Cases with 1-click Copy */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Ví dụ (Sample Cases)
+                  </h3>
+                  {problem.samples.map((sample, idx) => (
+                    <div key={idx} className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden text-xs">
+                      <div className="bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between font-semibold text-slate-700 dark:text-slate-300">
+                        <span>Ví dụ #{idx + 1}</span>
+                        <button
+                          onClick={() => handleCopySample(sample.input, idx)}
+                          className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+                        >
+                          {copiedSample === idx ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="text-emerald-500">Đã copy</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy Input</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800">
+                        <div className="p-3 bg-slate-50/30 dark:bg-slate-900/40">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Input:</span>
+                          <pre className="font-mono-code text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{sample.input}</pre>
+                        </div>
+                        <div className="p-3 bg-slate-50/30 dark:bg-slate-900/40">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Output:</span>
+                          <pre className="font-mono-code text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{sample.output}</pre>
+                        </div>
+                      </div>
+
+                      {sample.explanation && (
+                        <div className="p-2.5 bg-amber-50/50 dark:bg-amber-950/20 border-t border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px]">
+                          <strong>Giải thích:</strong> {sample.explanation}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Source & Attribution */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 space-y-1">
+                  <p>Tác giả: <strong className="text-slate-600 dark:text-slate-300">{problem.author}</strong></p>
+                  <p>Nguồn đề: <strong className="text-slate-600 dark:text-slate-300">{problem.source}</strong></p>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'editorial' && (
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
+                  💡 Hướng dẫn giải chi tiết được kiểm duyệt bởi ban chuyên môn AHtest.code.
+                </div>
+                <KaTeXRenderer content={problem.editorial || 'Lời giải chi tiết đang được cập nhật.'} />
+              </div>
+            )}
+
+            {activeTab === 'submissions' && (
+              <div className="space-y-3 text-xs">
+                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-emerald-600">AC • 100/100</span>
+                    <p className="text-[11px] text-slate-400">C++20 • 0.08s • 18.2MB • 10 phút trước</p>
+                  </div>
+                  <button className="text-rose-600 font-semibold hover:underline">Xem code</button>
+                </div>
+                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-amber-600">TLE • 60/100</span>
+                    <p className="text-[11px] text-slate-400">C++17 • 2.05s • 24.1MB • 2 giờ trước</p>
+                  </div>
+                  <button className="text-rose-600 font-semibold hover:underline">Xem code</button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'comments' && (
+              <div className="space-y-4 text-xs">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Viết câu hỏi hoặc thảo luận về bài toán..."
+                    className="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs"
+                  />
+                  <button className="px-4 py-2 bg-rose-600 text-white font-bold rounded-xl">Gửi</button>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+                    <span>Trần Đức Lương (Grandmaster)</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Hôm qua</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    Các bạn chú ý Subtask 3 có các giá trị $A_i$ lên tới $10^9$ nên bắt buộc phải nén tọa độ trước khi dựng Fenwick Tree nhé!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Code Editor & Execution Console */}
+        <div className="w-full lg:w-1/2 flex flex-col bg-slate-900 text-white overflow-hidden">
+          {/* Editor Controls Bar */}
+          <div className="h-10 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between shrink-0 text-xs">
+            <div className="flex items-center gap-3">
+              <label htmlFor="lang-select" className="text-slate-400 font-semibold">Ngôn ngữ:</label>
+              <select
+                id="lang-select"
+                value={language}
+                onChange={(e) => {
+                  const newLang = e.target.value as any;
+                  setLanguage(newLang);
+                  setCode(defaultCodes[newLang] || '');
+                }}
+                className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none"
+              >
+                <option value="cpp20">C++20 (GCC 16.2 - O3 FastIO)</option>
+                <option value="cpp17">C++17 (g++ 16.2)</option>
+                <option value="py3">Python 3 (PyPy 3.10)</option>
+                <option value="java">Java 21 LTS</option>
+                <option value="rust">Rust 1.82</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCode(defaultCodes[language] || '')}
+                title="Khôi phục code mẫu ban đầu"
+                className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Code Textarea Editor */}
+          <div className="flex-1 relative overflow-hidden bg-slate-950 font-mono-code text-sm">
+            <textarea
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              spellCheck={false}
+              className="w-full h-full p-4 bg-transparent text-slate-100 resize-none focus:outline-none leading-relaxed font-mono-code"
+              placeholder="// Viết code giải của bạn tại đây..."
+            />
+          </div>
+
+          {/* Bottom Terminal / Drawer */}
+          <div className="border-t border-slate-800 bg-slate-900 shrink-0">
+            {/* Drawer Header */}
+            <div className="h-9 px-4 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setConsoleTab('testcase')}
+                  className={`font-semibold cursor-pointer ${consoleTab === 'testcase' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Sample Input
+                </button>
+                <button
+                  onClick={() => setConsoleTab('custom')}
+                  className={`font-semibold cursor-pointer ${consoleTab === 'custom' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Custom Test
+                </button>
+                <button
+                  onClick={() => setConsoleTab('result')}
+                  className={`font-semibold cursor-pointer flex items-center gap-1.5 ${consoleTab === 'result' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Kết quả chấm
+                  {finalVerdict && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  )}
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowConsole(!showConsole)}
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+              >
+                <ChevronDown className={`w-3.5 h-3.5 transform transition-transform ${showConsole ? '' : 'rotate-180'}`} />
+              </button>
+            </div>
+
+            {/* Drawer Content */}
+            {showConsole && (
+              <div className="p-4 h-44 overflow-y-auto font-mono-code text-xs space-y-3">
+                {consoleTab === 'testcase' && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 block mb-1">Dữ liệu test mẫu:</span>
+                    <pre className="text-slate-300 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                      {problem.samples[0]?.input}
+                    </pre>
+                  </div>
+                )}
+
+                {consoleTab === 'custom' && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] text-slate-400 block">Nhập dữ liệu kiểm tra tùy ý (Custom Input):</span>
+                    <textarea
+                      value={customInput}
+                      onChange={(e) => setCustomInput(e.target.value)}
+                      rows={3}
+                      className="w-full p-2 bg-slate-950 text-slate-200 rounded-lg border border-slate-800 text-xs font-mono-code focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                {consoleTab === 'result' && (
+                  <div className="space-y-3">
+                    {isGrading ? (
+                      <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                        <div className="w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-slate-300 font-semibold animate-pulse">
+                          Đang biên dịch và thực thi trên cụm Judge Sandbox... ({Math.round(gradingProgress)}%)
+                        </span>
+                      </div>
+                    ) : testResults ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                              {finalVerdict} • {problem.points}/{problem.points}
+                            </span>
+                            <span className="text-slate-400 font-sans text-xs">Tất cả {testResults.length} test cases chính xác!</span>
+                          </div>
+                        </div>
+
+                        {/* Test by test breakdown */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                          {testResults.map((tr) => (
+                            <div key={tr.testId} className="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+                              <span className="text-slate-400">Test #{tr.testId}</span>
+                              <div className="text-right">
+                                <span className="font-bold text-emerald-400 text-xs">AC</span>
+                                <p className="text-[10px] text-slate-500">{tr.time}ms</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : customOutput ? (
+                      <div>
+                        <span className="text-[10px] text-emerald-400 font-bold block mb-1">✓ Chạy thử thành công! Output:</span>
+                        <pre className="text-slate-200 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                          {customOutput}
+                        </pre>
+                      </div>
+                    ) : (
+                      <p className="text-slate-500 text-center py-6">
+                        Chưa có kết quả. Bấm "Chạy thử" hoặc "Nộp bài" để kiểm tra nghiệm.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

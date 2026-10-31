@@ -1,0 +1,155 @@
+export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert';
+
+export interface SampleCase {
+  input: string;
+  output: string;
+  explanation?: string;
+}
+
+export interface Subtask {
+  id: number;
+  points: number;
+  description: string;
+}
+
+export interface Problem {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  difficulty: Difficulty;
+  points: number;
+  timeLimit: number; // in seconds
+  memoryLimit: number; // in MB
+  tags: string[];
+  solvedCount: number;
+  totalSubmissions: number;
+  statement: string;
+  inputFormat: string;
+  outputFormat: string;
+  constraints: string;
+  samples: SampleCase[];
+  subtasks?: Subtask[];
+  editorial?: string;
+  author: string;
+  source: string;
+  createdAt: string;
+}
+
+export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RTE' | 'CE' | 'PENDING' | 'GRADING';
+
+export interface TestResult {
+  testId: number;
+  verdict: Verdict;
+  time: number; // in ms
+  memory: number; // in KB
+  score: number;
+  maxScore: number;
+  message?: string;
+}
+
+export interface Submission {
+  id: string;
+  problemId: string;
+  problemTitle: string;
+  problemSlug: string;
+  user: {
+    username: string;
+    fullName: string;
+    rating: number;
+    rankClass: string;
+  };
+  language: string;
+  verdict: Verdict;
+  score: number;
+  maxScore: number;
+  time: number; // in seconds
+  memory: number; // in MB
+  submittedAt: string;
+  code: string;
+  tests: TestResult[];
+}
+
+export interface ContestProblem {
+  code: string;
+  slug: string;
+  title: string;
+  points: number;
+  solvedCount: number;
+}
+
+export interface Contest {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  isRated: boolean;
+  status: 'UPCOMING' | 'RUNNING' | 'PAST';
+  tags: string[];
+  participantsCount: number;
+  problems: ContestProblem[];
+}
+
+export interface AcademyLesson {
+  id: string;
+  title: string;
+  durationMinutes: number;
+  summary: string;
+  content: string; // Markdown / KaTeX
+  initialCode: string;
+  expectedOutputRegex?: string;
+  solutionCode: string;
+  hints: string[];
+  testcases: { input: string; expectedOutput: string }[];
+}
+
+export interface AcademyModule {
+  id: string;
+  title: string;
+  description: string;
+  lessons: AcademyLesson[];
+}
+
+export interface AcademyCourse {
+  id: string;
+  title: string;
+  slug: string;
+  language: 'cpp' | 'python';
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  description: string;
+  totalLessons: number;
+  estimatedHours: number;
+  modules: AcademyModule[];
+}
+
+export interface ImportedTestCase {
+  id: number;
+  inputName: string;
+  outputName: string;
+  inputContent: string;
+  outputContent: string;
+  sizeBytes: number;
+  status: 'VALID' | 'EMPTY' | 'MISMATCH';
+}
+
+export interface ProblemPackage {
+  title: string;
+  slug: string;
+  timeLimit: number;
+  memoryLimit: number;
+  category: string;
+  tags: string[];
+  difficulty: Difficulty;
+  author: string;
+  source: string;
+  statement: string;
+  inputFormat: string;
+  outputFormat: string;
+  constraints: string;
+  tests: ImportedTestCase[];
+  modelSolutionCpp?: string;
+  status: 'DRAFT' | 'VALIDATED' | 'PUBLISHED';
+}
