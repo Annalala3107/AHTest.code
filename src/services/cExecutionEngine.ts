@@ -1,7 +1,7 @@
 /**
  * High-Performance Client-Side C/C++ Virtual Execution Engine
  * Provides static syntax diagnostics (CE), virtual heap tracking (malloc/free/leak/double-free),
- * standard I/O streams (scanf/printf), and loop iteration caps (TLE).
+ * standard I/O streams (scanf/printf/cin/cout), and loop iteration caps (TLE).
  */
 
 export interface ExecutionResult {
@@ -121,10 +121,10 @@ export class VirtualCRuntime {
   private stdinTokens: string[] = [];
   private stdoutBuffer: string = '';
   private stderrBuffer: string = '';
-  private heapMap: Map<number, { size: number; freed: boolean }> = new Map();
+  private heapMap: Map<number, any> = new Map();
   private nextAddress: number = 0x2000;
   private stepCount: number = 0;
-  private readonly MAX_STEPS = 50000;
+  private readonly MAX_STEPS = 100000;
 
   constructor(stdin: string) {
     // Split stdin by all whitespace (space, tab, newline)
@@ -135,49 +135,92 @@ export class VirtualCRuntime {
   public tick() {
     this.stepCount++;
     if (this.stepCount > this.MAX_STEPS) {
-      throw new Error('TIME_LIMIT_EXCEEDED: Vòng lặp vượt quá 50,000 bước thực thi (Kiểm tra điều kiện dừng của while/for).');
+      throw new Error('TIME_LIMIT_EXCEEDED: Vòng lặp vượt quá 100,000 bước thực thi (Kiểm tra điều kiện dừng của while/for).');
     }
   }
 
-  // Virtual Heap: malloc
-  public malloc(size: number): number {
+  // Virtual Heap: malloc (Returns an indexable Array with address metadata)
+  public malloc(size: number): any {
     this.tick();
-    if (size <= 0) return 0;
+    if (size <= 0) return null;
     const addr = this.nextAddress;
     this.nextAddress += Math.max(size, 4);
-    this.heapMap.set(addr, { size, freed: false });
-    return addr;
+
+    const block: any = [];
+    block.__addr = addr;
+    block.__size = size;
+    block.__freed = false;
+
+    this.heapMap.set(addr, block);
+    return block;
   }
 
   // Virtual Heap: calloc
-  public calloc(num: number, size: number): number {
-    return this.malloc(num * size);
+  public calloc(num: number, size: number): any {
+    const block = this.malloc(num * size);
+    if (block) {
+      for (let i = 0; i < num; i++) block[i] = 0;
+    }
+    return block;
   }
 
   // Virtual Heap: free
-  public free(addr: number) {
+  public free(ptr: any) {
     this.tick();
-    if (addr === 0) return; // In standard C, free(NULL) is a safe no-op
+    if (!ptr || ptr === 0) return; // In standard C, free(NULL) is a safe no-op
     
+    const addr = typeof ptr === 'object' && ptr.__addr ? ptr.__addr : ptr;
     const block = this.heapMap.get(addr);
     if (!block) {
-      throw new Error(`RUNTIME_ERROR: free(): invalid pointer address 0x${addr.toString(16)} (Con trỏ không hợp lệ hoặc không được cấp phát bởi malloc).`);
+      throw new Error(`RUNTIME_ERROR: free(): invalid pointer address 0x${addr ? addr.toString(16) : '0'} (Con trỏ không hợp lệ hoặc không được cấp phát bởi malloc).`);
     }
-    if (block.freed) {
-      throw new Error(`RUNTIME_ERROR: free(): double free detected in tcache 2 at address 0x${addr.toString(16)} (Lỗi giải phóng con trỏ 2 lần liên tiếp!).`);
+    if (block.__freed) {
+      throw new Error(`RUNTIME_ERROR: free(): double free detected in tcache at address 0x${addr.toString(16)} (Lỗi giải phóng con trỏ 2 lần liên tiếp!).`);
     }
-    block.freed = true;
+    block.__freed = true;
   }
 
   // Pointer dereference safeguard
   public checkDereference(addr: number) {
-    if (addr === 0) {
+    if (!addr || addr === 0) {
       throw new Error('RUNTIME_ERROR: SIGSEGV: Segmentation fault (Dereferencing NULL pointer - Truy cập vùng nhớ con trỏ NULL).');
     }
   }
 
-  // Simulated scanf
-  public scanfNext(type: 'int' | 'float' | 'string' | 'char'): any {
+  // Formatted scanf with setter callbacks: scanf("%d %d", (v) => a = v, (v) => b = v)
+  public scanf(format: string, ...setterFns: ((val: any) => void)[]): number {
+    this.tick();
+    const specifiers = (format.match(/%(?:d|i|f|lf|s|c|lld|ld)/g) || []);
+    let count = 0;
+
+    for (let i = 0; i < specifiers.length; i++) {
+      if (this.stdinTokens.length === 0) break;
+      const token = this.stdinTokens.shift()!;
+      const spec = specifiers[i];
+      let val: any;
+
+      if (spec.includes('f')) {
+        val = parseFloat(token);
+        if (isNaN(val)) val = 0.0;
+      } else if (spec.includes('s')) {
+        val = token;
+      } else if (spec.includes('c')) {
+        val = token.length > 0 ? token[0] : '';
+      } else {
+        val = parseInt(token, 10);
+        if (isNaN(val)) val = 0;
+      }
+
+      if (setterFns[i] && typeof setterFns[i] === 'function') {
+        setterFns[i](val);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  // Single token consumer for C++ cin >> x
+  public scanfNext(type: 'int' | 'float' | 'string' | 'char' = 'int'): any {
     this.tick();
     if (this.stdinTokens.length === 0) {
       return type === 'string' ? '' : 0;
@@ -202,7 +245,7 @@ export class VirtualCRuntime {
     this.tick();
     let argIdx = 0;
     // Replace %d, %i, %f, %.1f, %.2f, %.3f, %s, %c
-    const formatted = format.replace(/%(?:(\.\d+)?f|d|i|u|ld|lld|s|c|%)/g, (match, precision) => {
+    const formatted = String(format).replace(/%(?:(\.\d+)?f|d|i|u|ld|lld|s|c|%)/g, (match, precision) => {
       if (match === '%%') return '%';
       if (argIdx >= args.length) return match;
       const val = args[argIdx++];
@@ -258,9 +301,9 @@ export class VirtualCRuntime {
     const leakedBlocks: number[] = [];
 
     this.heapMap.forEach((block, addr) => {
-      totalAllocated += block.size;
-      if (block.freed) {
-        totalFreed += block.size;
+      totalAllocated += block.__size;
+      if (block.__freed) {
+        totalFreed += block.__size;
       } else {
         activeBlocks++;
         leakedBlocks.push(addr);
@@ -279,16 +322,45 @@ export class VirtualCRuntime {
 
 /**
  * 3. TRANSPILER & EXECUTION ENGINE
- * Converts common C patterns to a sandboxed JavaScript function with virtual C environment bindings.
+ * Robustly converts C/C++ source code into a sandboxed JavaScript function.
  */
 function transpileCToJS(cCode: string): string {
-  // Strip preprocessor directives & namespaces
-  let code = cCode.replace(/^\s*#include\s*<.*?>\s*$/gm, '');
+  // Step 1: Protect string literals
+  const stringLiterals: string[] = [];
+  let code = cCode.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match) => {
+    const idx = stringLiterals.length;
+    stringLiterals.push(match);
+    return `__STR_LITERAL_${idx}__`;
+  });
+
+  // Protect char literals
+  const charLiterals: string[] = [];
+  code = code.replace(/'([^'\\]*(\\.[^'\\]*)*)'/g, (match) => {
+    const idx = charLiterals.length;
+    charLiterals.push(match);
+    return `__CHAR_LITERAL_${idx}__`;
+  });
+
+  // Step 2: Strip preprocessor directives & namespaces
+  code = code.replace(/^\s*#include\s*<.*?>\s*$/gm, '');
   code = code.replace(/^\s*#include\s*".*?"\s*$/gm, '');
   code = code.replace(/^\s*#define\s+.*$/gm, '');
   code = code.replace(/\busing\s+namespace\s+std\s*;/g, '');
 
-  // C++ cout << a << b << endl;
+  // Step 3: Functions MUST be transformed BEFORE variable declarations!
+  // Main entrypoint
+  code = code.replace(/\b(?:int|void)\s+main\s*\((.*?)\)\s*\{/g, 'function __c_main() {');
+
+  // Other function signatures: int add(int a, int b) -> function add(a, b)
+  code = code.replace(/\b(?:int|void|float|double|char|long|short)\s*\*?\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{/g, (_, fnName, params) => {
+    const cleanParams = params.split(',').map((p: string) => {
+      const parts = p.trim().split(/\s+/);
+      return parts[parts.length - 1].replace(/^\*+/, '');
+    }).filter(Boolean).join(', ');
+    return `function ${fnName}(${cleanParams}) {`;
+  });
+
+  // Step 4: C++ cout << a << b << endl;
   code = code.replace(/\b(?:std::)?cout\s*<<\s*([^;]+);/g, (_, expr) => {
     const parts = expr.split('<<').map((p: string) => {
       const clean = p.trim();
@@ -301,50 +373,51 @@ function transpileCToJS(cCode: string): string {
   // C++ cin >> a >> b;
   code = code.replace(/\b(?:std::)?cin\s*>>\s*([^;]+);/g, (_, expr) => {
     const vars = expr.split('>>').map((v: string) => v.trim()).filter(Boolean);
-    return vars.map((v: string) => `${v} = __rt.scanfNext("int");`).join(' ');
+    return vars.map((v: string) => `${v} = __rt.scanfNext("int");`).join('; ') + ';';
   });
 
-  // Wrap loops with runtime.tick() watchdog
-  // while(...) { -> while(...) { __rt.tick();
+  // Step 5: Wrap loops with runtime.tick() watchdog
   code = code.replace(/while\s*\((.*?)\)\s*\{/g, 'while ($1) { __rt.tick(); ');
-  // for(...) { -> for(...) { __rt.tick();
   code = code.replace(/for\s*\((.*?)\)\s*\{/g, 'for ($1) { __rt.tick(); ');
-  // do { -> do { __rt.tick();
   code = code.replace(/do\s*\{/g, 'do { __rt.tick(); ');
 
-  // Replace type declarations
-  code = code.replace(/\b(?:int|long|short|unsigned|signed)\s+([a-zA-Z_]\w*)/g, 'let $1');
-  code = code.replace(/\b(?:float|double)\s+([a-zA-Z_]\w*)/g, 'let $1');
-  code = code.replace(/\bchar\s+([a-zA-Z_]\w*)\s*\[\s*\d*\s*\]/g, 'let $1 = ""');
+  // Step 6: Memory allocations & sizeof
+  code = code.replace(/sizeof\s*\([^)]*\)/g, '4');
+  code = code.replace(/\([a-zA-Z_]\w*\*+\)\s*/g, ''); // strip pointer casts like (int*)
+  code = code.replace(/\bmalloc\s*\(/g, '__rt.malloc(');
+  code = code.replace(/\bcalloc\s*\(/g, '__rt.calloc(');
+  code = code.replace(/\bfree\s*\(/g, '__rt.free(');
+
+  // Step 7: Formatted scanf with setter functions
+  code = code.replace(/scanf\s*\(\s*(__STR_LITERAL_\d+__)\s*,\s*([^)]+)\)/g, (_, fmtPlaceholder, argsStr) => {
+    const argTargets = argsStr.split(',').map((arg: string) => {
+      const clean = arg.trim().replace(/^&/, '');
+      return `(v) => { ${clean} = v; }`;
+    });
+    return `__rt.scanf(${fmtPlaceholder}, ${argTargets.join(', ')})`;
+  });
+
+  // Step 8: Replace type declarations
+  // Strip pointer symbols in variable declarations: int *arr -> let arr
+  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double|char|void)\s*\*+\s*([a-zA-Z_]\w*)/g, 'let $1');
+  // Normal declarations: int a = 5;
+  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)/g, 'let $1');
+  // Char arrays
+  code = code.replace(/\bchar\s+([a-zA-Z_]\w*)\s*\[\s*\d*\s*\]/g, 'let $1 = []');
   code = code.replace(/\bchar\s+([a-zA-Z_]\w*)/g, 'let $1');
 
-  // Replace malloc & free
-  code = code.replace(/\(int\*\)\s*malloc\s*\((.*?)\)/g, '__rt.malloc($1)');
-  code = code.replace(/\(char\*\)\s*malloc\s*\((.*?)\)/g, '__rt.malloc($1)');
-  code = code.replace(/\(void\*\)\s*malloc\s*\((.*?)\)/g, '__rt.malloc($1)');
-  code = code.replace(/\bmalloc\s*\((.*?)\)/g, '__rt.malloc($1)');
-  code = code.replace(/\bcalloc\s*\((.*?),\s*(.*?)\)/g, '__rt.calloc($1, $2)');
-  code = code.replace(/\bfree\s*\((.*?)\)/g, '__rt.free($1)');
-
-  // Replace printf
+  // Step 9: Replace printf
   code = code.replace(/\bprintf\s*\(/g, '__rt.printf(');
 
-  // Replace scanf("%d", &x) or scanf("%f", &x) or scanf("%s", str)
-  code = code.replace(/scanf\s*\(\s*["']%d["']\s*,\s*&([a-zA-Z_]\w*)\s*\)/g, '($1 = __rt.scanfNext("int"))');
-  code = code.replace(/scanf\s*\(\s*["']%f["']\s*,\s*&([a-zA-Z_]\w*)\s*\)/g, '($1 = __rt.scanfNext("float"))');
-  code = code.replace(/scanf\s*\(\s*["']%lf["']\s*,\s*&([a-zA-Z_]\w*)\s*\)/g, '($1 = __rt.scanfNext("float"))');
-  code = code.replace(/scanf\s*\(\s*["']%s["']\s*,\s*([a-zA-Z_]\w*)\s*\)/g, '($1 = __rt.scanfNext("string"))');
-  code = code.replace(/scanf\s*\(\s*["']%c["']\s*,\s*&([a-zA-Z_]\w*)\s*\)/g, '($1 = __rt.scanfNext("char"))');
-
-  // Replace standard C constants & math
-  code = code.replace(/\bNULL\b/g, '0');
+  // Step 10: Constants & Math
+  code = code.replace(/\bNULL\b/g, 'null');
   code = code.replace(/\bsqrt\s*\(/g, 'Math.sqrt(');
   code = code.replace(/\babs\s*\(/g, 'Math.abs(');
   code = code.replace(/\bpow\s*\(/g, 'Math.pow(');
 
-  // Extract function definitions
-  // Convert 'int main(...) {' to 'function main() {'
-  code = code.replace(/\b(?:int|void)\s+main\s*\([^)]*\)\s*\{/, 'function __c_main() {');
+  // Step 11: Restore string and char literals
+  code = code.replace(/__STR_LITERAL_(\d+)__/g, (_, idx) => stringLiterals[Number(idx)]);
+  code = code.replace(/__CHAR_LITERAL_(\d+)__/g, (_, idx) => charLiterals[Number(idx)]);
 
   return `
     ${code}
