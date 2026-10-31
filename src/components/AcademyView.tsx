@@ -21,7 +21,10 @@ import {
   PanelLeft,
   PanelLeftClose,
   ChevronRight,
-  GraduationCap
+  GraduationCap,
+  Search,
+  X,
+  Sparkles
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
@@ -73,8 +76,39 @@ export const AcademyView: React.FC = () => {
     return saved ? Math.min(75, Math.max(25, Number(saved))) : 46;
   });
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(() => {
+    return localStorage.getItem('ahtest_academy_sidebar_expanded') === 'true';
+  });
+  const [searchLessonQuery, setSearchLessonQuery] = useState<string>('');
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+
+  const toggleSidebarExpanded = (val?: boolean) => {
+    setIsSidebarExpanded((prev) => {
+      const next = typeof val === 'boolean' ? val : !prev;
+      localStorage.setItem('ahtest_academy_sidebar_expanded', String(next));
+      return next;
+    });
+  };
+
+  const filteredModules = selectedCourse.modules.map(module => {
+    if (!searchLessonQuery.trim()) return module;
+    const q = searchLessonQuery.toLowerCase().trim();
+    const matchesModule = module.title.toLowerCase().includes(q) || (Boolean(module.titleEn) && module.titleEn!.toLowerCase().includes(q));
+    const matchedLessons = module.lessons.filter(l => 
+      matchesModule ||
+      l.title.toLowerCase().includes(q) || 
+      (Boolean(l.titleEn) && l.titleEn!.toLowerCase().includes(q)) ||
+      (Boolean(l.appliedExercises) && l.appliedExercises!.some(ex => 
+        ex.questionCode.toLowerCase().includes(q) || 
+        ex.titleVi.toLowerCase().includes(q) || 
+        (Boolean(ex.titleEn) && ex.titleEn!.toLowerCase().includes(q))
+      ))
+    );
+    return {
+      ...module,
+      lessons: matchedLessons
+    };
+  }).filter(m => m.lessons.length > 0);
 
   const workspaceContainerRef = useRef<HTMLDivElement>(null);
   const academyMonacoRef = useRef<any>(null);
@@ -395,15 +429,15 @@ export const AcademyView: React.FC = () => {
         {/* Left: Drawer Toggle & Interactive Breadcrumb Trail */}
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            onClick={() => toggleSidebarExpanded()}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
-              isSidebarOpen
+              isSidebarExpanded
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
-            title="Đóng / Mở danh mục lộ trình bài học"
+            title={isSidebarExpanded ? "Thu gọn về thanh Icon Rail" : "Mở rộng danh mục lộ trình bài học (Drawer)"}
           >
-            {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
+            {isSidebarExpanded ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
             <span className="hidden md:inline">Lộ trình</span>
           </button>
 
@@ -624,79 +658,341 @@ export const AcademyView: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div 
-          ref={workspaceContainerRef}
-          className={`flex-1 flex flex-col lg:flex-row overflow-hidden relative ${isDraggingSplitter ? 'cursor-col-resize select-none' : ''}`}
-        >
-          {/* COLLAPSIBLE SIDEBAR: Curriculum Drawer */}
-          {isSidebarOpen && (
-            <div className="w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 z-20 shadow-md">
-              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                    {docLang === 'en' ? selectedCourse.titleEn : selectedCourse.title}
-                  </h3>
-                  <span className="text-[11px] text-slate-500">
-                    {selectedCourse.totalLessons} bài học • {selectedCourse.estimatedHours} giờ học
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <PanelLeftClose className="w-4 h-4" />
-                </button>
-              </div>
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* 1. SIDEBAR: DUAL-MODE MINI ICON RAIL & COLLAPSIBLE DRAWER (Hidden in Zen Mode) */}
+          {!isZenMode && (
+            <>
+              {/* A. MINI ICON RAIL: Visible on Desktop (>= 1024px) when sidebar is collapsed */}
+              {!isSidebarExpanded && (
+                <div className="hidden lg:flex flex-col w-14 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 select-none">
+                  {/* Rail Header: Expand Button */}
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-center shrink-0">
+                    <button
+                      onClick={() => toggleSidebarExpanded(true)}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800/80 transition-all cursor-pointer group relative"
+                      title="Mở rộng lộ trình bài học (Drawer 320px)"
+                    >
+                      <PanelLeft className="w-4 h-4 transition-transform group-hover:scale-110" />
+                      <div className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold shadow-xl border border-slate-700/80 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap">
+                        Mở rộng lộ trình bài học
+                      </div>
+                    </button>
+                  </div>
 
-              {/* Module & Lesson List */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-4">
-                {selectedCourse.modules.map((module) => (
-                  <div key={module.id} className="space-y-1.5">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 px-2">
-                      <Layers className="w-3 h-3 text-indigo-500" />
-                      <span>{docLang === 'en' && module.titleEn ? module.titleEn : module.title}</span>
-                    </h4>
-                    
-                    <div className="space-y-1">
-                      {module.lessons.map((lesson, idx) => {
-                        const isCurrent = activeLesson.id === lesson.id && !activeExercise;
-                        return (
-                          <button
-                            key={lesson.id}
-                            onClick={() => {
-                              handleSelectLesson(lesson);
-                              if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                            }}
-                            className={`w-full text-left p-2.5 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer ${
-                              isCurrent
-                                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800/80'
-                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                            }`}
+                  {/* Rail Body: Vertical List of Lesson Pills & Module Badges */}
+                  <div className="flex-1 overflow-y-auto py-2 px-1 space-y-2 overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    {selectedCourse.modules.map((module, modIdx) => {
+                      const modNumber = modIdx + 1;
+                      return (
+                        <div key={module.id} className="space-y-1.5 flex flex-col items-center">
+                          {/* Module Badge */}
+                          <div 
+                            className="w-8 h-4 rounded-full bg-slate-100 dark:bg-slate-800/80 text-[9px] font-extrabold text-slate-500 dark:text-slate-400 flex items-center justify-center select-none"
+                            title={docLang === 'en' && module.titleEn ? module.titleEn : module.title}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              {completedLessons.includes(lesson.id) ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                              ) : (
-                                <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                                  isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                                }`}>
-                                  {idx + 1}
-                                </span>
-                              )}
-                              <span className="truncate">
-                                {docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 shrink-0 ml-1.5">{lesson.durationMinutes}m</span>
-                          </button>
-                        );
-                      })}
+                            M{modNumber}
+                          </div>
+
+                          {/* Lessons in this Module */}
+                          {module.lessons.map((lesson, lessonIdx) => {
+                            const isCurrent = activeLesson.id === lesson.id && !activeExercise;
+                            const isDone = completedLessons.includes(lesson.id);
+                            return (
+                              <div key={lesson.id} className="relative group w-full flex justify-center">
+                                <button
+                                  onClick={() => handleSelectLesson(lesson)}
+                                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all cursor-pointer relative ${
+                                    isCurrent
+                                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400 dark:ring-indigo-300 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-105'
+                                      : isDone
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:scale-105'
+                                        : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white hover:scale-105'
+                                  }`}
+                                  title={`${lessonIdx + 1}. ${docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}`}
+                                >
+                                  {isDone ? (
+                                    <CheckCircle2 className={`w-4 h-4 ${isCurrent ? 'text-white' : 'text-emerald-500'}`} />
+                                  ) : (
+                                    <span>{lessonIdx + 1}</span>
+                                  )}
+
+                                  {/* Active pulsing dot */}
+                                  {isCurrent && (
+                                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-indigo-400 ring-2 ring-white dark:ring-slate-900" />
+                                  )}
+                                </button>
+
+                                {/* Hover Tooltip positioned to the right of the rail */}
+                                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 min-w-56 max-w-xs p-3 rounded-xl bg-slate-900 dark:bg-slate-800 text-white shadow-2xl border border-slate-700/80 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 select-none">
+                                  <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 mb-0.5">
+                                    {docLang === 'en' && module.titleEn ? module.titleEn : module.title}
+                                  </div>
+                                  <div className="font-bold text-xs text-slate-100 mb-1.5 leading-snug line-clamp-2">
+                                    {lessonIdx + 1}. {docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-700/60 pt-1.5">
+                                    <span className="flex items-center gap-1 text-slate-300">
+                                      <Clock className="w-3 h-3 text-slate-400" />
+                                      {lesson.durationMinutes} phút
+                                    </span>
+                                    {isDone ? (
+                                      <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                                        <Check className="w-3 h-3" /> Đã hoàn thành
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400">Chưa hoàn thành</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Rail Footer: Mini Progress Meter */}
+                  <div className="p-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-col items-center gap-1 shrink-0">
+                    <div 
+                      className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400"
+                      title={`Tiến độ: ${completedCount}/${selectedCourse.totalLessons} bài (${progressPercent}%)`}
+                    >
+                      {progressPercent}%
+                    </div>
+                    <div className="w-8 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                        style={{ width: `${progressPercent}%` }}
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+
+              {/* B. EXPANDED CURRICULUM DRAWER: Drawer on Desktop, Overlay Drawer with Backdrop on Mobile */}
+              {isSidebarExpanded && (
+                <>
+                  {/* Backdrop Overlay for Mobile (< 1024px) */}
+                  <div 
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+                    onClick={() => toggleSidebarExpanded(false)}
+                  />
+
+                  {/* Drawer Panel Container */}
+                  <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 shadow-2xl lg:shadow-none lg:relative lg:z-20 select-none">
+                    {/* Drawer Header */}
+                    <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 shrink-0 bg-slate-50/50 dark:bg-slate-950/30">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                            {selectedCourse.level}
+                          </span>
+                          <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {selectedCourse.estimatedHours}h học
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate mt-0.5">
+                          {docLang === 'en' ? selectedCourse.titleEn : selectedCourse.title}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => toggleSidebarExpanded(false)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                        title="Thu gọn về thanh Icon Rail"
+                      >
+                        <PanelLeftClose className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Gamified Course Progress Bar */}
+                    <div className="px-3.5 py-2.5 bg-indigo-50/60 dark:bg-indigo-950/20 border-b border-slate-200 dark:border-slate-800/80 shrink-0">
+                      <div className="flex items-center justify-between text-[11px] mb-1.5">
+                        <span className="font-semibold text-slate-600 dark:text-slate-300">Tiến độ khóa học</span>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                          {completedCount}/{selectedCourse.totalLessons} bài ({progressPercent}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-linear-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Search & Filter Bar */}
+                    <div className="p-3 border-b border-slate-200 dark:border-slate-800/80 shrink-0">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={searchLessonQuery}
+                          onChange={(e) => setSearchLessonQuery(e.target.value)}
+                          placeholder="Tìm bài học, bài tập..."
+                          className="w-full pl-8 pr-7 py-1.5 rounded-lg text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 border border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all"
+                        />
+                        {searchLessonQuery && (
+                          <button
+                            onClick={() => setSearchLessonQuery('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 cursor-pointer"
+                            title="Xóa tìm kiếm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Filtered Modules & Lessons List */}
+                    <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                      {filteredModules.length === 0 ? (
+                        <div className="text-center py-8 px-4 space-y-2">
+                          <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+                          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            Không tìm thấy bài học nào phù hợp
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc
+                          </p>
+                          <button
+                            onClick={() => setSearchLessonQuery('')}
+                            className="mt-2 px-3 py-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
+                          >
+                            Xóa bộ lọc
+                          </button>
+                        </div>
+                      ) : (
+                        filteredModules.map((module) => {
+                          const moduleCompleted = module.lessons.filter(l => completedLessons.includes(l.id)).length;
+                          return (
+                            <div key={module.id} className="space-y-1.5">
+                              {/* Module Header */}
+                              <div className="flex items-center justify-between px-2 py-1">
+                                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 min-w-0">
+                                  <Layers className="w-3 h-3 text-indigo-500 shrink-0" />
+                                  <span className="truncate">{docLang === 'en' && module.titleEn ? module.titleEn : module.title}</span>
+                                </h4>
+                                <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-1">
+                                  {moduleCompleted}/{module.lessons.length}
+                                </span>
+                              </div>
+
+                              {/* Lesson Items */}
+                              <div className="space-y-1">
+                                {module.lessons.map((lesson, idx) => {
+                                  const isCurrent = activeLesson.id === lesson.id && !activeExercise;
+                                  const isDone = completedLessons.includes(lesson.id);
+                                  const hasExercises = lesson.appliedExercises && lesson.appliedExercises.length > 0;
+                                  return (
+                                    <div key={lesson.id} className="space-y-1">
+                                      <button
+                                        onClick={() => {
+                                          handleSelectLesson(lesson);
+                                          if (window.innerWidth < 1024) toggleSidebarExpanded(false);
+                                        }}
+                                        className={`w-full text-left p-2.5 rounded-xl text-xs transition-all flex items-center justify-between cursor-pointer ${
+                                          isCurrent
+                                            ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800/80 shadow-2xs'
+                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          {isDone ? (
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                          ) : (
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                              isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                            }`}>
+                                              {idx + 1}
+                                            </span>
+                                          )}
+                                          <span className="truncate">
+                                            {docLang === 'en' && lesson.titleEn ? lesson.titleEn : lesson.title}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
+                                          {hasExercises && (
+                                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300">
+                                              +{lesson.appliedExercises!.length} BT
+                                            </span>
+                                          )}
+                                          <span className="text-[10px] text-slate-400">{lesson.durationMinutes}m</span>
+                                        </div>
+                                      </button>
+
+                                      {/* Sub-exercises list if active lesson and has exercises */}
+                                      {activeLesson.id === lesson.id && hasExercises && (
+                                        <div className="pl-6 pr-2 py-1 space-y-1 border-l-2 border-indigo-200 dark:border-indigo-900 ml-4 my-1">
+                                          {lesson.appliedExercises!.map((ex) => {
+                                            const isExActive = activeExercise?.id === ex.id;
+                                            return (
+                                              <button
+                                                key={ex.id}
+                                                onClick={() => {
+                                                  handleSelectExercise(ex);
+                                                  if (window.innerWidth < 1024) toggleSidebarExpanded(false);
+                                                }}
+                                                className={`w-full text-left px-2 py-1.5 rounded-lg text-[11px] flex items-center justify-between transition-colors cursor-pointer ${
+                                                  isExActive
+                                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30'
+                                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                                                }`}
+                                              >
+                                                <div className="flex items-center gap-1.5 truncate">
+                                                  <Target className="w-3 h-3 text-amber-500 shrink-0" />
+                                                  <span className="truncate">
+                                                    [{ex.questionCode}] {docLang === 'en' ? ex.titleEn : ex.titleVi}
+                                                  </span>
+                                                </div>
+                                                <span className="text-[9px] text-slate-400 shrink-0 ml-1">FPTU</span>
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Drawer Footer: Next Lesson Action */}
+                    {nextLessonCandidate && (
+                      <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/30 shrink-0">
+                        <button
+                          onClick={() => {
+                            handleSelectLesson(nextLessonCandidate);
+                            if (window.innerWidth < 1024) toggleSidebarExpanded(false);
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs transition-colors cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            <span className="truncate">
+                              Bài tiếp theo: {docLang === 'en' && nextLessonCandidate.titleEn ? nextLessonCandidate.titleEn : nextLessonCandidate.title}
+                            </span>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 shrink-0" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
           )}
+
+          {/* 2. SPLIT-SCREEN WORKBENCH CONTAINER (Holds Theory Document Panel, Draggable Splitter, Monaco Editor) */}
+          <div 
+            ref={workspaceContainerRef}
+            className={`flex-1 flex flex-col lg:flex-row overflow-hidden relative ${isDraggingSplitter ? 'cursor-col-resize select-none' : ''}`}
+          >
 
           {/* LEFT COLUMN: Document & Theory Panel (Collapsible in Zen Mode) */}
           {!isZenMode && (
@@ -1147,6 +1443,7 @@ export const AcademyView: React.FC = () => {
 
           </div>
         </div>
+      </div>
       )}
 
     </div>
