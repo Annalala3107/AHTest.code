@@ -511,37 +511,6 @@ export const AcademyView: React.FC = () => {
               </span>
             </div>
 
-            {selectedCourse.language === 'c' && (
-              <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
-                <div className="font-bold flex items-center justify-between">
-                  <span>Trình biên dịch Dev-C++ IDE</span>
-                  <span className="px-1.5 py-0.5 text-[9px] uppercase font-bold bg-blue-600 text-white rounded">
-                    Open Source
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Giáo trình được tối ưu cho môi trường MinGW GCC của <strong>Embarcadero Dev-C++</strong>.
-                </p>
-                <div className="flex items-center justify-between pt-1">
-                  <a
-                    href="https://github.com/Embarcadero/Dev-Cpp"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-                  >
-                    Mã nguồn Dev-Cpp ↗
-                  </a>
-                  <a
-                    href="https://grading-c-cpp-fptu.vercel.app/questions.html#q1"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
-                  >
-                    FPTU Grading ↗
-                  </a>
-                </div>
-              </div>
-            )}
 
             <div className="space-y-4 max-h-[680px] overflow-y-auto pr-1">
               {selectedCourse.modules.map((module) => (
