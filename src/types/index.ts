@@ -192,3 +192,19 @@ export interface ProblemPackage {
   modelSolutionCpp?: string;
   status: 'DRAFT' | 'VALIDATED' | 'PUBLISHED';
 }
+
+export type UserRole = 'super_admin' | 'educator' | 'student';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl: string;
+  role: UserRole;
+  provider: 'google' | 'email';
+  streakDays: number;
+  rating?: number;
+  rankClass?: string;
+  lastLoginAt?: string;
+}
+

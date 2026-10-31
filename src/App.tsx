@@ -8,7 +8,9 @@ import { AcademyView } from './components/AcademyView';
 import { ProblemImporterView } from './components/ProblemImporterView';
 import { ContestsView } from './components/ContestsView';
 import { LeaderboardView } from './components/LeaderboardView';
-import { Problem } from './types';
+import { AdminDashboardView } from './components/AdminDashboardView';
+import { AuthModal } from './components/AuthModal';
+import { Problem, AuthUser } from './types';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
@@ -19,6 +21,28 @@ export function App() {
     return true; // Default to dark on initial visit
   });
   const [streakCount] = useState<number>(7);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // Current authenticated user (synced with localStorage & Google SSO)
+  const [currentUser, setCurrentUser] = useState<AuthUser>(() => {
+    try {
+      const saved = localStorage.getItem('ahtest_auth_user');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return {
+      id: 'usr_admin_01',
+      name: 'Trương Quốc Anh',
+      email: 'admin.truong@ahtest.code',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+      role: 'super_admin',
+      provider: 'google',
+      streakDays: 45,
+      rating: 2450,
+      rankClass: 'Grandmaster'
+    };
+  });
 
   // Synchronize dark mode class on HTML element and persist preference
   useEffect(() => {
@@ -45,6 +69,27 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLogout = () => {
+    const guestUser: AuthUser = {
+      id: 'usr_guest',
+      name: 'Khách',
+      email: 'guest@ahtest.code',
+      avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=guest',
+      role: 'student',
+      provider: 'email',
+      streakDays: 0,
+      rating: 1200,
+      rankClass: 'Newbie'
+    };
+    setCurrentUser(guestUser);
+    localStorage.removeItem('ahtest_auth_user');
+  };
+
+  const handleLoginSuccess = (user: AuthUser) => {
+    setCurrentUser(user);
+    localStorage.setItem('ahtest_auth_user', JSON.stringify(user));
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors font-sans antialiased">
       {/* Top Navbar */}
@@ -54,10 +99,13 @@ export function App() {
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         streakCount={streakCount}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
-      {/* Main View Container: Full viewport edge-to-edge for IDE Workspaces (Academy & Workbench), max-w-7xl for browsing */}
-      <main className={`flex-1 w-full ${selectedProblem || currentTab === 'academy' ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}`}>
+      {/* Main View Container: Full viewport edge-to-edge for IDE Workspaces and Admin, max-w-7xl for browsing */}
+      <main className={`flex-1 w-full ${selectedProblem || currentTab === 'academy' || currentTab === 'admin' ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}`}>
         {selectedProblem ? (
           <WorkbenchView
             problem={selectedProblem}
@@ -79,12 +127,26 @@ export function App() {
             {currentTab === 'importer' && <ProblemImporterView />}
             {currentTab === 'contests' && <ContestsView />}
             {currentTab === 'leaderboard' && <LeaderboardView />}
+            {currentTab === 'admin' && (
+              <AdminDashboardView
+                currentUser={currentUser}
+                onNavigateTab={handleSelectTab}
+                onOpenAuthModal={() => setIsAuthModalOpen(true)}
+              />
+            )}
           </>
         )}
       </main>
 
-      {/* Footer (hidden on Workbench and Academy split mode to maximize vertical space) */}
-      {!selectedProblem && currentTab !== 'academy' && <Footer />}
+      {/* Google SSO Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Footer (hidden on Workbench, Academy and Admin split mode to maximize vertical space) */}
+      {!selectedProblem && currentTab !== 'academy' && currentTab !== 'admin' && <Footer />}
     </div>
   );
 }
