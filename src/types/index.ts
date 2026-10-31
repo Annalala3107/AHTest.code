@@ -123,6 +123,7 @@ export interface AcademyCourse {
   totalLessons: number;
   estimatedHours: number;
   modules: AcademyModule[];
+  isComingSoon?: boolean;
 }
 
 export interface ImportedTestCase {
