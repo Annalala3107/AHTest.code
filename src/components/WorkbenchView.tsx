@@ -29,6 +29,7 @@ import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode } from '../services/cExecutionEngine';
+import { CodeEditor } from './CodeEditor';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -107,8 +108,66 @@ fn main() {
   const [customOutput, setCustomOutput] = useState<string>('');
   const [customExpected, setCustomExpected] = useState<string>('');
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
-  const [splitRatio, setSplitRatio] = useState<'40-60' | '50-50' | '60-40'>('50-50');
-  const workbenchGutterRef = useRef<HTMLDivElement>(null);
+  const [splitPercent, setSplitPercent] = useState<number>(() => {
+    return Number(localStorage.getItem('ahtest_workbench_split')) || 50;
+  });
+  const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
+  const workspaceContainerRef = useRef<HTMLDivElement>(null);
+  const monacoEditorRef = useRef<any>(null);
+
+  // Jump to specific line and column in Monaco Editor
+  const jumpToLine = (line: number, col: number = 1) => {
+    if (monacoEditorRef.current) {
+      monacoEditorRef.current.revealLineInCenter(line);
+      monacoEditorRef.current.setPosition({ lineNumber: line, column: col });
+      monacoEditorRef.current.focus();
+    }
+  };
+
+  // Helper to extract diagnostic line/column from compiler error message
+  const parseDiagnosticError = (output: string) => {
+    if (!output) return null;
+    const match = output.match(/(?:solution\.c)?:?(\d+):(\d+):\s*(error|warning)/i) || output.match(/:(\d+):(\d+):/);
+    if (match) {
+      return {
+        line: parseInt(match[1], 10),
+        col: parseInt(match[2], 10),
+      };
+    }
+    const lineMatch = output.match(/dòng\s*(\d+)/i) || output.match(/line\s*(\d+)/i);
+    if (lineMatch) {
+      return {
+        line: parseInt(lineMatch[1], 10),
+        col: 1,
+      };
+    }
+    return null;
+  };
+
+  // Dragging handler for smooth 2-panel splitter
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSplitter || !workspaceContainerRef.current) return;
+      const rect = workspaceContainerRef.current.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const newPercent = Math.min(Math.max((offsetX / rect.width) * 100, 20), 80);
+      setSplitPercent(Math.round(newPercent));
+      localStorage.setItem('ahtest_workbench_split', String(Math.round(newPercent)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingSplitter(false);
+    };
+
+    if (isDraggingSplitter) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingSplitter]);
 
   // Helper for unique localStorage draft key per problem & language
   const getWorkbenchDraftKey = (probId: string, lang: string) => {
@@ -448,22 +507,22 @@ fn main() {
           {!isZenMode && (
             <div className="hidden xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200 dark:border-slate-700">
               <button
-                onClick={() => setSplitRatio('40-60')}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitRatio === '40-60' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                onClick={() => setSplitPercent(40)}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 40 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
                 title="Tỷ lệ: Đề bài 40% - Code 60%"
               >
                 4:6
               </button>
               <button
-                onClick={() => setSplitRatio('50-50')}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitRatio === '50-50' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                onClick={() => setSplitPercent(50)}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 50 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
                 title="Tỷ lệ: Đề bài 50% - Code 50%"
               >
                 5:5
               </button>
               <button
-                onClick={() => setSplitRatio('60-40')}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitRatio === '60-40' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+                onClick={() => setSplitPercent(60)}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 60 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
                 title="Tỷ lệ: Đề bài 60% - Code 40%"
               >
                 6:4
@@ -509,18 +568,17 @@ fn main() {
         </div>
       </div>
 
-      {/* Main Split-Screen Workspace */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      {/* Main Split-Screen Workspace with Real Draggable Splitter */}
+      <div 
+        ref={workspaceContainerRef}
+        className={`flex-1 flex flex-col lg:flex-row overflow-hidden relative ${isDraggingSplitter ? 'cursor-col-resize select-none' : ''}`}
+      >
         {/* LEFT COLUMN: Problem Statement & Documentation (Collapsible in Zen Mode) */}
-        <div className={`${
-          isZenMode 
-            ? 'hidden' 
-            : splitRatio === '40-60' 
-            ? 'w-full lg:w-[40%]' 
-            : splitRatio === '60-40' 
-            ? 'w-full lg:w-[60%]' 
-            : 'w-full lg:w-1/2'
-        } flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200`}>
+        {!isZenMode && (
+          <div 
+            style={{ width: `${splitPercent}%` }}
+            className="w-full lg:flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
+          >
           {/* Tabs */}
           <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/50 dark:bg-slate-800/40">
             <button
@@ -737,17 +795,27 @@ fn main() {
             )}
           </div>
         </div>
+        )}
 
-        {/* RIGHT COLUMN: Code Editor & Execution Console */}
-        <div className={`${
-          isZenMode 
-            ? 'w-full' 
-            : splitRatio === '40-60' 
-            ? 'w-full lg:w-[60%]' 
-            : splitRatio === '60-40' 
-            ? 'w-full lg:w-[40%]' 
-            : 'w-full lg:w-1/2'
-        } flex flex-col bg-slate-900 text-white overflow-hidden transition-all duration-200`}>
+        {/* DRAGGABLE SPLITTER HANDLE (Desktop Only) */}
+        {!isZenMode && (
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsDraggingSplitter(true);
+            }}
+            className="hidden lg:flex items-center justify-center w-2 hover:w-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 dark:hover:bg-rose-500 transition-colors cursor-col-resize group shrink-0 relative z-20 select-none"
+            title="Kéo sang trái hoặc phải để điều chỉnh tỷ lệ khung làm việc (20% - 80%)"
+          >
+            <div className="w-0.5 h-8 rounded-full bg-slate-400 dark:bg-slate-600 group-hover:bg-white" />
+          </div>
+        )}
+
+        {/* RIGHT COLUMN: Professional Monaco Code Editor & Execution Console */}
+        <div 
+          style={{ width: isZenMode ? '100%' : `${100 - splitPercent}%` }}
+          className="flex-1 flex flex-col bg-slate-900 text-white overflow-hidden transition-[width] duration-75"
+        >
           {/* Editor Controls Bar */}
           <div className="h-10 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between shrink-0 text-xs">
             <div className="flex items-center gap-3">
@@ -788,32 +856,17 @@ fn main() {
             </div>
           </div>
 
-          {/* Enhanced Code Textarea Editor with Line Numbers Gutter */}
-          <div className="flex-1 relative flex overflow-hidden bg-slate-950 font-mono text-xs sm:text-sm">
-            {/* Line Numbers Gutter */}
-            <div 
-              ref={workbenchGutterRef}
-              className="select-none py-4 pl-3 pr-2.5 text-right text-slate-600 bg-slate-950/90 border-r border-slate-800/80 font-mono text-xs leading-6 min-w-[2.75rem] overflow-hidden"
-              aria-hidden="true"
-            >
-              {(code || ' ').split('\n').map((_, i) => (
-                <div key={i}>{i + 1}</div>
-              ))}
-            </div>
-
-            {/* Main Code Textarea */}
-            <textarea
+          {/* Professional Monaco Code Editor */}
+          <div className="flex-1 relative overflow-hidden bg-slate-950 min-h-[300px]">
+            <CodeEditor
               value={code}
-              onChange={(e) => handleCodeChange(e.target.value)}
-              onKeyDown={handleEditorKeyDown}
-              onScroll={(e) => {
-                if (workbenchGutterRef.current) {
-                  workbenchGutterRef.current.scrollTop = e.currentTarget.scrollTop;
-                }
+              onChange={handleCodeChange}
+              language={language}
+              onRun={handleRunSample}
+              onSubmit={handleSubmitSolution}
+              onMount={(editor) => {
+                monacoEditorRef.current = editor;
               }}
-              spellCheck={false}
-              className="flex-1 p-4 bg-transparent text-slate-100 resize-none focus:outline-none leading-6 font-mono text-xs sm:text-sm overflow-y-auto"
-              placeholder="// Viết code giải của bạn tại đây (Nhấn Ctrl + Enter để nộp bài, F9 để chạy thử)..."
             />
           </div>
 
@@ -1025,7 +1078,27 @@ fn main() {
 
                         {/* Diff Inspector for the Selected Testcase */}
                         {selectedTestResult && (
-                          <div className="pt-2 animate-fadeIn">
+                          <div className="pt-2 animate-fadeIn space-y-2">
+                            {(() => {
+                              const err = parseDiagnosticError(selectedTestResult.actualOutput || '');
+                              if (err) {
+                                return (
+                                  <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-xs">
+                                    <span className="text-rose-200 text-xs font-mono">
+                                      Phát hiện lỗi cú pháp tại <strong className="text-rose-400 font-bold">Dòng {err.line}</strong>, Cột <strong className="text-rose-400 font-bold">{err.col}</strong>
+                                    </span>
+                                    <button
+                                      onClick={() => jumpToLine(err.line, err.col)}
+                                      className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+                                    >
+                                      <span>👉 Nhảy đến dòng lỗi</span>
+                                    </button>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+
                             <DiffViewer
                               actual={selectedTestResult.actualOutput || ''}
                               expected={selectedTestResult.expectedOutput || ''}

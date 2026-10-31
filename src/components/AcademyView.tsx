@@ -27,6 +27,7 @@ import { mockCourses } from '../data/mockAcademy';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult } from '../services/cExecutionEngine';
+import { CodeEditor } from './CodeEditor';
 
 export const AcademyView: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<AcademyCourse>(mockCourses[0]);
@@ -45,6 +46,7 @@ export const AcademyView: React.FC = () => {
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
   const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
   const academyGutterRef = useRef<HTMLDivElement>(null);
+  const academyMonacoRef = useRef<any>(null);
 
   // Helper for unique localStorage draft key per lesson / exercise
   const getDraftKey = (courseId: string, lessonId: string, exerciseId?: string | null) => {
@@ -844,33 +846,17 @@ export const AcademyView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Enhanced Editor Area with Line Numbers Gutter */}
-              <div className="flex bg-slate-950 font-mono text-xs sm:text-sm border-b border-slate-800/80 min-h-[220px]">
-                {/* Line Numbers Gutter */}
-                <div 
-                  ref={academyGutterRef}
-                  className="select-none py-3.5 pl-3 pr-2.5 text-right text-slate-600 bg-slate-950/90 border-r border-slate-800/60 font-mono text-xs leading-6 min-w-[2.75rem] overflow-hidden"
-                  aria-hidden="true"
-                >
-                  {(userCode || ' ').split('\n').map((_, i) => (
-                    <div key={i}>{i + 1}</div>
-                  ))}
-                </div>
-
-                {/* Main Code Textarea */}
-                <textarea
+              {/* Professional Monaco Code Editor */}
+              <div className="relative overflow-hidden bg-slate-950 border-b border-slate-800/80 h-72 sm:h-80 min-h-[260px]">
+                <CodeEditor
                   value={userCode}
-                  onChange={(e) => handleCodeChange(e.target.value)}
-                  onKeyDown={handleEditorKeyDown}
-                  onScroll={(e) => {
-                    if (academyGutterRef.current) {
-                      academyGutterRef.current.scrollTop = e.currentTarget.scrollTop;
-                    }
+                  onChange={handleCodeChange}
+                  language={selectedCourse.language || 'c'}
+                  onRun={handleRunCode}
+                  onSubmit={handleRunCode}
+                  onMount={(editor) => {
+                    academyMonacoRef.current = editor;
                   }}
-                  rows={12}
-                  spellCheck={false}
-                  className="flex-1 p-3.5 bg-transparent text-slate-100 resize-none focus:outline-none leading-6 font-mono text-xs sm:text-sm overflow-y-auto"
-                  placeholder={docLang === 'en' ? '// Write your C/C++ solution code here (Ctrl + Enter to run)...' : '// Viết code giải thử thách tại đây (Nhấn Ctrl + Enter để chạy)...'}
                 />
               </div>
 
@@ -924,6 +910,36 @@ export const AcademyView: React.FC = () => {
                       </span>
                     )}
                   </div>
+
+                  {/* Jump-to-line diagnostic button if compile error */}
+                  {(() => {
+                    const match = executionOutput.match(/(?:solution\.c)?:?(\d+):(\d+):\s*(error|warning)/i) || executionOutput.match(/:(\d+):(\d+):/);
+                    if (match) {
+                      const line = parseInt(match[1], 10);
+                      const col = parseInt(match[2], 10);
+                      return (
+                        <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-xs">
+                          <span className="text-rose-200 text-xs font-mono">
+                            Phát hiện lỗi cú pháp tại <strong className="text-rose-400 font-bold">Dòng {line}</strong>, Cột <strong className="text-rose-400 font-bold">{col}</strong>
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (academyMonacoRef.current) {
+                                academyMonacoRef.current.revealLineInCenter(line);
+                                academyMonacoRef.current.setPosition({ lineNumber: line, column: col });
+                                academyMonacoRef.current.focus();
+                              }
+                            }}
+                            className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>👉 Nhảy đến dòng lỗi trong Monaco</span>
+                          </button>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <pre className="text-slate-200 whitespace-pre-wrap">{executionOutput}</pre>
 
                   {/* Embedded Interactive DiffViewer */}
