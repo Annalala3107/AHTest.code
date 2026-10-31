@@ -93,17 +93,45 @@ export interface Contest {
   problems: ContestProblem[];
 }
 
+export interface AppliedTestCase {
+  input: string;
+  expectedOutput: string;
+  explanationVi?: string;
+  explanationEn?: string;
+}
+
+export interface AppliedExercise {
+  id: string; // e.g. 'q1', 'q2', 'q12', 'q78', 'q87'
+  questionCode: string; // e.g. 'Q001', 'Q002'
+  titleVi: string;
+  titleEn: string;
+  category: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  descriptionVi: string;
+  descriptionEn: string;
+  initialCode: string;
+  solutionCode?: string;
+  testcases: AppliedTestCase[];
+  hintsVi: string[];
+  hintsEn: string[];
+}
+
 export interface AcademyLesson {
   id: string;
   title: string;
+  titleEn?: string;
   durationMinutes: number;
   summary: string;
-  content: string; // Markdown / KaTeX
+  summaryEn?: string;
+  content: string; // Markdown / KaTeX (Vietnamese)
+  contentEn?: string; // Markdown / KaTeX (English)
   initialCode: string;
   expectedOutputRegex?: string;
   solutionCode: string;
   hints: string[];
-  testcases: { input: string; expectedOutput: string }[];
+  hintsEn?: string[];
+  testcases: AppliedTestCase[];
+  appliedExercises?: AppliedExercise[];
 }
 
 export interface AcademyModule {

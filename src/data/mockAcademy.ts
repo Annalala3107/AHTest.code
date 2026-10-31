@@ -1,4 +1,6 @@
 import { AcademyCourse } from '../types';
+import { fptuAppliedExercises } from './fptuAppliedExercises';
+import { academyEnTranslations } from './academyTranslations';
 
 export const mockCourses: AcademyCourse[] = [
   {
@@ -992,3 +994,32 @@ int main() {
     modules: []
   }
 ];
+
+// Enrich C curriculum lessons with English translations and FPTU Applied Exercises
+if (mockCourses[0] && mockCourses[0].id === 'c-curriculum') {
+  mockCourses[0].modules.forEach(mod => {
+    mod.lessons.forEach(lesson => {
+      // Attach FPTU applied practical exercises
+      if (fptuAppliedExercises[lesson.id]) {
+        lesson.appliedExercises = fptuAppliedExercises[lesson.id];
+      }
+      // Attach English translations
+      const trans = academyEnTranslations[lesson.id];
+      if (trans) {
+        lesson.titleEn = trans.titleEn;
+        lesson.summaryEn = trans.summaryEn;
+        lesson.contentEn = trans.contentEn;
+        lesson.hintsEn = trans.hintsEn;
+      }
+      // Provide default explanations for test cases if missing
+      if (lesson.testcases) {
+        lesson.testcases.forEach(tc => {
+          if (!tc.explanationVi) {
+            tc.explanationVi = 'Đầu vào "' + (tc.input || 'mặc định') + '" tạo ra kết quả kỳ vọng "' + tc.expectedOutput + '".';
+            tc.explanationEn = 'Input "' + (tc.input || 'default') + '" yields expected output "' + tc.expectedOutput + '".';
+          }
+        });
+      }
+    });
+  });
+}
