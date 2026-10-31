@@ -22,6 +22,7 @@ export function App() {
   });
   const [streakCount] = useState<number>(7);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Current authenticated user (synced with localStorage & Google SSO)
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => {
@@ -85,6 +86,11 @@ export function App() {
     localStorage.removeItem('ahtest_auth_user');
   };
 
+  const handleOpenAuthModal = (mode: 'login' | 'register' = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
   const handleLoginSuccess = (user: AuthUser) => {
     setCurrentUser(user);
     localStorage.setItem('ahtest_auth_user', JSON.stringify(user));
@@ -100,8 +106,9 @@ export function App() {
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         streakCount={streakCount}
         currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={handleOpenAuthModal}
         onLogout={handleLogout}
+        onQuickLogin={handleLoginSuccess}
       />
 
       {/* Main View Container: Full viewport edge-to-edge for IDE Workspaces and Admin, max-w-7xl for browsing */}
@@ -131,18 +138,19 @@ export function App() {
               <AdminDashboardView
                 currentUser={currentUser}
                 onNavigateTab={handleSelectTab}
-                onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                onOpenAuthModal={() => handleOpenAuthModal('login')}
               />
             )}
           </>
         )}
       </main>
 
-      {/* Google SSO Authentication Modal */}
+      {/* Google SSO & Email Authentication Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
+        initialMode={authModalMode}
       />
 
       {/* Footer (hidden on Workbench, Academy and Admin split mode to maximize vertical space) */}
