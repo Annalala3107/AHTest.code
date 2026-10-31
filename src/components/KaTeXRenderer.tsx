@@ -6,10 +6,9 @@ import {
   Lightbulb, 
   Info, 
   AlertTriangle, 
+  ShieldAlert, 
   Target, 
-  Sparkles,
-  Terminal,
-  CheckCircle2
+  Terminal 
 } from 'lucide-react';
 
 interface KaTeXRendererProps {
@@ -30,8 +29,7 @@ function highlightCCode(rawCode: string): string {
     }
     // Preprocessor line
     if (line.trim().startsWith('#')) {
-      const escaped = escapeHtml(line);
-      return `<span class="text-sky-400 font-semibold">${escaped}</span>`;
+      return `<span class="text-sky-400 font-semibold">${escapeHtml(line)}</span>`;
     }
 
     // Tokenizer regex for C/C++
@@ -122,8 +120,42 @@ const CodeBlockCard: React.FC<{ code: string; language?: string }> = ({ code, la
   );
 };
 
+// Normalize markdown to prevent single newlines from collapsing blocks
+function normalizeMarkdown(raw: string): string {
+  if (!raw) return '';
+  const codeBlocks: string[] = [];
+  let text = raw.replace(/```[\s\S]*?```/g, (match) => {
+    codeBlocks.push(match);
+    return `___CODE_BLOCK_${codeBlocks.length - 1}___`;
+  });
+
+  const mathBlocks: string[] = [];
+  text = text.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
+    mathBlocks.push(match);
+    return `___MATH_BLOCK_${mathBlocks.length - 1}___`;
+  });
+
+  // Ensure headings have blank lines around them
+  text = text.replace(/([^\n])\n(#{1,4}\s+[^\n]+)/g, '$1\n\n$2');
+  text = text.replace(/(#{1,4}\s+[^\n]+)\n([^\n#])/g, '$1\n\n$2');
+
+  // Ensure tables have blank lines around them
+  text = text.replace(/([^\n])\n(\|[^\n]+\|)/g, '$1\n\n$2');
+  text = text.replace(/(\|[^\n]+\|)\n([^\n|])/g, '$1\n\n$2');
+
+  // Ensure blockquotes have blank lines around them
+  text = text.replace(/([^\n])\n(>[^\n]+)/g, '$1\n\n$2');
+  text = text.replace(/(>[^\n]+)\n([^>\n])/g, '$1\n\n$2');
+
+  // Restore code and math blocks
+  text = text.replace(/___CODE_BLOCK_(\d+)___/g, (_, idx) => codeBlocks[Number(idx)]);
+  text = text.replace(/___MATH_BLOCK_(\d+)___/g, (_, idx) => mathBlocks[Number(idx)]);
+
+  return text;
+}
+
 export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className = '' }) => {
-  // Helper to parse inline Math, Code & Bold
+  // Helper to parse inline Math, Code, Bold, and Italic
   const renderInlineFormatted = (text: string) => {
     if (!text) return null;
 
@@ -149,24 +181,34 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
         }
       }
 
-      // Inline code (`...`) and bold (**...**)
-      const subParts = part.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
+      // Inline code (`...`), bold (**...**), and italic (*...*)
+      const subParts = part.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g);
       return subParts.map((sub, subIdx) => {
+        // Inline Code: Sophisticated indigo/cyan badge (pleasant, non-fatiguing)
         if (sub.startsWith('`') && sub.endsWith('`')) {
           return (
             <code
               key={`code-${subIdx}`}
-              className="px-1.5 py-0.5 mx-0.5 rounded-md font-mono-code text-xs sm:text-sm font-bold bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/80 shadow-2xs"
+              className="px-1.5 py-0.5 mx-0.5 rounded-md font-mono-code text-xs sm:text-sm font-semibold bg-indigo-50/80 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 shadow-2xs"
             >
               {sub.slice(1, -1)}
             </code>
           );
         }
+        // Bold
         if (sub.startsWith('**') && sub.endsWith('**')) {
           return (
             <strong key={`strong-${subIdx}`} className="font-bold text-slate-900 dark:text-white">
               {sub.slice(2, -2)}
             </strong>
+          );
+        }
+        // Italic
+        if (sub.startsWith('*') && sub.endsWith('*')) {
+          return (
+            <em key={`em-${subIdx}`} className="italic text-slate-800 dark:text-slate-200 font-medium">
+              {sub.slice(1, -1)}
+            </em>
           );
         }
         return sub;
@@ -176,29 +218,29 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
 
   // Parse markdown tables
   const renderTable = (tableBlock: string, blockKey: string | number) => {
-    const lines = tableBlock.trim().split('\n');
+    const lines = tableBlock.trim().split('\n').filter(l => l.trim().startsWith('|'));
     if (lines.length < 2) return <p key={blockKey}>{tableBlock}</p>;
 
     const headerCols = lines[0].split('|').slice(1, -1).map(c => c.trim());
     const dataRows = lines.slice(2).map(line => line.split('|').slice(1, -1).map(c => c.trim()));
 
     return (
-      <div key={blockKey} className="overflow-x-auto my-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <div key={blockKey} className="overflow-x-auto my-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <table className="w-full text-xs sm:text-sm text-left">
-          <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+          <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-800">
             <tr>
               {headerCols.map((col, idx) => (
-                <th key={idx} className="px-3.5 py-2.5">
+                <th key={idx} className="px-4 py-3">
                   {renderInlineFormatted(col)}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900/40">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900/50">
             {dataRows.map((row, rIdx) => (
               <tr key={rIdx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-3.5 py-2 text-slate-700 dark:text-slate-300">
+                  <td key={cIdx} className="px-4 py-2.5 text-slate-700 dark:text-slate-300">
                     {renderInlineFormatted(cell)}
                   </td>
                 ))}
@@ -214,9 +256,10 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
   const renderBlocks = () => {
     if (!content) return null;
 
-    // First, split by block math $$ ... $$ and code blocks ``` ... ```
+    const normalizedContent = normalizeMarkdown(content);
+    // Major split by code blocks ``` ... ``` and block math $$ ... $$
     const majorRegex = /(```(?:[a-zA-Z]*)\n[\s\S]*?```|\$\$[\s\S]*?\$\$)/g;
-    const parts = content.split(majorRegex);
+    const parts = normalizedContent.split(majorRegex);
 
     return parts.map((part, pIdx) => {
       // 1. Fenced Code Block
@@ -247,72 +290,82 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
         }
       }
 
-      // 3. Normal text containing paragraphs, headings, tables, blockquotes, lists
+      // 3. Normal text - split by double newlines into blocks
       const subParagraphs = part.split(/\n\s*\n/g);
 
       return (
-        <div key={`sub-${pIdx}`} className="space-y-3">
+        <div key={`sub-${pIdx}`} className="space-y-3.5">
           {subParagraphs.map((para, paraIdx) => {
             const trimmed = para.trim();
             if (!trimmed) return null;
 
-            // Heading: ### 2. Thử thách / Challenge (Special Mission Card)
-            if (
-              trimmed.startsWith('### 2. Thử thách') || 
-              trimmed.startsWith('### 2. Challenge') ||
-              trimmed.startsWith('### Thử thách') ||
-              trimmed.startsWith('### Challenge')
-            ) {
+            // Mission / Challenge Card (Thử thách)
+            const isChallenge = /^(?:#{1,3}\s*)?(?:\d+\.\s*)?(?:Thử thách|Challenge)/i.test(trimmed);
+            if (isChallenge) {
               const lines = trimmed.split('\n');
-              const heading = lines[0].replace(/^###\s*/, '');
-              const rest = lines.slice(1).join('\n');
+              const match = lines[0].match(/^(?:#{1,3}\s*)?(?:\d+\.\s*)?(?:Thử thách|Challenge)[:\s]*(.*)/i);
+              const inlinePrompt = match ? match[1].trim() : '';
+              const restLines = lines.slice(1).map(l => l.trim()).filter(Boolean);
+              const fullDescription = [inlinePrompt, ...restLines].filter(Boolean).join('\n');
+
               return (
                 <div 
                   key={`challenge-${paraIdx}`}
-                  className="my-4 p-4 md:p-5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800/80 shadow-xs space-y-2.5"
+                  className="my-4 p-4 sm:p-5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 shadow-xs space-y-2.5"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-indigo-600 text-white">
+                    <span className="p-1 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
                       <Target className="w-4 h-4" />
                     </span>
-                    <h3 className="font-extrabold text-base text-indigo-900 dark:text-indigo-200">
-                      {heading}
-                    </h3>
+                    <h4 className="font-extrabold text-sm sm:text-base text-indigo-950 dark:text-indigo-200 uppercase tracking-wide">
+                      Nhiệm vụ Thử thách
+                    </h4>
                   </div>
-                  {rest && (
-                    <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {renderInlineFormatted(rest)}
+                  {fullDescription && (
+                    <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                      {renderInlineFormatted(fullDescription)}
                     </div>
                   )}
                 </div>
               );
             }
 
-            // Normal Headings: ### Title or ## Title
+            // Headings: ### Title or ## Title (NO FLOATING RED PILL!)
             if (trimmed.startsWith('### ') || trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
-              const headingText = trimmed.replace(/^#{1,3}\s*/, '');
+              const lines = trimmed.split('\n');
+              const headingText = lines[0].replace(/^#{1,3}\s*/, '');
+              const restOfBlock = lines.slice(1).join('\n').trim();
+
               return (
-                <div key={`heading-${paraIdx}`} className="pt-2 pb-1 border-b border-slate-100 dark:border-slate-800/80">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span className="w-1.5 h-4 rounded-full bg-rose-500 shrink-0" />
-                    <span>{renderInlineFormatted(headingText)}</span>
-                  </h3>
+                <div key={`heading-group-${paraIdx}`} className="space-y-2 pt-2">
+                  <div className="pb-1.5 border-b border-slate-200 dark:border-slate-800">
+                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+                      {renderInlineFormatted(headingText)}
+                    </h3>
+                  </div>
+                  {restOfBlock && (
+                    <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {renderInlineFormatted(restOfBlock)}
+                    </div>
+                  )}
                 </div>
               );
             }
 
-            // Markdown Table: | col | col |
-            if (trimmed.startsWith('|') && trimmed.includes('\n|')) {
+            // Markdown Table: lines with | ... |
+            if (trimmed.startsWith('|') || (trimmed.includes('\n|') && trimmed.includes('| :---'))) {
               return renderTable(trimmed, `table-${paraIdx}`);
             }
 
-            // Alert Box: > [!TIP] or > [!NOTE] or > [!WARNING]
+            // Alert Box: > [!CAUTION], > [!TIP], > [!WARNING], > [!NOTE], etc.
             if (trimmed.startsWith('>')) {
-              const isTip = trimmed.includes('[!TIP]');
+              const isCaution = trimmed.includes('[!CAUTION]');
               const isWarning = trimmed.includes('[!WARNING]');
+              const isTip = trimmed.includes('[!TIP]');
               const isNote = trimmed.includes('[!NOTE]') || trimmed.includes('[!INFO]');
+
               const cleanText = trimmed
-                .replace(/^>\s*\[!(TIP|NOTE|WARNING|INFO|IMPORTANT)\]\s*/gm, '')
+                .replace(/^>\s*\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]\s*/gim, '')
                 .replace(/^>\s*/gm, '')
                 .trim();
 
@@ -320,18 +373,22 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
                 <div
                   key={`alert-${paraIdx}`}
                   className={`my-3 p-3.5 rounded-xl border flex items-start gap-3 text-xs sm:text-sm leading-relaxed ${
-                    isTip
-                      ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    isCaution
+                      ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60 text-rose-950 dark:text-rose-200'
                       : isWarning
-                      ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
-                      : 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200'
+                      ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-200'
+                      : isTip
+                      ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200'
+                      : 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 text-indigo-950 dark:text-indigo-200'
                   }`}
                 >
                   <div className="shrink-0 mt-0.5">
-                    {isTip ? (
-                      <Lightbulb className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    {isCaution ? (
+                      <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                     ) : isWarning ? (
                       <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    ) : isTip ? (
+                      <Lightbulb className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     ) : (
                       <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     )}
@@ -347,13 +404,13 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
             if (/^\d+\.\s+/.test(trimmed)) {
               const listLines = trimmed.split('\n');
               return (
-                <div key={`numlist-${paraIdx}`} className="space-y-2 my-2">
+                <div key={`numlist-${paraIdx}`} className="space-y-2.5 my-2">
                   {listLines.map((line, lIdx) => {
                     const match = line.match(/^(\d+)\.\s+(.*)/);
                     if (match) {
                       return (
                         <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm">
-                          <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                          <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/70 text-indigo-700 dark:text-indigo-300 text-[11px] font-extrabold flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                             {match[1]}
                           </span>
                           <div className="flex-1 text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -381,7 +438,7 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
                     const cleanLine = line.replace(/^[*•-]\s+/, '');
                     return (
                       <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 mt-2" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0 mt-2" />
                         <div className="flex-1 text-slate-700 dark:text-slate-300 leading-relaxed">
                           {renderInlineFormatted(cleanLine)}
                         </div>
@@ -405,7 +462,7 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
   };
 
   return (
-    <div className={`space-y-3 leading-relaxed text-slate-700 dark:text-slate-300 ${className}`}>
+    <div className={`space-y-3.5 leading-relaxed text-slate-700 dark:text-slate-300 ${className}`}>
       {renderBlocks()}
     </div>
   );

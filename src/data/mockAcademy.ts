@@ -336,8 +336,11 @@ while (i < 10) {
 *Giải thích:* Thiếu câu lệnh tăng biến đếm \`i++\` khiến điều kiện \`i < 10\` luôn luôn đúng, dẫn đến treo máy vì tràn tài nguyên CPU!
 
 ### 2. Code Review Challenge 2: Bẫy \`if (mark = 10)\`
-*Nếu lập trình viên gõ \`if (mark = 10)\` thay vì \`if (mark == 10)\`, điều gì sẽ xảy ra?*
-* **Đáp án:** Lệnh so sánh biến thành lệnh Gán! Biến \`mark\` được gán giá trị 10, và biểu thức trả về giá trị 10 (khác 0 tức là **TRUE**). Do đó, khối lệnh bên trong \`if\` **luôn luôn được thực thi** một cách tai hại!
+
+> [!WARNING]
+> **Tình huống:** Nếu lập trình viên gõ \`if (mark = 10)\` thay vì \`if (mark == 10)\`, điều gì sẽ xảy ra?
+
+* **Đáp án:** Lệnh so sánh bị biến thành lệnh Gán! Biến \`mark\` được gán giá trị 10, và biểu thức trả về giá trị 10 (khác 0 tức là **TRUE**). Do đó, khối lệnh bên trong \`if\` **luôn luôn được thực thi** một cách tai hại!
 
 ### 3. Thử thách:
 Viết chương trình sửa lại câu lệnh gán nhầm thành câu lệnh so sánh điều kiện chính xác: Nhập số nguyên $X$, in \`BANG 10\` nếu $X == 10$, ngược lại in \`KHAC 10\`.`,
@@ -398,9 +401,28 @@ int main() {
 ### 2. Truyền tham trị vs Truyền con trỏ
 Ngôn ngữ C mặc định sử dụng cơ chế **Truyền tham trị (Pass-by-value)**: chỉ copy giá trị vào vùng nhớ mới trên Stack, mọi thay đổi trong hàm không ảnh hưởng đến biến gốc.
 
-| Sai lầm phổ biến: Truyền tham trị | Giải pháp cốt lõi: Truyền con trỏ |
-| :--- | :--- |
-| \`\`\`c<br>void swap(int x, int y) {<br>    int temp = x;<br>    x = y;<br>    y = temp;<br>}<br>// a và b ở main KHÔNG HỀ đổi!<br>\`\`\` | \`\`\`c<br>void swap(int *px, int *py) {<br>    int temp = *px;<br>    *px = *py;<br>    *py = temp;<br>}<br>// Gọi: swap(&a, &b); a và b ĐÃ ĐỔI!<br>\`\`\` |
+> [!NOTE]
+> **So sánh trực quan giữa 2 cơ chế hoán vị (Swap):**
+
+**❌ Sai lầm phổ biến: Truyền tham trị (Không đổi giá trị)**
+\`\`\`c
+void swap(int x, int y) {
+    int temp = x;
+    x = y;
+    y = temp;
+}
+// Tại hàm main: hai biến a và b KHÔNG HỀ thay đổi!
+\`\`\`
+
+**✅ Giải pháp cốt lõi: Truyền con trỏ (Hoán vị thành công)**
+\`\`\`c
+void swap(int *px, int *py) {
+    int temp = *px;
+    *px = *py;
+    *py = temp;
+}
+// Tại hàm main: gọi swap(&a, &b) -> a và b ĐÃ ĐƯỢC HOÁN VỊ!
+\`\`\`
 
 ### 3. Thử thách:
 Hãy hoàn thiện hàm \`swap(int *a, int *b)\` để hoán đổi giá trị 2 số nguyên được truyền vào từ hàm \`main\`.`,
@@ -498,7 +520,8 @@ int main() {
             content: `### 1. Tại sao cần cấp phát động trên Heap?
 Mảng tĩnh (như \`int arr[100];\`) được lưu trên Stack. Nhược điểm chí mạng: kích thước phải cố định từ lúc viết code, gây lãng phí nếu không dùng hết hoặc gây tràn bộ nhớ (**Stack Overflow**) nếu mảng quá lớn.
 
-### 2. Bảng 4 hàm quản lý bộ nhớ trong \`<stdlib.h>\`:
+### 2. Bảng 4 hàm quản lý bộ nhớ trong \`<stdlib.h>\`
+
 | Hàm | Cú pháp & Mục đích | Đặc điểm nổi bật |
 | :--- | :--- | :--- |
 | \`malloc()\` | \`(int*) malloc(n * sizeof(int));\` | Cấp phát bộ nhớ nhưng chứa toàn **giá trị rác**. Tốc độ thực thi rất nhanh. |
@@ -667,11 +690,16 @@ int main() {
             durationMinutes: 12,
             summary: 'Xây dựng dự án kết hợp cấp phát mảng động cho struct Employee, tính lương và giải phóng RAM.',
             content: `### 1. Yêu cầu Dự án Mini-Project
-Xây dựng chương trình quản lý thông tin nhân viên (ID, Tên, Lương cơ bản, Số ngày làm việc):
-1. Nhập số lượng nhân viên ban đầu $N$.
-2. Cấp phát mảng động để lưu $N$ nhân viên: \`Employee *list = (Employee*)malloc(n * sizeof(Employee));\`
-3. Tính lương hàng ngày (\`lương cơ bản / 26\`) và lương thực nhận (\`lương hàng ngày * số ngày công\`).
-4. Kết thúc bằng lệnh giải phóng toàn bộ bộ nhớ (\`free(list); list = NULL;\`).
+
+Xây dựng hệ thống quản lý danh sách nhân viên động (ID, Tên, Lương cơ bản, Ngày công) theo quy trình chuẩn:
+
+1. **Khởi tạo dữ liệu:** Nhập số lượng nhân viên ban đầu $N$.
+2. **Cấp phát bộ nhớ Heap:** Khởi tạo mảng động chứa $N$ nhân viên:
+\`Employee *list = (Employee*)malloc(n * sizeof(Employee));\`
+3. **Tính toán chi trả:**
+   * Lương ngày = $\\text{Lương cơ bản} / 26.0$
+   * Lương thực nhận = $\\text{Lương ngày} \\times \\text{Ngày công}$
+4. **Dọn dẹp an toàn:** Giải phóng tài nguyên trước khi kết thúc bằng: \`free(list); list = NULL;\`
 
 \`\`\`c
 typedef struct {
