@@ -3,12 +3,8 @@ import {
   UploadCloud, 
   FileArchive, 
   CheckCircle2, 
-  AlertTriangle, 
-  Play, 
   Download, 
   FileCode, 
-  Clock, 
-  HardDrive, 
   Sparkles,
   Info,
   Check,
@@ -18,7 +14,7 @@ import {
   Tag,
   BookOpen
 } from 'lucide-react';
-import { ProblemPackage, ImportedTestCase } from '../types';
+import { ProblemPackage } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { CodeEditor } from './CodeEditor';
 
@@ -29,7 +25,6 @@ export const ProblemImporterView: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isBenchmarking, setIsBenchmarking] = useState<boolean>(false);
   const [benchmarkResult, setBenchmarkResult] = useState<{ maxTime: number; suggestedLimit: number } | null>(null);
-  const [publishStatus, setPublishStatus] = useState<string | null>(null);
 
   // Mock initial imported package
   const [currentPackage, setCurrentPackage] = useState<ProblemPackage>({
@@ -101,10 +96,7 @@ int main() {
   };
 
   const handlePublish = () => {
-    setPublishStatus('SUCCESS');
-    setTimeout(() => {
-      setActiveStep(4);
-    }, 500);
+    setActiveStep(4);
   };
 
   return (

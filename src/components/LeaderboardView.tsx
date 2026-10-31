@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Building2, TrendingUp, Award, Search, Sparkles } from 'lucide-react';
+import { Trophy, Building2, TrendingUp } from 'lucide-react';
 import { mockUsers, UserItem } from '../data/mockUsers';
 
 export const LeaderboardView: React.FC = () => {

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Trophy, Clock, Users, ArrowRight, Play, CheckCircle2, Award, Shield } from 'lucide-react';
+import { Trophy, Clock, Users, Play } from 'lucide-react';
 import { mockContests } from '../data/mockContests';
 import { Contest } from '../types';
 
 export const ContestsView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'scoreboard'>('all');
-  const [selectedContest, setSelectedContest] = useState<Contest>(mockContests[0]);
+  const [selectedContest] = useState<Contest>(mockContests[0]);
   const [isVirtualRunning, setIsVirtualRunning] = useState<boolean>(false);
-  const [virtualTimer, setVirtualTimer] = useState<string>('04:59:42');
+  const [virtualTimer] = useState<string>('04:59:42');
 
   const handleStartVirtual = () => {
     setIsVirtualRunning(true);

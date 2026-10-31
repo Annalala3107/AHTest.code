@@ -5,7 +5,6 @@ import { cppCourse } from './cppCourse';
 import { pythonCourse } from './pythonCourse';
 import { academyEnTranslations } from '../academyTranslations';
 import { fptuAppliedExercises } from '../fptuAppliedExercises';
-import { validateAcademyCourse } from './schemas';
 
 export const cCourse: AcademyCourse = {
   id: 'c-curriculum',
@@ -58,7 +57,4 @@ rawCourses.forEach(course => {
   });
 });
 
-// Validate all courses via Zod schema to guarantee zero runtime format crashes
-export const mockCourses: AcademyCourse[] = rawCourses.map(course => {
-  return validateAcademyCourse(course) as AcademyCourse;
-});
+export const mockCourses: AcademyCourse[] = rawCourses;

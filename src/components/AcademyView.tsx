@@ -13,17 +13,15 @@ import {
   Trophy,
   Copy,
   Check,
-  Languages,
   ArrowRight,
   ArrowLeft,
   Terminal,
-  ExternalLink,
   Target,
   Lock,
   Save
 } from 'lucide-react';
 import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
-import { mockCourses } from '../data/mockAcademy';
+import { mockCourses } from '../data/academy';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult } from '../services/cExecutionEngine';
@@ -45,7 +43,6 @@ export const AcademyView: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
   const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
-  const academyGutterRef = useRef<HTMLDivElement>(null);
   const academyMonacoRef = useRef<any>(null);
 
   // Helper for unique localStorage draft key per lesson / exercise
@@ -131,57 +128,6 @@ export const AcademyView: React.FC = () => {
     navigator.clipboard.writeText(input);
     setCopiedTestIdx(idx);
     setTimeout(() => setCopiedTestIdx(null), 2000);
-  };
-
-  // Keyboard shortcut & indentation handler for code editor
-  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // 1. Ctrl + Enter or Cmd + Enter: Trigger Run
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      if (!isRunning) {
-        handleRunCode();
-      }
-      return;
-    }
-
-    // 2. Tab key indentation (2 spaces)
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const currentVal = target.value;
-      const newVal = currentVal.substring(0, start) + '  ' + currentVal.substring(end);
-      handleCodeChange(newVal);
-      setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 2;
-      }, 0);
-      return;
-    }
-
-    // 3. Enter key: Auto-indent matching previous line
-    if (e.key === 'Enter') {
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const currentVal = target.value;
-      const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
-      const lineText = currentVal.substring(lineStart, start);
-      const indentMatch = lineText.match(/^(\s*)/);
-      let indent = indentMatch ? indentMatch[1] : '';
-
-      if (lineText.trim().endsWith('{')) {
-        indent += '  ';
-      }
-
-      if (indent.length > 0) {
-        e.preventDefault();
-        const newVal = currentVal.substring(0, start) + '\n' + indent + currentVal.substring(start);
-        handleCodeChange(newVal);
-        setTimeout(() => {
-          target.selectionStart = target.selectionEnd = start + 1 + indent.length;
-        }, 0);
-      }
-    }
   };
 
   const handleRunCode = () => {

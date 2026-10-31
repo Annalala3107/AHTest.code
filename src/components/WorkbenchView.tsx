@@ -10,17 +10,11 @@ import {
   FileText, 
   Clock, 
   HardDrive, 
-  Tag, 
-  AlertCircle, 
-  CheckCircle2, 
-  XCircle, 
   MessageSquare, 
   Lightbulb, 
-  Maximize2, 
   ChevronDown, 
   Terminal, 
   Lock, 
-  Columns2,
   Save,
   PanelLeftClose,
   PanelLeft
@@ -201,66 +195,6 @@ fn main() {
     localStorage.removeItem(key);
     setCode(defaultCodes[language] || '');
     setDraftSaved(false);
-  };
-
-  // Keyboard shortcut & indentation handler for code editor
-  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // 1. Ctrl + Enter or Cmd + Enter: Trigger Submit Solution
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      if (!isGrading) {
-        handleSubmitSolution();
-      }
-      return;
-    }
-
-    // 2. F9: Trigger Run Sample
-    if (e.key === 'F9') {
-      e.preventDefault();
-      if (!isGrading) {
-        handleRunSample();
-      }
-      return;
-    }
-
-    // 3. Tab key indentation (2 spaces)
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const currentVal = target.value;
-      const newVal = currentVal.substring(0, start) + '  ' + currentVal.substring(end);
-      handleCodeChange(newVal);
-      setTimeout(() => {
-        target.selectionStart = target.selectionEnd = start + 2;
-      }, 0);
-      return;
-    }
-
-    // 4. Enter key: Auto-indent matching previous line
-    if (e.key === 'Enter') {
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const currentVal = target.value;
-      const lineStart = currentVal.lastIndexOf('\n', start - 1) + 1;
-      const lineText = currentVal.substring(lineStart, start);
-      const indentMatch = lineText.match(/^(\s*)/);
-      let indent = indentMatch ? indentMatch[1] : '';
-
-      if (lineText.trim().endsWith('{')) {
-        indent += '  ';
-      }
-
-      if (indent.length > 0) {
-        e.preventDefault();
-        const newVal = currentVal.substring(0, start) + '\n' + indent + currentVal.substring(start);
-        handleCodeChange(newVal);
-        setTimeout(() => {
-          target.selectionStart = target.selectionEnd = start + 1 + indent.length;
-        }, 0);
-      }
-    }
   };
   
   // Grading & Execution State

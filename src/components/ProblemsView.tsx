@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, CheckCircle2, ChevronRight, Tag, BookOpen, Clock, HardDrive, Sparkles } from 'lucide-react';
+import { Search, Filter, CheckCircle2, ChevronRight, Tag } from 'lucide-react';
 import { Problem, Difficulty } from '../types';
 import { mockProblems } from '../data/mockProblems';
 

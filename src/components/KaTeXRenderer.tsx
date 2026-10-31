@@ -372,7 +372,6 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
               const isCaution = /\[!CAUTION\]/i.test(trimmed);
               const isWarning = /\[!WARNING\]/i.test(trimmed);
               const isTip = /\[!TIP\]/i.test(trimmed);
-              const isNote = /\[!(NOTE|INFO|IMPORTANT)\]/i.test(trimmed);
 
               const cleanText = trimmed
                 .replace(/^>*\s*\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]\s*/gim, '')

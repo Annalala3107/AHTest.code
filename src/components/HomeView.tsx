@@ -7,15 +7,9 @@ import {
   BookOpen, 
   UploadCloud, 
   Clock, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle,
-  Award, 
-  Sparkles,
-  TrendingUp,
-  Cpu
+  Sparkles
 } from 'lucide-react';
-import { Problem, Submission } from '../types';
+import { Problem } from '../types';
 import { mockProblems } from '../data/mockProblems';
 import { mockContests } from '../data/mockContests';
 import { mockSubmissions } from '../data/mockSubmissions';
