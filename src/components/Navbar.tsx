@@ -32,18 +32,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Streamlined nav items without distracting badge clutter
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: LayoutDashboard },
     { id: 'problems', label: 'Luyện tập', icon: Code2 },
-    { id: 'academy', label: 'Khóa học', icon: BookOpen, badge: 'Mới' },
+    { id: 'academy', label: 'Khóa học', icon: BookOpen },
     { id: 'contests', label: 'Kỳ thi', icon: Trophy },
-    { id: 'importer', label: 'Import Đề', icon: UploadCloud, badge: 'Pro' },
+    { id: 'importer', label: 'Import Đề', icon: UploadCloud },
     { id: 'leaderboard', label: 'Xếp hạng', icon: Users },
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 transition-colors shadow-xs">
-      {/* Full width container to utilize all available space */}
+      {/* Full width container utilizing available horizontal space */}
       <div className="w-full px-3 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex items-center justify-between h-16 gap-2 lg:gap-4">
           
@@ -61,14 +62,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
 
-              {/* Logo Title & Subtitle */}
+              {/* Logo Title & Subtitle - Clean typography without clutter badge */}
               <div className="flex flex-col justify-center min-w-0">
                 <div className="flex items-center gap-1.5 leading-tight">
                   <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
                     AHtest<span className="text-rose-600 dark:text-rose-500">.code</span>
-                  </span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
-                    Pro
                   </span>
                 </div>
                 <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap leading-tight">
@@ -95,11 +93,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400 dark:text-slate-500'}`} />
                   <span className="whitespace-nowrap">{item.label}</span>
-                  {item.badge && (
-                    <span className="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded-full bg-emerald-500 text-white shadow-xs shrink-0 whitespace-nowrap">
-                      {item.badge}
-                    </span>
-                  )}
                   {isActive && (
                     <span className="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-rose-600 dark:bg-rose-500 rounded-full" />
                   )}
@@ -115,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Chuỗi ngày luyện tập liên tiếp!" 
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 lg:px-3 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400 text-xs font-bold whitespace-nowrap shrink-0"
             >
-              <Flame className="w-4 h-4 fill-amber-500 text-amber-500 animate-bounce" />
+              <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
               <span>{streakCount} ngày</span>
             </div>
 
@@ -129,19 +122,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
 
-            {/* User Profile Capsule */}
-            <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 shrink-0">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="fextivity avatar"
-                className="w-8 h-8 rounded-full ring-2 ring-rose-500 object-cover shrink-0"
-              />
+            {/* User Profile Capsule - Authentic Student Profile */}
+            <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="relative">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                  alt="fextivity avatar"
+                  className="w-8 h-8 rounded-full ring-2 ring-slate-200 dark:ring-slate-700 object-cover shrink-0"
+                />
+                <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+              </div>
               <div className="hidden lg:flex flex-col text-left">
-                <span className="text-xs font-bold text-red-600 dark:text-red-400 leading-none whitespace-nowrap">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-none whitespace-nowrap">
                   fextivity
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5">
-                  3236 (LGM)
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap mt-0.5 flex items-center gap-1">
+                  Học viên C/C++
                 </span>
               </div>
             </div>
@@ -182,11 +178,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </div>
-                {item.badge && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500 text-white">
-                    {item.badge}
-                  </span>
-                )}
               </button>
             );
           })}

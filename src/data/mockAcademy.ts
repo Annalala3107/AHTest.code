@@ -7,16 +7,20 @@ export const mockCourses: AcademyCourse[] = [
     id: 'c-curriculum',
     slug: 'c-dev-cpp-full',
     title: 'Giáo Trình C/C++ Toàn Diện (Cơ Bản Đến Trung Cấp)',
+    titleEn: 'Comprehensive C/C++ Curriculum (Beginner to Intermediate)',
     language: 'c',
     level: 'Beginner',
     description: 'Giáo trình chuẩn mực 2 giai đoạn: Giai đoạn 1 (Nền tảng lập trình & Giao tiếp với máy tính) và Giai đoạn 2 (Quản lý bộ nhớ, Con trỏ & Cấu trúc dữ liệu) theo môi trường Embarcadero Dev-C++ / GCC.',
+    descriptionEn: 'Comprehensive 2-stage curriculum: Stage 1 (Core Programming & System I/O) and Stage 2 (Memory Management, Pointers & Advanced Structs) based on Embarcadero Dev-C++ / GCC.',
     totalLessons: 14,
     estimatedHours: 8,
     modules: [
       {
         id: 'c-giai-doan-1',
         title: 'Giai Đoạn 1: Nền Tảng Lập Trình & Giao Tiếp Máy Tính',
+        titleEn: 'Stage 1: Core Programming & System I/O',
         description: 'Quá trình biên dịch 4 bước, bộ nhớ RAM, biến, kiểu dữ liệu, rẽ nhánh, vòng lặp và Mini-Project.',
+        descriptionEn: '4-stage compilation process, RAM memory cells, variables, data types, branches, loops and Mini-Project.',
         lessons: [
           {
             id: 'c-1-compile',
@@ -384,7 +388,9 @@ int main() {
       {
         id: 'c-giai-doan-2',
         title: 'Giai Đoạn 2: Quản Lý Bộ Nhớ, Con Trỏ & Cấu Trúc Dữ Liệu',
+        titleEn: 'Stage 2: Memory Management, Pointers & Advanced Structs',
         description: 'Sơ đồ 4 phân vùng RAM, truyền con trỏ swap(), pointer arithmetic, malloc/free, struct và Mini-Project.',
+        descriptionEn: '4-region RAM layout, pointer swap, pointer arithmetic, malloc/free, structs and Mini-Project.',
         lessons: [
           {
             id: 'c-2-memory-swap',
@@ -825,6 +831,7 @@ int main() {
     id: 'cpp-fundamentals',
     slug: 'cpp-chuyen-tin',
     title: 'C++ Chuyên Tin: Từ Số 0 Đến Thuật Toán',
+    titleEn: 'Competitive C++: From Zero to Algorithms',
     language: 'cpp',
     level: 'Beginner',
     description: 'Khoá học tương tác thực chiến dành riêng cho học sinh chuyên Tin và sinh viên nhập môn. Không nhồi nhét lý thuyết suông: mỗi bài học chỉ 3 phút lý thuyết kèm 1 thử thách gõ code trực tiếp trên trình duyệt!',
@@ -834,6 +841,7 @@ int main() {
       {
         id: 'mod-1',
         title: 'Chương 1: Cấu Trúc Cơ Bản & Nhập Xuất Nhanh',
+        titleEn: 'Chapter 1: Basic Structure & Fast I/O',
         description: 'Làm chủ cú pháp C++20 và kỹ thuật I/O FastIO tối quan trọng trong các kỳ thi.',
         lessons: [
           {
@@ -1013,6 +1021,7 @@ int main() {
     id: 'python-cp',
     slug: 'python-chuyen-tin',
     title: 'Python Siêu Tốc Cho Lập Trình Thi Đấu',
+    titleEn: 'Ultra-Fast Python for Competitive Programming',
     language: 'python',
     level: 'Beginner',
     description: 'Bí kíp sử dụng Python hiệu quả trong các kỳ thi Tin học trẻ, Olympic Sinh viên và ICPC (Đang được đội ngũ chuyên môn biên soạn).',
@@ -1024,8 +1033,8 @@ int main() {
 ];
 
 // Enrich C curriculum lessons with English translations and FPTU Applied Exercises
-if (mockCourses[0] && mockCourses[0].id === 'c-curriculum') {
-  mockCourses[0].modules.forEach(mod => {
+mockCourses.forEach(course => {
+  course.modules.forEach(mod => {
     mod.lessons.forEach(lesson => {
       // Attach FPTU applied practical exercises
       if (fptuAppliedExercises[lesson.id]) {
@@ -1050,4 +1059,4 @@ if (mockCourses[0] && mockCourses[0].id === 'c-curriculum') {
       }
     });
   });
-}
+});

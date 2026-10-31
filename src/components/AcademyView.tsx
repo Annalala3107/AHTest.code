@@ -414,16 +414,47 @@ export const AcademyView: React.FC = () => {
             </div>
             
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Học Lập Trình Thi Đấu & Ngôn Ngữ Tương Tác
+              {docLang === 'en'
+                ? 'Interactive Coding & Algorithmic Academy'
+                : 'Học Lập Trình Thi Đấu & Ngôn Ngữ Tương Tác'}
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Học lý thuyết ngắn gọn 3 phút, giải thử thách ngay trên trình duyệt với công nghệ WebAssembly. 
-              Tích hợp bộ câu hỏi thi thực hành chuẩn <strong>FPT University C/C++</strong> với đầy đủ testcases và chế độ song ngữ (VI/EN).
+              {docLang === 'en'
+                ? 'Bite-sized 3-minute theory, hands-on challenges right in your browser with WebAssembly. Integrated with official FPT University C/C++ Practical Exam questions with full test cases.'
+                : 'Học lý thuyết ngắn gọn 3 phút, giải thử thách ngay trên trình duyệt với công nghệ WebAssembly. Tích hợp bộ câu hỏi thi thực hành chuẩn FPT University C/C++ với đầy đủ testcases và chế độ song ngữ (VI/EN).'}
             </p>
           </div>
 
-          {/* Track Switcher */}
-          <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-950/60 border border-slate-800/80 backdrop-blur-md self-start md:self-auto shrink-0">
+          {/* Controls: Quick Bilingual Switcher & Track Switcher */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 self-start md:self-auto shrink-0">
+            {/* Quick Bilingual Switcher */}
+            <div className="flex items-center bg-slate-950/80 border border-slate-800 p-1 rounded-xl text-xs backdrop-blur-md">
+              <button
+                onClick={() => handleToggleLang('vi')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  docLang === 'vi'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Giao diện Tiếng Việt"
+              >
+                <span>🇻🇳 VI</span>
+              </button>
+              <button
+                onClick={() => handleToggleLang('en')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  docLang === 'en'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Switch to English (Exam Mode)"
+              >
+                <span>🇬🇧 EN</span>
+              </button>
+            </div>
+
+            {/* Track Switcher */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-950/60 border border-slate-800/80 backdrop-blur-md">
             {mockCourses.map((c) => {
               const isSelected = selectedCourse.id === c.id;
               return (
@@ -460,6 +491,7 @@ export const AcademyView: React.FC = () => {
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
       </div>
@@ -500,10 +532,14 @@ export const AcademyView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                  Lộ trình {selectedCourse.title}
+                  {docLang === 'en'
+                    ? (selectedCourse.titleEn || selectedCourse.title)
+                    : `Lộ trình ${selectedCourse.title}`}
                 </h3>
                 <span className="text-xs text-slate-500">
-                  {selectedCourse.totalLessons} bài học • {selectedCourse.estimatedHours} giờ hoàn thành
+                  {docLang === 'en'
+                    ? `${selectedCourse.totalLessons} lessons • ${selectedCourse.estimatedHours} hrs to complete`
+                    : `${selectedCourse.totalLessons} bài học • ${selectedCourse.estimatedHours} giờ hoàn thành`}
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
@@ -517,7 +553,7 @@ export const AcademyView: React.FC = () => {
                 <div key={module.id} className="space-y-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                    {module.title}
+                    {docLang === 'en' && module.titleEn ? module.titleEn : module.title}
                   </h4>
                   <div className="space-y-1">
                     {module.lessons.map((lesson, idx) => {
@@ -856,7 +892,7 @@ export const AcademyView: React.FC = () => {
                   rows={10}
                   spellCheck={false}
                   className="w-full bg-transparent text-slate-100 resize-none focus:outline-none leading-relaxed font-mono-code"
-                  placeholder="// Viết code giải thử thách tại đây..."
+                  placeholder={docLang === 'en' ? '// Write your C/C++ solution code here...' : '// Viết code giải thử thách tại đây...'}
                 />
               </div>
 

@@ -137,17 +137,21 @@ export interface AcademyLesson {
 export interface AcademyModule {
   id: string;
   title: string;
+  titleEn?: string;
   description: string;
+  descriptionEn?: string;
   lessons: AcademyLesson[];
 }
 
 export interface AcademyCourse {
   id: string;
   title: string;
+  titleEn?: string;
   slug: string;
   language: 'c' | 'cpp' | 'python';
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   description: string;
+  descriptionEn?: string;
   totalLessons: number;
   estimatedHours: number;
   modules: AcademyModule[];

@@ -236,5 +236,74 @@ Review and fix the bug in a bank account deposit program to prevent memory corru
     hintsEn: [
       'Ensure account is found before updating balance.'
     ]
+  },
+
+  'cpp-1-1': {
+    titleEn: 'Lesson 1: Program Skeleton & Fast I/O',
+    summaryEn: 'Learn the main() function and cin/cout desynchronization techniques to avoid TLE.',
+    contentEn: `### 1. Standard Competitive Programming Skeleton
+Every modern C++ contest solution starts with this standard structure:
+\`\`\`cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    // Mandatory Fast I/O
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    
+    cout << "Chao mung den voi AHtest.code!\\n";
+    return 0;
+}
+\`\`\`
+
+> [!TIP]
+> Always use \`'\\n'\` instead of \`endl\` because \`endl\` forces the operating system to flush the buffer continuously, making execution up to 10x slower and causing TLE!
+
+### 2. Challenge:
+Write a program to output the exact line: \`AHtest.code Academy 2026\` followed by a newline.`,
+    hintsEn: [
+      'Use `cout << "AHtest.code Academy 2026\\n";`',
+      'Make sure Fast I/O lines are included in main().'
+    ]
+  },
+
+  'cpp-1-2': {
+    titleEn: 'Lesson 2: Data Types & Integer Overflow',
+    summaryEn: 'Variable value limits, bit boundaries, and silent overflow traps in math calculations.',
+    contentEn: `### 1. 32-bit vs 64-bit Limits in C++
+- \`int\`: 32-bit signed integer (range approx $-2 \\times 10^9$ to $2 \\times 10^9$).
+- \`long long\`: 64-bit signed integer (range up to $9 \\times 10^{18}$).
+
+> [!WARNING]
+> **The Multiplication Trap:**
+> Even if the result variable is \`long long\`, writing \`long long ans = a * b;\` with 32-bit \`int\` variables \`a\` and \`b\` will overflow **before** assignment!
+> Always cast: \`long long ans = (long long)a * b;\`.
+
+### 2. Challenge:
+Given two integers $A$ and $B$ (up to $10^9$). Calculate and print their 64-bit product $A \\times B$.`,
+    hintsEn: [
+      'Declare variables as `long long a, b;`',
+      'Use format `cout << a * b << "\\n";`'
+    ]
+  },
+
+  'cpp-1-3': {
+    titleEn: 'Lesson 3: Prefix Sum Array Technique',
+    summaryEn: 'Optimize range sum queries from O(N) to O(1) using precalculated cumulative sums.',
+    contentEn: `### 1. Prefix Sum Principle
+Given array $A$ of size $N$, construct prefix array $P$ where $P[i] = P[i-1] + A[i]$ with $P[0] = 0$.
+The sum of elements in subsegment $[L, R]$ is computed in $O(1)$:
+$$\\text{Sum}(L, R) = P[R] - P[L - 1]$$
+
+> [!NOTE]
+> Instead of looping $O(N)$ for each query, precomputing $P$ in $O(N)$ allows answering $Q$ range sum queries in $O(1)$ each!
+
+### 2. Challenge:
+Build a prefix sum array and output the sum of elements for the given query range.`,
+    hintsEn: [
+      'Precompute with `prefix[i] = prefix[i - 1] + a[i]`',
+      'Query result is `prefix[r] - prefix[l - 1]`'
+    ]
   }
 };
