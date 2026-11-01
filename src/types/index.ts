@@ -45,6 +45,37 @@ export interface Problem {
   createdAt: string;
   testcases?: TestCaseItem[];
   isCustom?: boolean;
+  collectionId?: string;
+  progressiveHints?: ProgressiveHint[];
+}
+
+export interface ProgressiveHint {
+  tier: 1 | 2 | 3;
+  title: string;
+  content: string;
+}
+
+export interface ProblemCollection {
+  id: string;
+  title: string;
+  titleEn?: string;
+  description: string;
+  category: string;
+  icon: string;
+  color: 'rose' | 'amber' | 'emerald' | 'blue' | 'purple' | 'cyan';
+  difficultySummary: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
+  isSystem?: boolean;
+  problems: Problem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ExamSessionConfig {
+  collectionId: string;
+  collectionTitle: string;
+  totalQuestions: number; // 10 to 20
+  timeLimitMinutes: number; // 45, 60, 90
+  problems: Problem[];
 }
 
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RTE' | 'CE' | 'PENDING' | 'GRADING';
