@@ -82,6 +82,18 @@ export const AcademyView: React.FC = () => {
     const saved = localStorage.getItem('ahtest_academy_split');
     return saved ? Math.min(75, Math.max(25, Number(saved))) : 46;
   });
+  const [isLgScreen, setIsLgScreen] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
+  const [mobileActiveTab, setMobileActiveTab] = useState<'theory' | 'editor'>('theory');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLgScreen(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(() => {
     return localStorage.getItem('ahtest_academy_sidebar_expanded') === 'true';
@@ -270,6 +282,7 @@ export const AcademyView: React.FC = () => {
   const handleSelectLesson = (lesson: AcademyLesson) => {
     // Flush draft of currently edited lesson/exercise before switching
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('theory');
     if (runTimerRef.current) {
       clearTimeout(runTimerRef.current);
       runTimerRef.current = null;
@@ -292,6 +305,7 @@ export const AcademyView: React.FC = () => {
   const handleSelectExercise = (exercise: AppliedExercise) => {
     // Flush draft of current code before switching
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('theory');
     if (runTimerRef.current) {
       clearTimeout(runTimerRef.current);
       runTimerRef.current = null;
@@ -312,6 +326,7 @@ export const AcademyView: React.FC = () => {
 
   const handleBackToLesson = () => {
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('theory');
     if (runTimerRef.current) {
       clearTimeout(runTimerRef.current);
       runTimerRef.current = null;
@@ -386,6 +401,7 @@ export const AcademyView: React.FC = () => {
   const handleRunCode = () => {
     if (isRunning) return; // Prevent spam clicks
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('editor');
     if (runTimerRef.current) {
       clearTimeout(runTimerRef.current);
       runTimerRef.current = null;
@@ -1224,6 +1240,32 @@ export const AcademyView: React.FC = () => {
             </>
           )}
 
+          {/* Mobile/Tablet Dual-Tab Switcher (Viewport < 1024px) */}
+          <div className="lg:hidden flex items-center bg-slate-100 dark:bg-slate-800 p-1 border-b border-slate-200 dark:border-slate-700 shrink-0">
+            <button
+              onClick={() => setMobileActiveTab('theory')}
+              className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                mobileActiveTab === 'theory'
+                  ? 'bg-white dark:bg-slate-900 shadow-xs text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>📖 Lý thuyết & Bài tập</span>
+            </button>
+            <button
+              onClick={() => setMobileActiveTab('editor')}
+              className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                mobileActiveTab === 'editor'
+                  ? 'bg-white dark:bg-slate-900 shadow-xs text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              <span>💻 Trình soạn thảo & Chạy thử</span>
+            </button>
+          </div>
+
           {/* 2. SPLIT-SCREEN WORKBENCH CONTAINER (Holds Theory Document Panel, Draggable Splitter, Monaco Editor) */}
           <div 
             ref={workspaceContainerRef}
@@ -1233,8 +1275,10 @@ export const AcademyView: React.FC = () => {
           {/* LEFT COLUMN: Document & Theory Panel (Collapsible in Zen Mode) */}
           {!isZenMode && (
             <div 
-              style={{ width: `${splitPercent}%` }}
-              className="w-full lg:flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
+              style={{ width: isLgScreen ? `${splitPercent}%` : '100%' }}
+              className={`w-full flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden ${
+                !isLgScreen && mobileActiveTab !== 'theory' ? 'hidden' : 'flex'
+              }`}
             >
               {/* Document Tabs */}
               <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/60 dark:bg-slate-950/40 text-xs shrink-0">
@@ -1518,8 +1562,10 @@ export const AcademyView: React.FC = () => {
           {/* RIGHT COLUMN: Monaco Code Editor & Terminal Sandbox */}
           <div 
             ref={editorColumnRef}
-            style={{ width: isZenMode ? '100%' : `${100 - splitPercent}%` }}
-            className={`flex-1 flex flex-col bg-slate-900 text-white overflow-hidden relative ${isDraggingConsole ? 'select-none cursor-row-resize' : ''}`}
+            style={{ width: isLgScreen ? (isZenMode ? '100%' : `${100 - splitPercent}%`) : '100%' }}
+            className={`flex-1 flex flex-col bg-slate-900 text-white overflow-hidden relative ${
+              isDraggingConsole ? 'select-none cursor-row-resize' : ''
+            } ${!isLgScreen && mobileActiveTab !== 'editor' ? 'hidden' : 'flex'}`}
           >
             {/* Editor Status Bar */}
             <div className="h-10 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs shrink-0">

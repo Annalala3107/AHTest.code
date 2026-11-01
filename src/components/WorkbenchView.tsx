@@ -28,7 +28,8 @@ import {
   ArrowRight,
   ShieldAlert,
   BookOpen,
-  FolderGit2
+  FolderGit2,
+  Code2
 } from 'lucide-react';
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
@@ -143,6 +144,18 @@ fn main() {
   const [splitPercent, setSplitPercent] = useState<number>(() => {
     return Number(localStorage.getItem('ahtest_workbench_split')) || 50;
   });
+  const [isLgScreen, setIsLgScreen] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
+  const [mobileActiveTab, setMobileActiveTab] = useState<'statement' | 'editor'>('statement');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLgScreen(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
   const [consoleHeight, setConsoleHeight] = useState<number>(() => {
     const saved = localStorage.getItem('ahtest_workbench_console_height');
@@ -259,6 +272,7 @@ fn main() {
 
   // Cleanup timers on problem change or unmount to eliminate memory leaks and race conditions
   useEffect(() => {
+    setMobileActiveTab('statement');
     return () => {
       if (gradingTimerRef.current) {
         clearInterval(gradingTimerRef.current);
@@ -411,6 +425,7 @@ fn main() {
   const handleRunSample = () => {
     if (isGrading) return; // Prevent spam clicks
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('editor');
     if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
     if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
 
@@ -497,6 +512,7 @@ fn main() {
   const handleRunSpecificSample = (index: number) => {
     if (isGrading) return; // Prevent spam clicks
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('editor');
     if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
     if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
 
@@ -584,6 +600,7 @@ fn main() {
   const handleRunCustomTest = () => {
     if (isGrading) return; // Prevent spam clicks
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('editor');
     setShowConsole(true);
     setConsoleTab('custom');
     setPedagogicalDiagnosis(null);
@@ -614,6 +631,7 @@ fn main() {
   const handleSubmitSolution = () => {
     if (isGrading) return; // Prevent spam submit clicks
     flushPendingDraft();
+    if (!isLgScreen) setMobileActiveTab('editor');
     if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
     if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
 
@@ -1001,6 +1019,32 @@ fn main() {
         </div>
       </div>
 
+      {/* Mobile/Tablet Dual-Tab Switcher (Viewport < 1024px) */}
+      <div className="lg:hidden flex items-center bg-slate-100 dark:bg-slate-800 p-1 border-b border-slate-200 dark:border-slate-700 shrink-0">
+        <button
+          onClick={() => setMobileActiveTab('statement')}
+          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileActiveTab === 'statement'
+              ? 'bg-white dark:bg-slate-900 shadow-xs text-rose-600 dark:text-rose-400'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>📖 Đề bài & Mô tả</span>
+        </button>
+        <button
+          onClick={() => setMobileActiveTab('editor')}
+          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileActiveTab === 'editor'
+              ? 'bg-white dark:bg-slate-900 shadow-xs text-rose-600 dark:text-rose-400'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Code2 className="w-3.5 h-3.5" />
+          <span>💻 Trình soạn thảo & Chấm</span>
+        </button>
+      </div>
+
       {/* Main Split-Screen Workspace with Real Draggable Splitter */}
       <div 
         ref={workspaceContainerRef}
@@ -1009,8 +1053,10 @@ fn main() {
         {/* LEFT COLUMN: Problem Statement & Documentation (Collapsible in Zen Mode) */}
         {!isZenMode && (
           <div 
-            style={{ width: `${splitPercent}%` }}
-            className="w-full lg:flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
+            style={{ width: isLgScreen ? `${splitPercent}%` : '100%' }}
+            className={`w-full flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden ${
+              !isLgScreen && mobileActiveTab !== 'statement' ? 'hidden' : 'flex'
+            }`}
           >
           {/* Tabs */}
           <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/50 dark:bg-slate-800/40">
@@ -1361,10 +1407,10 @@ fn main() {
         {/* RIGHT COLUMN: Professional Monaco Code Editor & Execution Console */}
         <div 
           ref={editorColumnRef}
-          style={{ width: isZenMode ? '100%' : `${100 - splitPercent}%` }}
+          style={{ width: isLgScreen ? (isZenMode ? '100%' : `${100 - splitPercent}%`) : '100%' }}
           className={`flex-1 flex flex-col bg-slate-900 text-white overflow-hidden transition-[width] duration-75 relative ${
             isDraggingConsole ? 'select-none cursor-row-resize' : ''
-          }`}
+          } ${!isLgScreen && mobileActiveTab !== 'editor' ? 'hidden' : 'flex'}`}
         >
           {/* Editor Controls Bar */}
           <div className="h-10 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between shrink-0 text-xs">

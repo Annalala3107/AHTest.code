@@ -31,6 +31,8 @@ export function loadCollections(): ProblemCollection[] {
     const v3Flag = localStorage.getItem('ahtest_prf192_master_v3');
     let collections: ProblemCollection[] = [];
 
+    let needsSave = false;
+
     // If master bank v3 not initialized yet or raw empty, initialize with 115+ master problems
     if (!v3Flag || !raw) {
       // Preserve any custom collections user created before resetting system collections
@@ -48,8 +50,8 @@ export function loadCollections(): ProblemCollection[] {
         else collections.push(existingUserCol);
       }
       localStorage.setItem('ahtest_prf192_master_v3', 'true');
-      localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(collections));
       seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+      needsSave = true;
     } else {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -59,11 +61,13 @@ export function loadCollections(): ProblemCollection[] {
           // Auto upgrade
           collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
           seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+          needsSave = true;
         } else {
           collections = parsed;
         }
       } else {
         collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
+        needsSave = true;
       }
     }
 
@@ -98,9 +102,11 @@ export function loadCollections(): ProblemCollection[] {
                 collectionId: userCol.id,
                 isCustom: true
               });
+              needsSave = true;
             }
           }
         }
+        localStorage.removeItem(LEGACY_PROBLEMS_STORAGE_KEY);
       } catch (e) {
         console.warn('Failed to parse legacy imported problems during migration:', e);
       }
@@ -114,8 +120,10 @@ export function loadCollections(): ProblemCollection[] {
       }));
     });
 
-    // Save synced version
-    saveCollections(collections);
+    // Save only when initial seed or migration actually modified data
+    if (needsSave) {
+      saveCollections(collections);
+    }
     return collections;
   } catch (err) {
     console.error('Error loading problem collections:', err);
@@ -208,6 +216,35 @@ export function addProblemToCollection(collectionId: string, problem: Problem): 
     col.updatedAt = new Date().toISOString().split('T')[0];
     saveCollections(collections);
   }
+  return collections;
+}
+
+/**
+ * Batch add problems to collections in a single O(1) disk write operation.
+ * Eliminates disk thrashing when importing large sets (e.g. 115 DOCX problems).
+ */
+export function addProblemsBatchToCollections(
+  items: Array<{ collectionId: string; problem: Problem }>
+): ProblemCollection[] {
+  const collections = loadCollections();
+  const now = new Date().toISOString().split('T')[0];
+
+  items.forEach(({ collectionId, problem }) => {
+    const col = collections.find(c => c.id === collectionId);
+    if (col) {
+      problem.collectionId = collectionId;
+      problem.isCustom = true;
+      const existingIdx = col.problems.findIndex(p => p.id === problem.id);
+      if (existingIdx >= 0) {
+        col.problems[existingIdx] = problem;
+      } else {
+        col.problems.unshift(problem);
+      }
+      col.updatedAt = now;
+    }
+  });
+
+  saveCollections(collections);
   return collections;
 }
 
