@@ -74,48 +74,43 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     }
   };
 
-  // Code editor state
+  // Code editor starter templates: only library imports and empty entry point (no leaked solution code)
   const defaultCodes: Record<string, string> = {
     c17: `#include <stdio.h>
 #include <stdlib.h>
-
-// Problem: ${problem.title} (${problem.slug})
-// Environment: C17 (GCC 16.2 / Embarcadero Dev-C++ Standard)
+#include <string.h>
+#include <math.h>
+#include <ctype.h>
 
 int main() {
-    // TODO: Viết thuật toán giải bằng ngôn ngữ C tại đây
-    
     return 0;
 }`,
-    cpp20: `#include <bits/stdc++.h>
+    cpp20: `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <cmath>
+
 using namespace std;
 
-// Problem: ${problem.title} (${problem.slug})
-// Time Limit: ${problem.timeLimit}s, Memory Limit: ${problem.memoryLimit}MB
-
 int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    
-    // TODO: Viết thuật toán giải tại đây
-    
     return 0;
 }`,
     cpp17: `#include <iostream>
 #include <vector>
+#include <string>
+#include <algorithm>
+#include <cmath>
+
 using namespace std;
 
 int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    // Code C++17
     return 0;
 }`,
     py3: `import sys
+import math
 
 def solve():
-    input = sys.stdin.readline
-    # Đọc dữ liệu và xử lý thuật toán
     pass
 
 if __name__ == '__main__':
@@ -124,15 +119,14 @@ if __name__ == '__main__':
 import java.io.*;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        // Code Java
+    public static void main(String[] args) {
+        
     }
 }`,
     rust: `use std::io::{self, BufRead};
 
 fn main() {
-    // Rust CP Solution
+    
 }`
   };
 
@@ -294,8 +288,32 @@ fn main() {
     const key = getWorkbenchDraftKey(problem.id, language);
     const saved = localStorage.getItem(key);
     if (saved !== null) {
-      setCode(saved);
-      setDraftSaved(true);
+      // Check if draft contains leaked solution code from legacy imports
+      const isLeaked =
+        saved.includes('// [Sanitized]') ||
+        saved.includes('Dynamically allocate') ||
+        saved.includes('min_odd') ||
+        saved.includes('max_odd') ||
+        saved.includes('veTamGiac') ||
+        saved.includes('PRF192 Master') ||
+        (problem.id.startsWith('prf192_') && (
+          saved.includes('void swap') || 
+          saved.includes('scanf(') || 
+          saved.length > 250
+        ));
+
+      if (isLeaked) {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          // ignore
+        }
+        setCode(defaultCodes[language] || '');
+        setDraftSaved(false);
+      } else {
+        setCode(saved);
+        setDraftSaved(true);
+      }
     } else {
       setCode(defaultCodes[language] || '');
       setDraftSaved(false);

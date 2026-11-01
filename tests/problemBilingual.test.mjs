@@ -94,3 +94,98 @@ test('6. Solution 5: Category-aware fallback synthesis eliminates invisible stat
   const strVi = getProblemStatement(strProb, 'vi');
   assert.ok(strVi.includes('chuỗi') || strVi.includes('\\0'), 'String should guide null-terminator');
 });
+
+test('7. Generic boilerplate specifications in Image 2 are identified and replaced with domain-specific specs', async () => {
+  const { isGenericFormat, detectProblemDomain } = await import('../src/services/problemBilingualService.ts');
+
+  // Verify detector identifies meaningless boilerplate from Image 2
+  assert.strictEqual(isGenericFormat('Dữ liệu đầu vào chuẩn từ stdin theo từng dòng.'), true);
+  assert.strictEqual(isGenericFormat('Kết quả in ra stdout theo đúng định dạng kiểm thử.'), true);
+  assert.strictEqual(isGenericFormat('Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.'), true);
+  assert.strictEqual(isGenericFormat('Line 1: An integer N (1 <= N <= 1000)'), false);
+
+  const arrayProb = {
+    id: 'prf192_src_1',
+    title: 'Source 1: Đổi vị trí số lẻ lớn nhất và nhỏ nhất',
+    category: 'Mảng 1 Chiều & Sắp Xếp',
+    inputFormat: 'Dữ liệu đầu vào chuẩn từ stdin theo từng dòng.',
+    outputFormat: 'Kết quả in ra stdout theo đúng định dạng kiểm thử.',
+    constraints: 'Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.'
+  };
+
+  assert.strictEqual(detectProblemDomain(arrayProb), 'array');
+
+  const inputVi = getProblemInputFormat(arrayProb, 'vi');
+  const outputVi = getProblemOutputFormat(arrayProb, 'vi');
+  const constraintsVi = getProblemConstraints(arrayProb, 'vi');
+
+  // Must NOT be the old meaningless placeholder
+  assert.notStrictEqual(inputVi, 'Dữ liệu đầu vào chuẩn từ stdin theo từng dòng.');
+  assert.notStrictEqual(outputVi, 'Kết quả in ra stdout theo đúng định dạng kiểm thử.');
+  assert.notStrictEqual(constraintsVi, 'Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.');
+
+  // Must contain specific array details
+  assert.ok(inputVi.includes('Dòng 1: Số nguyên dương $N$') || inputVi.includes('mảng'));
+  assert.ok(outputVi.includes('mảng sau khi xử lý') || outputVi.includes('khoảng trắng'));
+  assert.ok(constraintsVi.includes('1 \\le N \\le 1000') && constraintsVi.includes('A_i'));
+
+  // Test Shape problem replacement
+  const shapeProb = {
+    id: 'prf192_src_8',
+    title: 'Source 8: Vẽ hình tam giác',
+    category: 'Vẽ Hình & Ma Trận Ký Tự',
+    inputFormat: 'Dữ liệu đầu vào chuẩn từ stdin theo từng dòng.',
+    outputFormat: 'Kết quả in ra stdout theo đúng định dạng kiểm thử.',
+    constraints: 'Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.'
+  };
+
+  assert.strictEqual(detectProblemDomain(shapeProb), 'shape');
+  const shapeInput = getProblemInputFormat(shapeProb, 'vi');
+  const shapeOutput = getProblemOutputFormat(shapeProb, 'vi');
+  const shapeConstraints = getProblemConstraints(shapeProb, 'vi');
+
+  assert.ok(shapeInput.includes('kích thước cạnh hoặc chiều cao'));
+  assert.ok(shapeOutput.includes('ký tự sao `*`'));
+  assert.ok(shapeConstraints.includes('Không in khoảng trắng thừa'));
+});
+
+test('8. purgeLeakedSolutionDrafts purges leaked solution code from localStorage', async () => {
+  const { purgeLeakedSolutionDrafts } = await import('../src/services/collectionStorage.ts');
+
+  // Mock global window & localStorage
+  const store = new Map();
+  global.window = {
+    localStorage: {
+      length: 0,
+      key(idx) {
+        return Array.from(store.keys())[idx] || null;
+      },
+      getItem(k) {
+        return store.get(k) || null;
+      },
+      setItem(k, v) {
+        store.set(k, String(v));
+        this.length = store.size;
+      },
+      removeItem(k) {
+        store.delete(k);
+        this.length = store.size;
+      }
+    }
+  };
+  global.localStorage = global.window.localStorage;
+
+  // Add leaked drafts (like Image 1)
+  global.localStorage.setItem('ahtest_draft_workbench_prf192_src_1_c17', `#include <stdio.h>\nvoid swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }\nint main() {\n  // [Sanitized]: removed\n  int n; scanf("%d", &n);\n}`);
+  global.localStorage.setItem('ahtest_draft_workbench_prf192_src_8_cpp20', `#include <stdio.h>\nvoid veTamGiac(int n) {\n  for(int i=0;i<n;i++) printf("* ");\n}`);
+  // Add a clean draft
+  global.localStorage.setItem('ahtest_draft_workbench_custom_prob_c17', `#include <stdio.h>\n\nint main() {\n    return 0;\n}`);
+
+  purgeLeakedSolutionDrafts();
+
+  // Leaked solution drafts must be gone
+  assert.strictEqual(global.localStorage.getItem('ahtest_draft_workbench_prf192_src_1_c17'), null);
+  assert.strictEqual(global.localStorage.getItem('ahtest_draft_workbench_prf192_src_8_cpp20'), null);
+  // Clean draft preserved
+  assert.notStrictEqual(global.localStorage.getItem('ahtest_draft_workbench_custom_prob_c17'), null);
+});

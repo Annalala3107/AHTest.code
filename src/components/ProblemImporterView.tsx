@@ -35,7 +35,6 @@ import { ProblemSpecificationView } from './ProblemSpecificationView';
 import {
   loadCollections,
   saveCollections,
-  resetCollectionsToDefault,
   restoreFull115MasterBank,
   createCollection,
   deleteCollection,
@@ -191,14 +190,6 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     }
   };
 
-  // Reset to Factory Collections
-  const handleResetCollections = () => {
-    if (window.confirm('Khôi phục toàn bộ Thư mục & Bộ Đề PRF192 chuẩn hóa ban đầu? (Các bài tập tự tạo cá nhân có thể được làm mới)')) {
-      const defaults = resetCollectionsToDefault();
-      setCollections(defaults);
-      setActiveCollectionId(null);
-    }
-  };
 
   // Delete Collection
   const handleDeleteCollection = (id: string, e: React.MouseEvent) => {
@@ -282,12 +273,6 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
       collectionId: targetCollectionId
     };
 
-    // If source code was provided, seed into localStorage draft for instant running in Workbench
-    if (rawSourceCodeInput.trim()) {
-      localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, rawSourceCodeInput.trim());
-      localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, rawSourceCodeInput.trim());
-    }
-
     const updated = addProblemToCollection(targetCollectionId, created);
     setCollections(updated);
     setIsAddProblemModalOpen(false);
@@ -354,7 +339,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
         tags: ['PRF192', 'Sanitized', destinationColId.replace('prf192_', '').toUpperCase()],
         solvedCount: 0,
         totalSubmissions: 0,
-        statement: `${item.statement}\n\n\`\`\`c\n${item.code.slice(0, 2000)}\n\`\`\``,
+        statement: item.statement,
         inputFormat: item.inputFormat,
         outputFormat: item.outputFormat,
         constraints: item.constraints,
@@ -366,14 +351,6 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
         isCustom: true,
         collectionId: destinationColId
       };
-
-      // Seed draft
-      try {
-        localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, item.code);
-        localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, item.code);
-      } catch {
-        // ignore
-      }
 
       batchItems.push({ collectionId: destinationColId, problem: prob });
     });
@@ -465,7 +442,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
             tags: ['SourceFile', 'AutoSanitized', 'PRF192'],
             solvedCount: 0,
             totalSubmissions: 0,
-            statement: `${sanitized.statement}\n\n\`\`\`c\n${sanitized.code.slice(0, 2000)}\n\`\`\``,
+            statement: sanitized.statement,
             inputFormat: sanitized.inputFormat,
             outputFormat: sanitized.outputFormat,
             constraints: sanitized.constraints,
@@ -477,10 +454,6 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
             isCustom: true,
             collectionId: targetCollectionId
           };
-
-          // Seed code into drafts so Monaco editor has cleaned code immediately
-          localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, sanitized.code);
-          localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, sanitized.code);
 
           const updated = addProblemToCollection(targetCollectionId, prob);
           setCollections(updated);

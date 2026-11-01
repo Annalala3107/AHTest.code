@@ -514,7 +514,7 @@ export function sanitizeSingleProblem(
   // Step 5: Synthesize clean test cases
   const { samples, testcases } = synthesizeDomainTestCases(rawTitle, finalCode);
 
-  // Step 6: Compose pedagogical statement
+  // Step 6: Compose pedagogical statement and domain-aware specifications
   const cleanTitle = rawTitle.replace(/^Source\s*\d+:\s*/i, '').trim();
   const statement = rawStatement || `### Bài toán: ${cleanTitle}
 
@@ -525,9 +525,23 @@ Viết chương trình C giải quyết bài toán theo chuẩn khảo thí PRF1
 - Không sử dụng các lệnh điều khiển màn hình Windows như \`system("cls")\` hay \`system("pause")\`.
 - Đảm bảo in đúng định dạng kết quả ra \`stdout\` để hệ thống chấm tự động (Judge Sandbox).`;
 
-  const inputFormat = 'Dữ liệu đầu vào chuẩn từ stdin theo từng dòng.';
-  const outputFormat = 'Kết quả in ra stdout theo đúng định dạng kiểm thử.';
-  const constraints = 'Thời gian thực thi tối đa: 1.0 giây. Bộ nhớ: 128MB.';
+  let inputFormat = 'Dòng 1: Số nguyên dương $N$ ($1 \\le N \\le 10^7$).';
+  let outputFormat = 'In ra một số nguyên duy nhất là kết quả tính toán của bài toán.';
+  let constraints = '$1 \\le N \\le 10^7$. Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$.';
+
+  if (category === 'Mảng 1 Chiều & Sắp Xếp') {
+    inputFormat = 'Dòng 1: Số nguyên dương $N$ ($1 \\le N \\le 1000$) — số lượng phần tử của mảng.\nDòng 2: $N$ số nguyên cách nhau bởi dấu cách biểu diễn các phần tử.';
+    outputFormat = 'In ra các phần tử của mảng sau khi xử lý trên một dòng, cách nhau bởi một khoảng trắng.';
+    constraints = '$1 \\le N \\le 1000$; mỗi phần tử $-10^5 \\le A_i \\le 10^5$. Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$.';
+  } else if (category === 'Vẽ Hình & Ma Trận Ký Tự') {
+    inputFormat = 'Một dòng duy nhất chứa số nguyên dương $N$ ($1 \\le N \\le 50$) — kích thước cạnh hoặc chiều cao của hình cần vẽ.';
+    outputFormat = 'In ra hình vẽ tương ứng gồm các ký tự sao `*` hoặc số theo đúng quy luật, mỗi dòng cách nhau bởi ký tự xuống dòng. Không in khoảng trắng thừa ở cuối dòng.';
+    constraints = '$1 \\le N \\le 50$. Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$. Không in khoảng trắng thừa ở cuối dòng.';
+  } else if (category === 'Chuỗi & Ký Tự Nâng Cao') {
+    inputFormat = 'Một dòng chứa chuỗi ký tự $S$ ($1 \\le |S| \\le 1000$) cần xử lý, kết thúc bởi ký tự xuống dòng.';
+    outputFormat = 'In ra chuỗi ký tự sau khi xử lý ra màn hình trên một dòng riêng biệt.';
+    constraints = 'Độ dài chuỗi $1 \\le |S| \\le 1000$. Ký tự thuộc bảng mã ASCII tiêu chuẩn (từ $32$ đến $126$). Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$.';
+  }
 
   const report: SanitizationReport = {
     originalLength,

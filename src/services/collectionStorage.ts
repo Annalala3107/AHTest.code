@@ -1,24 +1,45 @@
 import type { ProblemCollection, Problem, ExamSessionConfig } from '../types';
 import { DEFAULT_PROBLEM_COLLECTIONS } from '../data/prf192Collections.ts';
-import { PRF192_MASTER_PROBLEMS } from '../data/prf192MasterDataset.ts';
 
 export const COLLECTIONS_STORAGE_KEY = 'ahtest_problem_collections';
 export const LEGACY_PROBLEMS_STORAGE_KEY = 'ahtest_imported_problems';
 
 /**
- * Seed code drafts directly into localStorage for Monaco editor.
+ * Purge any previously seeded solution drafts from localStorage,
+ * ensuring students always start with standard library declarations and empty main().
  */
-export function seedDraftsForProblems(problems: (Problem & { code?: string })[]): void {
+export function purgeLeakedSolutionDrafts(): void {
   try {
-    problems.forEach(p => {
-      if (p.code) {
-        localStorage.setItem(`ahtest_draft_workbench_${p.id}_c17`, p.code);
-        localStorage.setItem(`ahtest_draft_workbench_${p.id}_cpp20`, p.code);
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('ahtest_draft_workbench_') || key.startsWith('ahtest_draft_workbench_prf192_'))) {
+        const val = localStorage.getItem(key) || '';
+        const isLeaked =
+          val.includes('// [Sanitized]') ||
+          val.includes('Dynamically allocate') ||
+          val.includes('min_odd') ||
+          val.includes('max_odd') ||
+          val.includes('veTamGiac') ||
+          val.includes('PRF192 Master') ||
+          (key.includes('_prf192_') && (val.includes('scanf(') || val.includes('void swap') || val.includes('for (i = 0'))) ||
+          val.length > 300;
+
+        if (isLeaked) {
+          keysToRemove.push(key);
+        }
       }
-    });
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
   } catch (e) {
-    console.warn('Draft seeding error:', e);
+    console.warn('Draft purge warning:', e);
   }
+}
+
+// Auto-purge leaked drafts on startup in browser environments
+if (typeof window !== 'undefined' && window.localStorage) {
+  purgeLeakedSolutionDrafts();
 }
 
 /**
@@ -50,7 +71,7 @@ export function loadCollections(): ProblemCollection[] {
         else collections.push(existingUserCol);
       }
       localStorage.setItem('ahtest_prf192_master_v3', 'true');
-      seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+      purgeLeakedSolutionDrafts();
       needsSave = true;
     } else {
       const parsed = JSON.parse(raw);
@@ -60,7 +81,7 @@ export function loadCollections(): ProblemCollection[] {
         if (totalProbs < 20) {
           // Auto upgrade
           collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
-          seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+          purgeLeakedSolutionDrafts();
           needsSave = true;
         } else {
           collections = parsed;
@@ -112,12 +133,19 @@ export function loadCollections(): ProblemCollection[] {
       }
     }
 
-    // Ensure all problems know their collectionId
+    // Ensure all problems know their collectionId and sanitize any leaked solution code blocks in statements
     collections.forEach(col => {
-      col.problems = (col.problems || []).map(p => ({
-        ...p,
-        collectionId: col.id
-      }));
+      col.problems = (col.problems || []).map(p => {
+        let cleanStatement = p.statement || '';
+        if (cleanStatement.includes('```c')) {
+          cleanStatement = cleanStatement.replace(/\n\n```c[\s\S]*?```$/g, '').trim();
+        }
+        return {
+          ...p,
+          statement: cleanStatement,
+          collectionId: col.id
+        };
+      });
     });
 
     // Save only when initial seed or migration actually modified data
@@ -148,14 +176,14 @@ export function saveCollections(collections: ProblemCollection[]): void {
 export function resetCollectionsToDefault(): ProblemCollection[] {
   const defaults: ProblemCollection[] = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
   saveCollections(defaults);
-  localStorage.setItem('ahtest_prf192_master_v2', 'true');
-  seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+  localStorage.setItem('ahtest_prf192_master_v3', 'true');
+  purgeLeakedSolutionDrafts();
   return defaults;
 }
 
 /**
  * 1-Click Restore / Synchronize Full 115+ Master PRF192 Bank.
- * Preserves user custom collections and re-seeds all drafts.
+ * Preserves user custom collections and purges leaked solution drafts.
  */
 export function restoreFull115MasterBank(): ProblemCollection[] {
   const freshDefaults: ProblemCollection[] = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
@@ -170,8 +198,8 @@ export function restoreFull115MasterBank(): ProblemCollection[] {
     }
   }
   saveCollections(freshDefaults);
-  localStorage.setItem('ahtest_prf192_master_v2', 'true');
-  seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+  localStorage.setItem('ahtest_prf192_master_v3', 'true');
+  purgeLeakedSolutionDrafts();
   return freshDefaults;
 }
 

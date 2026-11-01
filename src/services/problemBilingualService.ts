@@ -164,26 +164,117 @@ Viết chương trình C hoàn chỉnh để giải quyết bài toán theo chu�
 - Không dùng các lệnh dừng màn hình không tương thích như \`system("cls")\` hay \`system("pause")\`.`;
 }
 
+export function isGenericFormat(str?: string): boolean {
+  if (!str || !str.trim()) return true;
+  const s = str.trim().toLowerCase();
+  return s.includes('dữ liệu đầu vào chuẩn từ stdin') ||
+         s.includes('dữ liệu đầu vào chuẩn từ bàn phím') ||
+         s.includes('dữ liệu đầu vào chuẩn') ||
+         s.includes('kết quả in ra stdout theo đúng định dạng') ||
+         s.includes('kết quả in ra màn hình (stdout)') ||
+         s.includes('kết quả in ra stdout') ||
+         s.includes('theo chuẩn đề bài') ||
+         s.includes('standard input data from stdin') ||
+         s.includes('standard input from stdin') ||
+         s.includes('print formatted result to stdout') ||
+         s.includes('print formatted output to stdout') ||
+         s.includes('thời gian thực thi tối đa: 1.0') ||
+         s.includes('thời gian thực thi: 1.0') ||
+         s.includes('thời gian thực thi tối đa') ||
+         (s.includes('1.0s') && s.includes('128mb')) ||
+         (s.includes('1.0 giây') && s.includes('128mb'));
+}
+
+export function detectProblemDomain(problem: Partial<Problem>): 'array' | 'shape' | 'string' | 'math' {
+  const cat = (problem.category || '').toLowerCase();
+  const title = (problem.title || '').toLowerCase();
+  const tags = (problem.tags || []).map(t => t.toLowerCase()).join(' ');
+
+  if (
+    cat.includes('mảng') || cat.includes('array') || cat.includes('sort') ||
+    title.includes('mảng') || title.includes('dãy') || title.includes('sắp xếp') ||
+    title.includes('đổi vị trí') || title.includes('hoán đổi') || title.includes('phần tử') ||
+    tags.includes('array') || tags.includes('sort')
+  ) {
+    return 'array';
+  }
+
+  if (
+    cat.includes('hình') || cat.includes('shape') || cat.includes('pattern') ||
+    title.includes('vẽ') || title.includes('hình') || title.includes('tam giác') ||
+    title.includes('vuông') || title.includes('ngôi nhà') || title.includes('bình hành') ||
+    title.includes('thoi') || title.includes('kim cương') || tags.includes('shape')
+  ) {
+    return 'shape';
+  }
+
+  if (
+    cat.includes('chuỗi') || cat.includes('string') || cat.includes('con trỏ') ||
+    title.includes('chuỗi') || title.includes('xâu') || title.includes('string') ||
+    title.includes('ký tự') || title.includes('từ') || title.includes('ascii') ||
+    tags.includes('string')
+  ) {
+    return 'string';
+  }
+
+  return 'math';
+}
+
 /**
  * Returns input format in selected language with fallback
  */
 export function getProblemInputFormat(problem: Partial<Problem>, lang: 'vi' | 'en'): string {
   if (lang === 'en') {
-    if (problem.inputFormatEn && problem.inputFormatEn.trim()) return problem.inputFormatEn;
-    if (problem.inputFormat && problem.inputFormat.trim()) {
+    if (problem.inputFormatEn && problem.inputFormatEn.trim() && !isGenericFormat(problem.inputFormatEn)) {
+      return problem.inputFormatEn;
+    }
+    if (problem.inputFormat && problem.inputFormat.trim() && !isGenericFormat(problem.inputFormat)) {
       let text = problem.inputFormat;
       text = text.replace(/Một dòng duy nhất chứa/g, 'A single line containing');
-      text = text.replace(/Dữ liệu đầu vào chuẩn từ stdin theo từng dòng\./g, 'Standard input data from stdin on separate lines.');
       text = text.replace(/Dòng đầu tiên chứa/g, 'The first line contains');
       text = text.replace(/Dòng thứ hai chứa/g, 'The second line contains');
       text = text.replace(/số nguyên dương/g, 'positive integers');
       text = text.replace(/số nguyên/g, 'integers');
       return text;
     }
-    return 'Standard input from stdin as specified in the problem statement.';
+
+    const domain = detectProblemDomain(problem);
+    if (domain === 'array') {
+      return 'Line 1: A positive integer $N$ ($1 \\le N \\le 1000$) — the number of elements in the array.\nLine 2: $N$ space-separated integers representing the array elements.';
+    }
+    if (domain === 'shape') {
+      return 'A single line containing a positive integer $N$ ($1 \\le N \\le 50$) — dimension or height of the geometric pattern.';
+    }
+    if (domain === 'string') {
+      return 'A single line containing string $S$ ($1 \\le |S| \\le 1000$) to be processed, terminated by a newline.';
+    }
+    const sampleInput = problem.samples?.[0]?.input?.trim() || '';
+    if (sampleInput.includes(' ') && !sampleInput.includes('\n')) {
+      return 'A single line containing two space-separated integers $a, b$ ($1 \\le a, b \\le 10^7$).';
+    }
+    return 'A single line containing an integer $N$ ($1 \\le N \\le 10^7$).';
   }
 
-  return problem.inputFormat || 'Dữ liệu đầu vào chuẩn từ bàn phím (stdin) theo từng dòng.';
+  // Vietnamese
+  if (problem.inputFormat && problem.inputFormat.trim() && !isGenericFormat(problem.inputFormat)) {
+    return problem.inputFormat;
+  }
+
+  const domain = detectProblemDomain(problem);
+  if (domain === 'array') {
+    return 'Dòng 1: Số nguyên dương $N$ ($1 \\le N \\le 1000$) — số lượng phần tử của mảng.\nDòng 2: $N$ số nguyên cách nhau bởi dấu cách biểu diễn các phần tử của mảng.';
+  }
+  if (domain === 'shape') {
+    return 'Một dòng duy nhất chứa số nguyên dương $N$ ($1 \\le N \\le 50$) — kích thước cạnh hoặc chiều cao của hình cần vẽ.';
+  }
+  if (domain === 'string') {
+    return 'Một dòng chứa chuỗi ký tự $S$ ($1 \\le |S| \\le 1000$) cần xử lý, kết thúc bởi ký tự xuống dòng.';
+  }
+  const sampleInput = problem.samples?.[0]?.input?.trim() || '';
+  if (sampleInput.includes(' ') && !sampleInput.includes('\n')) {
+    return 'Một dòng duy nhất chứa hai số nguyên $a, b$ ($1 \\le a, b \\le 10^7$) cách nhau bởi dấu cách.';
+  }
+  return 'Một dòng duy nhất chứa số nguyên dương $N$ ($1 \\le N \\le 10^7$).';
 }
 
 /**
@@ -191,18 +282,65 @@ export function getProblemInputFormat(problem: Partial<Problem>, lang: 'vi' | 'e
  */
 export function getProblemOutputFormat(problem: Partial<Problem>, lang: 'vi' | 'en'): string {
   if (lang === 'en') {
-    if (problem.outputFormatEn && problem.outputFormatEn.trim()) return problem.outputFormatEn;
-    if (problem.outputFormat && problem.outputFormat.trim()) {
+    if (problem.outputFormatEn && problem.outputFormatEn.trim() && !isGenericFormat(problem.outputFormatEn)) {
+      return problem.outputFormatEn;
+    }
+    if (problem.outputFormat && problem.outputFormat.trim() && !isGenericFormat(problem.outputFormat)) {
       let text = problem.outputFormat;
-      text = text.replace(/Kết quả in ra stdout theo đúng định dạng kiểm thử\./g, 'Print formatted result to stdout matching the test specification.');
       text = text.replace(/In ra một số nguyên duy nhất/g, 'Print a single integer');
       text = text.replace(/In ra/g, 'Print');
       return text;
     }
-    return 'Print formatted output to stdout matching expected sample output.';
+
+    const domain = detectProblemDomain(problem);
+    const title = (problem.title || '').toLowerCase();
+    if (domain === 'shape') {
+      return 'Print the corresponding pattern composed of `*` or digits according to the rules, each row separated by a newline. No trailing spaces.';
+    }
+    if (domain === 'array') {
+      if (title.includes('sắp xếp') || title.includes('đổi vị trí') || title.includes('hoán đổi') || title.includes('đảo ngược') || title.includes('xóa')) {
+        return 'Print the array elements after transformation on a single line, separated by a single space.';
+      }
+      return 'Print a single integer representing the calculated answer.';
+    }
+    if (domain === 'string') {
+      if (title.includes('đếm') || title.includes('độ dài')) {
+        return 'Print a single integer representing the counted characters or words.';
+      }
+      return 'Print the processed string on a separate line.';
+    }
+    if (title.includes('kiểm tra') || title.includes('check') || title.includes('năm nhuận') || title.includes('nguyên tố') || title.includes('chính phương') || title.includes('amstrong')) {
+      return 'Print the verification result (`1` if true, `0` if false; or `YES`/`NO` matching sample format).';
+    }
+    return 'Print a single integer representing the calculated answer.';
   }
 
-  return problem.outputFormat || 'Kết quả in ra màn hình (stdout) theo đúng định dạng kiểm thử.';
+  // Vietnamese
+  if (problem.outputFormat && problem.outputFormat.trim() && !isGenericFormat(problem.outputFormat)) {
+    return problem.outputFormat;
+  }
+
+  const domain = detectProblemDomain(problem);
+  const title = (problem.title || '').toLowerCase();
+  if (domain === 'shape') {
+    return 'In ra hình vẽ tương ứng gồm các ký tự sao `*` hoặc số theo đúng quy luật, mỗi dòng cách nhau bởi ký tự xuống dòng. Không in khoảng trắng thừa ở cuối dòng.';
+  }
+  if (domain === 'array') {
+    if (title.includes('sắp xếp') || title.includes('đổi vị trí') || title.includes('hoán đổi') || title.includes('đảo ngược') || title.includes('xóa') || title.includes('bình phương')) {
+      return 'In ra các phần tử của mảng sau khi xử lý trên một dòng, cách nhau bởi một khoảng trắng.';
+    }
+    return 'In ra một số nguyên duy nhất là kết quả tính toán của bài toán.';
+  }
+  if (domain === 'string') {
+    if (title.includes('đếm') || title.includes('độ dài')) {
+      return 'In ra một số nguyên duy nhất là số lượng ký tự hoặc từ đếm được.';
+    }
+    return 'In ra chuỗi ký tự sau khi xử lý ra màn hình trên một dòng riêng biệt.';
+  }
+  if (title.includes('kiểm tra') || title.includes('check') || title.includes('năm nhuận') || title.includes('nguyên tố') || title.includes('chính phương') || title.includes('amstrong') || title.includes('đối xứng')) {
+    return 'In ra kết quả kiểm tra (ví dụ: `1` nếu thỏa mãn, `0` nếu không thỏa mãn; hoặc `YES`/`NO` theo mẫu kiểm thử).';
+  }
+  return 'In ra một số nguyên duy nhất là kết quả tính toán của bài toán.';
 }
 
 /**
@@ -210,15 +348,43 @@ export function getProblemOutputFormat(problem: Partial<Problem>, lang: 'vi' | '
  */
 export function getProblemConstraints(problem: Partial<Problem>, lang: 'vi' | 'en'): string {
   if (lang === 'en') {
-    if (problem.constraintsEn && problem.constraintsEn.trim()) return problem.constraintsEn;
-    if (problem.constraints && problem.constraints.trim()) {
+    if (problem.constraintsEn && problem.constraintsEn.trim() && !isGenericFormat(problem.constraintsEn)) {
+      return problem.constraintsEn;
+    }
+    if (problem.constraints && problem.constraints.trim() && !isGenericFormat(problem.constraints)) {
       let text = problem.constraints;
       text = text.replace(/Thời gian thực thi tối đa:\s*([\d.]+)s/g, 'Time limit: $1s');
       text = text.replace(/Bộ nhớ:\s*(\d+)MB/g, 'Memory limit: $1MB');
       return text;
     }
-    return 'Time limit: 1.0s • Memory limit: 128MB • GCC C11/C17 Sandbox';
+
+    const domain = detectProblemDomain(problem);
+    if (domain === 'array') {
+      return '$1 \\le N \\le 1000$; each element $-10^5 \\le A_i \\le 10^5$. Time limit: $1.0\\text{s}$, memory: $128\\text{MB}$.';
+    }
+    if (domain === 'shape') {
+      return '$1 \\le N \\le 50$. Time limit: $1.0\\text{s}$, memory: $128\\text{MB}$. No trailing spaces at the end of lines.';
+    }
+    if (domain === 'string') {
+      return 'String length $1 \\le |S| \\le 1000$. Printable ASCII characters. Time limit: $1.0\\text{s}$, memory: $128\\text{MB}$.';
+    }
+    return '$1 \\le N \\le 10^7$ (or standard 32-bit integer). Time limit: $1.0\\text{s}$, memory: $128\\text{MB}$.';
   }
 
-  return problem.constraints || 'Thời gian thực thi: 1.0s • Bộ nhớ tối đa: 128MB • GCC C11/C17 Sandbox';
+  // Vietnamese
+  if (problem.constraints && problem.constraints.trim() && !isGenericFormat(problem.constraints)) {
+    return problem.constraints;
+  }
+
+  const domain = detectProblemDomain(problem);
+  if (domain === 'array') {
+    return '$1 \\le N \\le 1000$; mỗi phần tử mảng $-10^5 \\le A_i \\le 10^5$. Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$.';
+  }
+  if (domain === 'shape') {
+    return '$1 \\le N \\le 50$. Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$. Không in khoảng trắng thừa ở cuối dòng.';
+  }
+  if (domain === 'string') {
+    return 'Độ dài chuỗi $1 \\le |S| \\le 1000$. Ký tự thuộc bảng mã ASCII tiêu chuẩn (từ $32$ đến $126$). Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$.';
+  }
+  return '$1 \\le N \\le 10^7$ (hoặc số nguyên 32-bit). Giới hạn thời gian: $1.0\\text{s}$, bộ nhớ: $128\\text{MB}$.';
 }
