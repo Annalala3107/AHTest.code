@@ -13,6 +13,8 @@ export interface CodeEditorProps {
   readOnly?: boolean;
   className?: string;
   placeholder?: string;
+  maxLength?: number;
+  showCharBadge?: boolean;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -26,6 +28,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onMount,
   readOnly = false,
   className = '',
+  maxLength = 5000,
+  showCharBadge = true,
 }) => {
   const editorRef = useRef<any>(null);
   const onNextLessonRef = useRef(onNextLesson);
@@ -102,13 +106,22 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
+  const handleCodeChange = (val: string | undefined) => {
+    const text = val || '';
+    if (maxLength && text.length > maxLength) {
+      onChange(text.slice(0, maxLength));
+    } else {
+      onChange(text);
+    }
+  };
+
   return (
     <div className={`w-full h-full min-h-[240px] relative overflow-hidden bg-slate-950 ${className}`}>
       <Editor
         height={height}
         language={getMonacoLanguage(language)}
         value={value}
-        onChange={(val) => onChange(val || '')}
+        onChange={handleCodeChange}
         onMount={handleEditorDidMount}
         loading={
           <div className="flex items-center justify-center h-full text-xs text-slate-500 font-mono gap-2 bg-slate-950">
@@ -144,6 +157,21 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           quickSuggestions: true,
         }}
       />
+
+      {/* Real-time 5000-character Floating Gauge */}
+      {showCharBadge && (
+        <div 
+          className={`absolute bottom-2.5 right-4 z-10 px-2 py-0.5 rounded text-[10px] font-mono border backdrop-blur-xs select-none pointer-events-none transition-all shadow-xs ${
+            value.length >= maxLength
+              ? 'bg-rose-950/90 text-rose-300 border-rose-600 font-bold animate-pulse'
+              : value.length >= maxLength * 0.9
+              ? 'bg-amber-950/80 text-amber-300 border-amber-700'
+              : 'bg-slate-900/80 text-slate-400 border-slate-800'
+          }`}
+        >
+          {value.length.toLocaleString('vi-VN')} / {maxLength.toLocaleString('vi-VN')} ký tự
+        </div>
+      )}
     </div>
   );
 };

@@ -4,6 +4,18 @@
  * standard I/O streams (scanf/printf/cin/cout), and loop iteration caps (TLE).
  */
 
+export const MAX_CODE_LENGTH = 5000;
+
+export interface PedagogicalDiagnosis {
+  category: 'SYNTAX' | 'RUNTIME' | 'TIMEOUT' | 'MEMORY_LEAK' | 'SIZE_LIMIT' | 'LOGIC';
+  badge: string;
+  title: string;
+  explanation: string;
+  suggestion: string;
+  location?: string;
+  codeSnippet?: string;
+}
+
 export interface ExecutionResult {
   status: 'SUCCESS' | 'CE' | 'RTE' | 'TLE';
   exitCode: number;
@@ -19,6 +31,158 @@ export interface ExecutionResult {
     leakedBlocks?: number[];
   };
   diagnostics?: string[];
+  pedagogicalDiagnosis?: PedagogicalDiagnosis;
+}
+
+/**
+ * 0. PEDAGOGICAL ERROR EXPLAINER
+ * Analyzes compiler output, runtime crashes, and system traps to provide
+ * compassionate, student-friendly diagnostic explanations and concrete fixes.
+ */
+export function generatePedagogicalDiagnosis(
+  status: 'SUCCESS' | 'CE' | 'RTE' | 'TLE',
+  rawError: string,
+  code: string,
+  heapReport?: any
+): PedagogicalDiagnosis | undefined {
+  if (code.length > MAX_CODE_LENGTH) {
+    return {
+      category: 'SIZE_LIMIT',
+      badge: 'Vượt quá 5,000 ký tự',
+      title: 'Mã nguồn vượt quá dung lượng cho phép',
+      explanation: `Hệ thống giới hạn mỗi bài tập tối đa 5,000 ký tự để rèn luyện tư duy tối ưu mã và đảm bảo hiệu năng. Mã của bạn hiện đang có ${code.length.toLocaleString('vi-VN')} ký tự (dư ${(code.length - MAX_CODE_LENGTH).toLocaleString('vi-VN')} ký tự).`,
+      suggestion: 'Hãy xóa bớt các ghi chú (comment) rườm rà, các hàm không dùng đến, hoặc tối ưu lại cấu trúc thuật toán.'
+    };
+  }
+
+  if (status === 'CE') {
+    if (rawError.includes("undefined reference to 'main'") || rawError.includes('hàm entrypoint')) {
+      return {
+        category: 'SYNTAX',
+        badge: 'Thiếu hàm main()',
+        title: 'Chương trình thiếu hàm khởi đầu int main()',
+        explanation: 'Trong ngôn ngữ C và C++, hệ điều hành luôn bắt đầu thực thi chương trình tại hàm main. Nếu không tìm thấy hàm này, trình biên dịch (GCC/Clang) sẽ dừng và báo lỗi tham chiếu chưa định nghĩa.',
+        suggestion: 'Hãy thêm hàm: int main() { /* mã nguồn của bạn */ return 0; } làm điểm vào cho chương trình.'
+      };
+    }
+
+    if (rawError.includes("expected ';'") || rawError.includes('Thiếu dấu chấm phẩy')) {
+      const lineMatch = rawError.match(/solution\.c:(\d+):(\d+)/);
+      const loc = lineMatch ? `Dòng ${lineMatch[1]}, cột ${lineMatch[2]}` : undefined;
+      return {
+        category: 'SYNTAX',
+        badge: "Thiếu dấu ';'",
+        title: "Thiếu dấu chấm phẩy ';' kết thúc câu lệnh",
+        explanation: 'Trong ngôn ngữ C/C++, mỗi câu lệnh đơn (khai báo biến, gán giá trị, gọi hàm printf/scanf, return) bắt buộc phải kết thúc bằng dấu chấm phẩy (;).',
+        suggestion: loc ? `Hãy kiểm tra tại ${loc} hoặc ngay trước dòng đó và bổ sung dấu ';'.` : "Hãy kiểm tra lại cuối câu lệnh và bổ sung dấu ';'.",
+        location: loc
+      };
+    }
+
+    if (rawError.includes('unmatched') || rawError.includes('mismatched') || rawError.includes('unclosed bracket') || rawError.includes('ngoặc')) {
+      const lineMatch = rawError.match(/solution\.c:(\d+):(\d+)/);
+      const loc = lineMatch ? `Dòng ${lineMatch[1]}` : undefined;
+      return {
+        category: 'SYNTAX',
+        badge: 'Lỗi đóng mở ngoặc',
+        title: 'Sai lệch cặp dấu ngoặc { }, ( ) hoặc [ ]',
+        explanation: 'Số lượng hoặc thứ tự các dấu ngoặc không khớp nhau. Lỗi này thường do mở ngoặc nhọn { của hàm, if, while nhưng quên đóng lại ở cuối khối lệnh.',
+        suggestion: 'Hãy kiểm tra lại toàn bộ các khối lệnh, đảm bảo mỗi dấu mở ngoặc đều có đúng một dấu đóng tương ứng.',
+        location: loc
+      };
+    }
+
+    return {
+      category: 'SYNTAX',
+      badge: 'Lỗi biên dịch cú pháp',
+      title: 'Cú pháp mã nguồn không hợp lệ',
+      explanation: 'Trình biên dịch phát hiện lỗi trong cách viết lệnh, từ khóa hoặc khai báo biến không tuân thủ quy chuẩn ngữ pháp của C/C++.',
+      suggestion: 'Đọc kỹ thông báo lỗi chi tiết bên dưới, kiểm tra lại cú pháp khai báo kiểu dữ liệu, include thư viện và tên hàm.'
+    };
+  }
+
+  if (status === 'TLE') {
+    return {
+      category: 'TIMEOUT',
+      badge: 'Quá thời gian (TLE)',
+      title: 'Vượt quá thời gian thực thi (Time Limit Exceeded)',
+      explanation: 'Chương trình chạy quá số bước tính toán tối đa (> 100,000 bước lặp). Hầu hết trường hợp là do vòng lặp while hoặc for bị lặp vô tận (infinite loop).',
+      suggestion: '1. Kiểm tra biến điều khiển vòng lặp: Đã có bước cập nhật biến đếm chưa (vd: i++, n--)?\n2. Kiểm tra điều kiện dừng: Điều kiện lặp có bao giờ trở thành sai (false) không?\n3. Khi dùng while(scanf(...) != -1), hãy chắc chắn chương trình dừng khi hết dữ liệu input.'
+    };
+  }
+
+  if (status === 'RTE') {
+    if (rawError.includes('double free')) {
+      return {
+        category: 'RUNTIME',
+        badge: 'Lỗi bộ nhớ (Double Free)',
+        title: 'Giải phóng vùng nhớ 2 lần (Double Free)',
+        explanation: 'Hàm free() đã được gọi 2 lần trên cùng một địa chỉ con trỏ Heap. Điều này gây hỏng cấu trúc bộ nhớ của hệ thống.',
+        suggestion: 'Chỉ giải phóng con trỏ một lần duy nhất. Sau khi free(ptr);, hãy gán ptr = NULL; để đảm bảo an toàn.'
+      };
+    }
+
+    if (rawError.includes('invalid pointer') || rawError.includes('free(): invalid pointer')) {
+      return {
+        category: 'RUNTIME',
+        badge: 'Con trỏ không hợp lệ',
+        title: 'Giải phóng con trỏ không hợp lệ',
+        explanation: 'Con trỏ được truyền vào hàm free() không phải là con trỏ được cấp phát bởi malloc()/calloc(), hoặc con trỏ đã bị dịch chuyển địa chỉ (ví dụ ptr++).',
+        suggestion: 'Chỉ gọi free() trên đúng biến con trỏ ban đầu được trả về từ malloc(). Không di chuyển con trỏ trước khi giải phóng.'
+      };
+    }
+
+    if (rawError.includes('SIGSEGV') || rawError.includes('Segmentation fault') || rawError.includes('NULL pointer') || rawError.includes('undefined') || rawError.includes('null')) {
+      return {
+        category: 'RUNTIME',
+        badge: 'Lỗi bộ nhớ (SIGSEGV)',
+        title: 'Vi phạm truy cập bộ nhớ (Segmentation Fault / NULL Pointer)',
+        explanation: 'Chương trình cố gắng đọc/ghi vào vùng nhớ không hợp lệ hoặc dereference con trỏ NULL (*ptr khi ptr == NULL). Thường do truy cập mảng ngoài phạm vi (out-of-bounds) hoặc con trỏ chưa trỏ vào ô nhớ hợp lệ.',
+        suggestion: '1. Kiểm tra chỉ số mảng: Mảng N phần tử chỉ hợp lệ từ chỉ số 0 đến N - 1.\n2. Kiểm tra con trỏ: Đảm bảo con trỏ đã được malloc() hoặc gán địa chỉ trước khi truy cập.\n3. Kiểm tra lệnh scanf: Đảm bảo có toán tử & trước biến (ví dụ: &x).'
+      };
+    }
+
+    if (rawError.includes('Maximum call stack') || rawError.includes('Stack overflow')) {
+      return {
+        category: 'RUNTIME',
+        badge: 'Tràn ngăn xếp (Stack Overflow)',
+        title: 'Tràn ngăn xếp bộ nhớ (Stack Overflow / Đệ quy vô tận)',
+        explanation: 'Hàm tự gọi lại chính nó quá nhiều lần mà không chạm tới điều kiện dừng (base case), dẫn đến việc tràn bộ nhớ ngăn xếp Call Stack.',
+        suggestion: 'Kiểm tra hàm đệ quy: Đảm bảo có lệnh if kiểm tra điều kiện cơ sở (vd: if (n <= 1) return 1;) ở ngay đầu hàm.'
+      };
+    }
+
+    if (rawError.includes('SIGFPE') || rawError.includes('division by zero') || rawError.includes('chia cho 0')) {
+      return {
+        category: 'RUNTIME',
+        badge: 'Lỗi số học (SIGFPE)',
+        title: 'Phép toán số học không hợp lệ (Chia cho 0)',
+        explanation: 'Chương trình thực hiện phép chia nguyên hoặc lấy dư (/ hoặc %) với mẫu số bằng 0.',
+        suggestion: 'Kiểm tra mẫu số trước khi chia: if (mauSo != 0) { thuong = tuSo / mauSo; }'
+      };
+    }
+
+    return {
+      category: 'RUNTIME',
+      badge: 'Lỗi thực thi (Runtime Error)',
+      title: 'Chương trình bị dừng đột ngột (Crash)',
+      explanation: 'Chương trình gặp sự cố trong quá trình chạy, có thể do thao tác dữ liệu không hợp lệ hoặc logic chưa xử lý các trường hợp ngoại lệ.',
+      suggestion: 'Kiểm tra lại input kiểm thử, các giá trị biên (số âm, số 0, chuỗi rỗng) và các thao tác trên mảng/con trỏ.'
+    };
+  }
+
+  // Memory leak in SUCCESS
+  if (heapReport && heapReport.hasMemoryLeak) {
+    return {
+      category: 'MEMORY_LEAK',
+      badge: 'Cảnh báo rò rỉ bộ nhớ Heap',
+      title: 'Phát hiện bộ nhớ chưa được giải phóng (Memory Leak)',
+      explanation: `Chương trình đã cấp phát ${heapReport.totalAllocated} bytes bộ nhớ động bằng malloc()/calloc() nhưng vẫn còn ${heapReport.activeBlocks} khối nhớ chưa được thu hồi bằng free().`,
+      suggestion: 'Hãy thêm lệnh free(ptr); cho tất cả các vùng nhớ đã malloc trước khi lệnh return 0; kết thúc hàm main.'
+    };
+  }
+
+  return undefined;
 }
 
 /**
@@ -474,18 +638,37 @@ function transpileCToJS(cCode: string): string {
 export function executeCCode(code: string, stdin: string = ''): ExecutionResult {
   const startTime = performance.now();
 
-  // Step 1: Static syntax check (CE)
-  const syntaxCheck = checkCSyntax(code);
-  if (!syntaxCheck.isValid) {
+  // Step 0: Enforce code character limit (5,000 characters)
+  if (code.length > MAX_CODE_LENGTH) {
     const elapsed = Math.round(performance.now() - startTime);
+    const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
     return {
       status: 'CE',
       exitCode: 1,
       stdout: '',
-      stderr: syntaxCheck.error || 'Compile Error: Lỗi cú pháp chương trình C.',
+      stderr: `[Dung lượng vượt mức]: Mã nguồn chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa cho phép là ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự.`,
       executionTimeMs: elapsed,
       memoryKb: 0,
-      diagnostics: [syntaxCheck.error || '']
+      diagnostics: [diag?.explanation || 'Mã nguồn vượt quá giới hạn 5,000 ký tự.'],
+      pedagogicalDiagnosis: diag
+    };
+  }
+
+  // Step 1: Static syntax check (CE)
+  const syntaxCheck = checkCSyntax(code);
+  if (!syntaxCheck.isValid) {
+    const elapsed = Math.round(performance.now() - startTime);
+    const rawErr = syntaxCheck.error || 'Compile Error: Lỗi cú pháp chương trình C.';
+    const diag = generatePedagogicalDiagnosis('CE', rawErr, code);
+    return {
+      status: 'CE',
+      exitCode: 1,
+      stdout: '',
+      stderr: rawErr,
+      executionTimeMs: elapsed,
+      memoryKb: 0,
+      diagnostics: [rawErr],
+      pedagogicalDiagnosis: diag
     };
   }
 
@@ -508,6 +691,8 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
       );
     }
 
+    const diag = generatePedagogicalDiagnosis('SUCCESS', '', code, heapSummary);
+
     return {
       status: 'SUCCESS',
       exitCode: 0,
@@ -516,13 +701,15 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
       executionTimeMs: Math.max(elapsed, 1),
       memoryKb: 1024 + heapSummary.totalAllocated,
       heapReport: heapSummary,
-      diagnostics: diagnostics.length > 0 ? diagnostics : undefined
+      diagnostics: diagnostics.length > 0 ? diagnostics : undefined,
+      pedagogicalDiagnosis: diag
     };
   } catch (err: any) {
     const elapsed = Math.round(performance.now() - startTime);
     const message = err?.message || String(err);
 
     if (message.includes('TIME_LIMIT_EXCEEDED')) {
+      const diag = generatePedagogicalDiagnosis('TLE', message, code);
       return {
         status: 'TLE',
         exitCode: 124,
@@ -530,10 +717,12 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
         stderr: message,
         executionTimeMs: 1000,
         memoryKb: 2048,
-        diagnostics: ['[Time Limit Exceeded] Chương trình chạy quá thời gian cho phép (1.00s). Có thể do vòng lặp vô tận (infinite loop).']
+        diagnostics: ['[Time Limit Exceeded] Chương trình chạy quá thời gian cho phép (1.00s). Có thể do vòng lặp vô tận (infinite loop).'],
+        pedagogicalDiagnosis: diag
       };
     }
 
+    const diag = generatePedagogicalDiagnosis('RTE', message, code);
     return {
       status: 'RTE',
       exitCode: 139,
@@ -541,7 +730,8 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
       stderr: message,
       executionTimeMs: Math.max(elapsed, 1),
       memoryKb: 2048,
-      diagnostics: [message]
+      diagnostics: [message],
+      pedagogicalDiagnosis: diag
     };
   }
 }

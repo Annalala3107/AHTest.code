@@ -29,7 +29,7 @@ import {
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
-import { executeCCode, ExecutionResult } from '../services/cExecutionEngine';
+import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
 import { CodeEditor } from './CodeEditor';
 
 interface WorkbenchViewProps {
@@ -122,6 +122,7 @@ fn main() {
   const [isDraggingConsole, setIsDraggingConsole] = useState<boolean>(false);
   const [isConsoleMaximized, setIsConsoleMaximized] = useState<boolean>(false);
   const [customExecResult, setCustomExecResult] = useState<ExecutionResult | null>(null);
+  const [pedagogicalDiagnosis, setPedagogicalDiagnosis] = useState<PedagogicalDiagnosis | null>(null);
   const workspaceContainerRef = useRef<HTMLDivElement>(null);
   const editorColumnRef = useRef<HTMLDivElement>(null);
   const monacoEditorRef = useRef<any>(null);
@@ -254,12 +255,39 @@ fn main() {
     setFinalVerdict(null);
     setTestResults(null);
     setSelectedTestResult(null);
+    setPedagogicalDiagnosis(null);
+
+    // Enforce 5,000 character limit
+    if (code.length > 5000) {
+      setIsGrading(false);
+      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
+      setPedagogicalDiagnosis(diag || null);
+      const ceResult: TestResult = {
+        testId: 1,
+        testName: 'Giới hạn kích thước mã nguồn',
+        verdict: 'CE',
+        time: 0,
+        memory: 0,
+        score: 0,
+        maxScore: problem.points,
+        isHidden: false,
+        input: 'Kiểm tra độ dài code',
+        actualOutput: `[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`,
+        expectedOutput: 'Dưới 5,000 ký tự'
+      };
+      setCustomOutput(ceResult.actualOutput || '');
+      setTestResults([ceResult]);
+      setSelectedTestResult(ceResult);
+      setFinalVerdict('CE');
+      return;
+    }
 
     setTimeout(() => {
       setIsGrading(false);
       const sample = problem.samples[0];
       const input = sample?.input || '';
       const exec = executeCCode(code, input);
+      setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
       if (exec.status === 'CE') verdict = 'CE';
@@ -267,6 +295,16 @@ fn main() {
       else if (exec.status === 'TLE') verdict = 'TLE';
       else if (exec.stdout.replace(/\r\n/g, '\n').trim() === (sample?.output || '').replace(/\r\n/g, '\n').trim()) {
         verdict = 'AC';
+      }
+
+      if (verdict === 'WA' && !exec.pedagogicalDiagnosis) {
+        setPedagogicalDiagnosis({
+          category: 'LOGIC',
+          badge: 'Chưa đạt (Wrong Answer)',
+          title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
+          explanation: 'Chương trình chạy hoàn tất không bị crash, nhưng nội dung in ra màn hình khác với kết quả mong đợi của ví dụ.',
+          suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc định dạng số.'
+        });
       }
 
       const singleResult: TestResult = {
@@ -297,12 +335,39 @@ fn main() {
     setFinalVerdict(null);
     setTestResults(null);
     setSelectedTestResult(null);
+    setPedagogicalDiagnosis(null);
+
+    // Enforce 5,000 character limit
+    if (code.length > 5000) {
+      setIsGrading(false);
+      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
+      setPedagogicalDiagnosis(diag || null);
+      const ceResult: TestResult = {
+        testId: index + 1,
+        testName: `Kiểm tra dung lượng code`,
+        verdict: 'CE',
+        time: 0,
+        memory: 0,
+        score: 0,
+        maxScore: problem.points,
+        isHidden: false,
+        input: 'Kiểm tra độ dài code',
+        actualOutput: `[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`,
+        expectedOutput: 'Dưới 5,000 ký tự'
+      };
+      setCustomOutput(ceResult.actualOutput || '');
+      setTestResults([ceResult]);
+      setSelectedTestResult(ceResult);
+      setFinalVerdict('CE');
+      return;
+    }
 
     setTimeout(() => {
       setIsGrading(false);
       const sample = problem.samples[index] || problem.samples[0];
       const input = sample?.input || '';
       const exec = executeCCode(code, input);
+      setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
       if (exec.status === 'CE') verdict = 'CE';
@@ -310,6 +375,16 @@ fn main() {
       else if (exec.status === 'TLE') verdict = 'TLE';
       else if (exec.stdout.replace(/\r\n/g, '\n').trim() === (sample?.output || '').replace(/\r\n/g, '\n').trim()) {
         verdict = 'AC';
+      }
+
+      if (verdict === 'WA' && !exec.pedagogicalDiagnosis) {
+        setPedagogicalDiagnosis({
+          category: 'LOGIC',
+          badge: 'Chưa đạt (Wrong Answer)',
+          title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
+          explanation: 'Chương trình chạy hoàn tất không bị crash, nhưng nội dung in ra màn hình khác với kết quả mong đợi của ví dụ.',
+          suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc định dạng số.'
+        });
       }
 
       const singleResult: TestResult = {
@@ -336,8 +411,20 @@ fn main() {
   const handleRunCustomTest = () => {
     setShowConsole(true);
     setConsoleTab('custom');
+    setPedagogicalDiagnosis(null);
+
+    // Enforce 5,000 character limit
+    if (code.length > 5000) {
+      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
+      setPedagogicalDiagnosis(diag || null);
+      setCustomOutput(`[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn 5,000 ký tự.`);
+      return;
+    }
+
     const exec = executeCCode(code, customInput);
     setCustomExecResult(exec);
+    setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
+
     if (exec.status === 'CE') {
       setCustomOutput(exec.stderr);
     } else if (exec.status === 'RTE') {
@@ -358,11 +445,37 @@ fn main() {
     setTestResults(null);
     setSelectedTestResult(null);
     setAiHint(null);
+    setPedagogicalDiagnosis(null);
+
+    // Enforce 5,000 character limit
+    if (code.length > 5000) {
+      setIsGrading(false);
+      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
+      setPedagogicalDiagnosis(diag || null);
+      const ceResult: TestResult = {
+        testId: 1,
+        testName: 'Giới hạn kích thước mã nguồn',
+        verdict: 'CE',
+        time: 0,
+        memory: 0,
+        score: 0,
+        maxScore: 100,
+        isHidden: false,
+        input: 'Kích thước mã nguồn',
+        actualOutput: `[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`,
+        expectedOutput: 'Tối đa 5,000 ký tự'
+      };
+      setTestResults([ceResult]);
+      setSelectedTestResult(ceResult);
+      setFinalVerdict('CE');
+      return;
+    }
 
     // Check for Compile Error once first
     const syntaxCheck = executeCCode(code, '');
     if (syntaxCheck.status === 'CE') {
       setIsGrading(false);
+      setPedagogicalDiagnosis(syntaxCheck.pedagogicalDiagnosis || null);
       const ceResult: TestResult = {
         testId: 1,
         testName: 'Compilation Check',
@@ -480,6 +593,24 @@ fn main() {
         const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
         setSelectedTestResult(firstFail || simulatedTests[0]);
 
+        if (firstFail) {
+          const failDef = testDefinitions.find(t => t.id === firstFail.testId);
+          const failExec = executeCCode(code, failDef?.input || '');
+          if (failExec.pedagogicalDiagnosis) {
+            setPedagogicalDiagnosis(failExec.pedagogicalDiagnosis);
+          } else {
+            setPedagogicalDiagnosis({
+              category: 'LOGIC',
+              badge: 'Chưa đạt (Wrong Answer)',
+              title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
+              explanation: 'Chương trình biên dịch và chạy thành công mà không bị crash, nhưng dữ liệu in ra màn hình khác với kết quả mong đợi của bộ test.',
+              suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc trường hợp biên.'
+            });
+          }
+        } else {
+          setPedagogicalDiagnosis(null);
+        }
+
         if (allAC) {
           confetti({
             particleCount: 80,
@@ -569,28 +700,40 @@ fn main() {
           {/* Run & Submit CTAs with Keyboard Shortcut Badges */}
           <button
             onClick={handleRunSample}
-            disabled={isGrading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors cursor-pointer"
-            title="Phím tắt: F9"
+            disabled={isGrading || code.length > 5000}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              code.length > 5000 
+                ? 'bg-rose-950/80 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed' 
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 cursor-pointer'
+            }`}
+            title={code.length > 5000 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 5,000 ký tự!` : "Phím tắt: F9"}
           >
             <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500" />
-            <span>Chạy thử</span>
-            <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
-              F9
-            </kbd>
+            <span>{code.length > 5000 ? 'Quá 5,000 ký tự' : 'Chạy thử'}</span>
+            {code.length <= 5000 && (
+              <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
+                F9
+              </kbd>
+            )}
           </button>
 
           <button
             onClick={handleSubmitSolution}
-            disabled={isGrading}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-xs shadow-rose-600/30 disabled:opacity-50 transition-all cursor-pointer"
-            title="Phím tắt: Ctrl + Enter"
+            disabled={isGrading || code.length > 5000}
+            className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              code.length > 5000
+                ? 'bg-rose-950 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed'
+                : 'bg-rose-600 hover:bg-rose-500 text-white shadow-xs shadow-rose-600/30 disabled:opacity-50 cursor-pointer'
+            }`}
+            title={code.length > 5000 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 5,000 ký tự!` : "Phím tắt: Ctrl + Enter"}
           >
             <Send className="w-3.5 h-3.5" />
-            <span>Nộp bài</span>
-            <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1.5 py-0.2 rounded bg-rose-700 text-rose-200 border border-rose-500/40 font-mono">
-              Ctrl+↵
-            </kbd>
+            <span>{code.length > 5000 ? 'Quá giới hạn' : 'Nộp bài'}</span>
+            {code.length <= 5000 && (
+              <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1.5 py-0.2 rounded bg-rose-700 text-rose-200 border border-rose-500/40 font-mono">
+                Ctrl+↵
+              </kbd>
+            )}
           </button>
         </div>
       </div>
@@ -869,6 +1012,21 @@ fn main() {
             </div>
 
             <div className="flex items-center gap-2.5">
+              {/* 5000-character limit counter */}
+              <div 
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1.5 transition-colors ${
+                  code.length > 5000 
+                    ? 'text-rose-400 bg-rose-950/80 border-rose-600 font-bold animate-pulse'
+                    : code.length > 4500
+                    ? 'text-amber-300 bg-amber-950/60 border-amber-600 font-semibold'
+                    : 'text-slate-400 bg-slate-900 border-slate-800'
+                }`}
+                title={`Dung lượng code: ${code.length.toLocaleString('vi-VN')} / 5,000 ký tự tối đa`}
+              >
+                <span>{code.length.toLocaleString('vi-VN')}/5,000</span>
+                <span className="hidden md:inline text-[10px] text-slate-500">ký tự</span>
+              </div>
+
               {draftSaved && (
                 <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
                   <Save className="w-3 h-3 text-emerald-400" />
@@ -1222,6 +1380,38 @@ fn main() {
                     {/* Output Section */}
                     {customOutput && (
                       <div className="pt-2 space-y-2">
+                        {/* Pedagogical Diagnosis Explainer Card in Custom tab */}
+                        {pedagogicalDiagnosis && (
+                          <div className="p-3.5 rounded-xl border border-amber-500/40 bg-linear-to-r from-amber-950/40 via-slate-900 to-slate-950 shadow-md font-sans space-y-2.5">
+                            <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
+                                  <Lightbulb className="w-4 h-4" />
+                                </span>
+                                <span className="font-bold text-amber-300 text-xs sm:text-sm">
+                                  {pedagogicalDiagnosis.title}
+                                </span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                                {pedagogicalDiagnosis.badge}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              {pedagogicalDiagnosis.explanation}
+                            </p>
+
+                            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1">
+                              <span className="font-bold text-emerald-400 text-[11px] block">
+                                💡 Hướng dẫn sửa nhanh:
+                              </span>
+                              <p className="text-slate-300 whitespace-pre-line font-mono text-[11px] leading-relaxed">
+                                {pedagogicalDiagnosis.suggestion}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Status bar */}
                         <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono">
                           <div className="flex items-center gap-2">
@@ -1313,6 +1503,38 @@ fn main() {
                       </div>
                     ) : testResults ? (
                       <div className="space-y-4 font-sans">
+                        {/* Pedagogical Diagnosis Explainer Card in Result tab */}
+                        {pedagogicalDiagnosis && (
+                          <div className="p-3.5 rounded-xl border border-amber-500/40 bg-linear-to-r from-amber-950/40 via-slate-900 to-slate-950 shadow-md font-sans space-y-2.5">
+                            <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
+                                  <Lightbulb className="w-4 h-4" />
+                                </span>
+                                <span className="font-bold text-amber-300 text-xs sm:text-sm">
+                                  {pedagogicalDiagnosis.title}
+                                </span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                                {pedagogicalDiagnosis.badge}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              {pedagogicalDiagnosis.explanation}
+                            </p>
+
+                            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1">
+                              <span className="font-bold text-emerald-400 text-[11px] block">
+                                💡 Hướng dẫn sửa nhanh:
+                              </span>
+                              <p className="text-slate-300 whitespace-pre-line font-mono text-[11px] leading-relaxed">
+                                {pedagogicalDiagnosis.suggestion}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Overall Verdict Banner */}
                         <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-3">

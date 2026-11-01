@@ -34,7 +34,7 @@ import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
-import { executeCCode, ExecutionResult } from '../services/cExecutionEngine';
+import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
 import { CodeEditor } from './CodeEditor';
 import confetti from 'canvas-confetti';
 
@@ -52,6 +52,7 @@ export const AcademyView: React.FC = () => {
 
   const [userCode, setUserCode] = useState<string>(activeLesson.initialCode || '');
   const [executionOutput, setExecutionOutput] = useState<string | null>(null);
+  const [pedagogicalDiagnosis, setPedagogicalDiagnosis] = useState<PedagogicalDiagnosis | null>(null);
   const [exercisePassed, setExercisePassed] = useState<boolean>(false);
   const [showHintIndex, setShowHintIndex] = useState<number>(-1);
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -311,8 +312,21 @@ export const AcademyView: React.FC = () => {
   const handleRunCode = () => {
     setIsRunning(true);
     setExecutionOutput(null);
+    setPedagogicalDiagnosis(null);
     setExercisePassed(false);
     setDiffState(null);
+
+    // Enforce 5000 character limit
+    if (userCode.length > 5000) {
+      setIsRunning(false);
+      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', userCode);
+      setPedagogicalDiagnosis(diag || null);
+      setExecutionOutput(`[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${userCode.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`);
+      setExercisePassed(false);
+      setDiffState(null);
+      setIsConsoleCollapsed(false);
+      return;
+    }
 
     setTimeout(() => {
       setIsRunning(false);
@@ -340,16 +354,20 @@ export const AcademyView: React.FC = () => {
           // If Compile Error
           if (exec.status === 'CE') {
             setExecutionOutput(`[Biên dịch thất bại: COMPILE ERROR]\n${exec.stderr}`);
+            setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
             setExercisePassed(false);
             setDiffState(null);
+            setIsConsoleCollapsed(false);
             return;
           }
 
           // If Runtime Error
           if (exec.status === 'RTE') {
             setExecutionOutput(`[Lỗi thực thi: RUNTIME ERROR]\n${exec.stderr}`);
+            setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
             setExercisePassed(false);
             setDiffState(null);
+            setIsConsoleCollapsed(false);
             return;
           }
 
@@ -358,8 +376,10 @@ export const AcademyView: React.FC = () => {
             setExecutionOutput(
               `[Vượt quá thời gian: TIME LIMIT EXCEEDED]\n${exec.stderr}\n[Gợi ý]: Vòng lặp while/for không có điều kiện dừng thích hợp.`
             );
+            setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
             setExercisePassed(false);
             setDiffState(null);
+            setIsConsoleCollapsed(false);
             return;
           }
 
@@ -404,6 +424,7 @@ export const AcademyView: React.FC = () => {
             }
           }
           setExecutionOutput(output);
+          setPedagogicalDiagnosis(lastExecResult?.pedagogicalDiagnosis || null);
           setExercisePassed(true);
           setCompletedLessons((prev) => {
             if (!prev.includes(activeLesson.id)) {
@@ -427,6 +448,14 @@ export const AcademyView: React.FC = () => {
           output += `\n\n❌ Test case thất bại đầu tiên: Input "${failedTc.input}"`;
           setExecutionOutput(output);
           setExercisePassed(false);
+          const waDiag: PedagogicalDiagnosis = {
+            category: 'LOGIC',
+            badge: 'Chưa đạt (Wrong Answer)',
+            title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
+            explanation: 'Chương trình biên dịch và chạy thành công mà không bị dừng đột ngột, nhưng kết quả in ra màn hình khác với kết quả mong đợi của bộ kiểm thử.',
+            suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n, định dạng chữ hoa/thường hoặc định dạng số thập phân.'
+          };
+          setPedagogicalDiagnosis(failedExec?.pedagogicalDiagnosis || waDiag);
           setDiffState({
             actual: failedExec.stdout,
             expected: failedTc.expectedOutput,
@@ -439,13 +468,19 @@ export const AcademyView: React.FC = () => {
         const exec = executeCCode(userCode, '');
         if (exec.status === 'CE') {
           setExecutionOutput(`[Biên dịch thất bại: COMPILE ERROR]\n${exec.stderr}`);
+          setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
           setExercisePassed(false);
+          setIsConsoleCollapsed(false);
         } else if (exec.status === 'RTE') {
           setExecutionOutput(`[Lỗi thực thi: RUNTIME ERROR]\n${exec.stderr}`);
+          setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
           setExercisePassed(false);
+          setIsConsoleCollapsed(false);
         } else if (exec.status === 'TLE') {
           setExecutionOutput(`[Vượt quá thời gian: TIME LIMIT EXCEEDED]\n${exec.stderr}`);
+          setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
           setExercisePassed(false);
+          setIsConsoleCollapsed(false);
         } else {
           confetti({
             particleCount: 75,
@@ -459,6 +494,7 @@ export const AcademyView: React.FC = () => {
             output += `\n⚠️ Cảnh báo: Rò rỉ bộ nhớ Heap (chưa gọi free())!`;
           }
           setExecutionOutput(output);
+          setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
           setExercisePassed(true);
           setCompletedLessons((prev) => {
             if (!prev.includes(activeLesson.id)) {
@@ -686,15 +722,23 @@ export const AcademyView: React.FC = () => {
           {/* Run Code / Submit Button */}
           <button
             onClick={handleRunCode}
-            disabled={isRunning}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
-            title="Phím tắt: Ctrl + Enter"
+            disabled={isRunning || userCode.length > 5000}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              userCode.length > 5000
+                ? 'bg-rose-950 text-rose-300 border border-rose-700 opacity-80 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-600/30 cursor-pointer disabled:opacity-50'
+            }`}
+            title={userCode.length > 5000 ? `Mã nguồn (${userCode.length.toLocaleString('vi-VN')} ký tự) vượt quá giới hạn 5,000 ký tự!` : "Phím tắt: Ctrl + Enter"}
           >
             <Play className="w-3 h-3 fill-white" />
-            <span className="hidden sm:inline">{isRunning ? 'Đang chấm...' : 'Chạy thử'}</span>
-            <kbd className="hidden sm:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-indigo-700 text-indigo-200 font-mono">
-              Ctrl+↵
-            </kbd>
+            <span className="hidden sm:inline">
+              {isRunning ? 'Đang chấm...' : userCode.length > 5000 ? 'Quá 5,000 ký tự' : 'Chạy thử'}
+            </span>
+            {userCode.length <= 5000 && (
+              <kbd className="hidden sm:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-indigo-700 text-indigo-200 font-mono">
+                Ctrl+↵
+              </kbd>
+            )}
           </button>
 
           {/* Next Lesson Pulsating Quick Button (Shift + Enter) */}
@@ -1394,8 +1438,23 @@ export const AcademyView: React.FC = () => {
                 </span>
               </div>
 
-              {/* Action Toolbar: Auto-save status & Hints */}
-              <div className="flex items-center gap-3 shrink-0">
+              {/* Action Toolbar: 5000-char counter, Auto-save status & Hints */}
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                {/* 5000-character limit counter */}
+                <div 
+                  className={`text-[11px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1.5 transition-colors ${
+                    userCode.length > 5000 
+                      ? 'text-rose-400 bg-rose-950/80 border-rose-600 font-bold animate-pulse'
+                      : userCode.length > 4500
+                      ? 'text-amber-300 bg-amber-950/60 border-amber-600 font-semibold'
+                      : 'text-slate-400 bg-slate-900 border-slate-800'
+                  }`}
+                  title={`Dung lượng code: ${userCode.length.toLocaleString('vi-VN')} / 5,000 ký tự tối đa`}
+                >
+                  <span>{userCode.length.toLocaleString('vi-VN')}/5,000</span>
+                  <span className="hidden md:inline text-[10px] text-slate-500">ký tự</span>
+                </div>
+
                 <div 
                   className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono select-none"
                   title="Code của bạn được tự động lưu liên tục trong trình duyệt"
@@ -1615,6 +1674,38 @@ export const AcademyView: React.FC = () => {
                   }
                   return null;
                 })()}
+
+                {/* Pedagogical Diagnosis Explainer Card */}
+                {pedagogicalDiagnosis && (
+                  <div className="p-3.5 rounded-xl border border-amber-500/40 bg-linear-to-r from-amber-950/40 via-slate-900 to-slate-950 shadow-md font-sans space-y-2.5">
+                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
+                          <Lightbulb className="w-4 h-4" />
+                        </span>
+                        <span className="font-bold text-amber-300 text-xs sm:text-sm">
+                          {pedagogicalDiagnosis.title}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                        {pedagogicalDiagnosis.badge}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {pedagogicalDiagnosis.explanation}
+                    </p>
+
+                    <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1">
+                      <span className="font-bold text-emerald-400 text-[11px] block">
+                        💡 Hướng dẫn sửa nhanh:
+                      </span>
+                      <p className="text-slate-300 whitespace-pre-line font-mono text-[11px] leading-relaxed">
+                        {pedagogicalDiagnosis.suggestion}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {executionOutput ? (
                   <pre className="text-slate-200 whitespace-pre-wrap leading-relaxed">
