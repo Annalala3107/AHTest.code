@@ -9,7 +9,6 @@ import {
   Sparkles, 
   FileText, 
   Clock, 
-  HardDrive, 
   MessageSquare, 
   Lightbulb, 
   ChevronDown, 
@@ -36,13 +35,8 @@ import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
 import { resolveProgressiveHints } from '../services/progressiveHintService';
-import { 
-  getProblemTitle, 
-  getProblemStatement, 
-  getProblemInputFormat, 
-  getProblemOutputFormat, 
-  getProblemConstraints 
-} from '../services/problemBilingualService';
+import { ProblemSpecificationView } from './ProblemSpecificationView';
+import { getProblemTitle } from '../services/problemBilingualService';
 import { CodeEditor } from './CodeEditor';
 
 interface WorkbenchViewProps {
@@ -1199,107 +1193,24 @@ fn main() {
             )}
 
             {activeTab === 'statement' && (
-              <>
-                {/* Meta Badges */}
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    Giới hạn: <strong>{problem.timeLimit}s</strong>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <HardDrive className="w-4 h-4 text-slate-400" />
-                    Bộ nhớ: <strong>{problem.memoryLimit}MB</strong>
-                  </span>
-                  <span>Input: <strong>stdin</strong></span>
-                  <span>Output: <strong>stdout</strong></span>
-                  <span>Điểm: <strong className="text-rose-600 font-bold">{problem.points}đ</strong></span>
-                </div>
-
-                {/* Statement Body (Rendered with KaTeX) with safe bilingual fallback */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    {docLang === 'en' ? 'Problem Description' : 'Mô tả bài toán'}
-                  </h3>
-                  <KaTeXRenderer content={getProblemStatement(problem, docLang)} />
-                </div>
-
-                {/* Input Format */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    {docLang === 'en' ? 'Input Specification (stdin)' : 'Dữ liệu vào (Input)'}
-                  </h3>
-                  <KaTeXRenderer content={getProblemInputFormat(problem, docLang)} />
-                </div>
-
-                {/* Output Format */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    {docLang === 'en' ? 'Output Specification (stdout)' : 'Dữ liệu ra (Output)'}
-                  </h3>
-                  <KaTeXRenderer content={getProblemOutputFormat(problem, docLang)} />
-                </div>
-
-                {/* Constraints & Subtasks */}
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    {docLang === 'en' ? 'Constraints & Technical Requirements' : 'Ràng buộc & Subtasks'}
-                  </h3>
-                  <KaTeXRenderer content={getProblemConstraints(problem, docLang)} />
-                </div>
-
-                {/* Sample Cases with 1-click Copy */}
-                <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Ví dụ (Sample Cases)
-                  </h3>
-                  {problem.samples.map((sample, idx) => (
-                    <div key={idx} className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden text-xs">
-                      <div className="bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between font-semibold text-slate-700 dark:text-slate-300">
-                        <span>Ví dụ #{idx + 1}</span>
-                        <button
-                          onClick={() => handleCopySample(sample.input, idx)}
-                          className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
-                        >
-                          {copiedSample === idx ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="text-emerald-500">Đã copy</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Copy Input</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800">
-                        <div className="p-3 bg-slate-50/30 dark:bg-slate-900/40">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Input:</span>
-                          <pre className="font-mono-code text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{sample.input}</pre>
-                        </div>
-                        <div className="p-3 bg-slate-50/30 dark:bg-slate-900/40">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Output:</span>
-                          <pre className="font-mono-code text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{sample.output}</pre>
-                        </div>
-                      </div>
-
-                      {sample.explanation && (
-                        <div className="p-2.5 bg-amber-50/50 dark:bg-amber-950/20 border-t border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px]">
-                          <strong>Giải thích:</strong> {sample.explanation}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+              <div className="space-y-4">
+                <ProblemSpecificationView
+                  problem={problem}
+                  lang={docLang}
+                  onToggleLang={handleToggleLang}
+                  showLangToggle={false}
+                  scoreWeight={`${problem.points}đ`}
+                  isExamMode={false}
+                />
 
                 {/* Source & Attribution */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 space-y-1">
-                  <p>Tác giả: <strong className="text-slate-600 dark:text-slate-300">{problem.author}</strong></p>
-                  <p>Nguồn đề: <strong className="text-slate-600 dark:text-slate-300">{problem.source}</strong></p>
-                </div>
-              </>
+                {(problem.author || problem.source) && (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 space-y-1">
+                    {problem.author && <p>Tác giả: <strong className="text-slate-600 dark:text-slate-300">{problem.author}</strong></p>}
+                    {problem.source && <p>Nguồn đề: <strong className="text-slate-600 dark:text-slate-300">{problem.source}</strong></p>}
+                  </div>
+                )}
+              </div>
             )}
 
             {activeTab === 'editorial' && (

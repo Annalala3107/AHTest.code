@@ -107,9 +107,24 @@ export function getProblemStatement(problem: Partial<Problem>, lang: 'vi' | 'en'
 
     // Fallback if statement is empty or blank
     const enTitle = getProblemTitle(problem, 'en');
+    const cat = (problem.category || '').toLowerCase();
+    let categoryGuideEn = 'Analyze the sample test cases below, determine input parameters from `stdin`, and print the exact expected format to `stdout`.';
+    if (cat.includes('hình') || cat.includes('shape') || cat.includes('pattern')) {
+      categoryGuideEn = 'Use nested loops (for/while) to print the corresponding geometric character matrix based on input dimension N from `stdin`.';
+    } else if (cat.includes('mảng') || cat.includes('array') || cat.includes('sort')) {
+      categoryGuideEn = 'Process an array of integers: read dimension N, input elements, filter, transform or sort elements in ascending/descending order.';
+    } else if (cat.includes('chuỗi') || cat.includes('string')) {
+      categoryGuideEn = 'Manipulate character arrays (strings): ensure proper null-terminator `\\0` handling and avoid reading out of allocated memory bounds.';
+    } else if (cat.includes('số') || cat.includes('math')) {
+      categoryGuideEn = 'Implement standard mathematical algorithms or number-theoretic checks (e.g. prime numbers, Armstrong, palindrome, GCD/LCM) with fast runtime complexity.';
+    }
+
     return `### Problem: ${enTitle}
 
 Write an optimized C program to solve this challenge according to official PRF192 practical examination requirements.
+
+**Algorithmic Objectives:**
+- ${categoryGuideEn}
 
 **Technical Specifications:**
 - Comply strictly with GCC C11/C17 compiler standards.
@@ -124,9 +139,24 @@ Write an optimized C program to solve this challenge according to official PRF19
 
   // Fallback for Vietnamese if statement is empty
   const viTitle = problem.title || 'Bài tập PRF192';
+  const cat = (problem.category || '').toLowerCase();
+  let categoryGuideVi = 'Quan sát các ca kiểm thử mẫu bên dưới, đọc chính xác các tham số từ `stdin` và in kết quả đúng định dạng ra `stdout`.';
+  if (cat.includes('hình') || cat.includes('shape') || cat.includes('pattern')) {
+    categoryGuideVi = 'Sử dụng các vòng lặp lồng nhau (for/while) để vẽ hình ma trận ký tự tương ứng dựa trên kích thước N nhập từ bàn phím.';
+  } else if (cat.includes('mảng') || cat.includes('array') || cat.includes('sort')) {
+    categoryGuideVi = 'Xử lý mảng số nguyên: đọc số lượng phần tử N, nạp các phần tử, tiến hành duyệt, lọc điều kiện hoặc sắp xếp theo thứ tự yêu cầu.';
+  } else if (cat.includes('chuỗi') || cat.includes('string')) {
+    categoryGuideVi = 'Xử lý chuỗi ký tự: chú ý ký tự kết thúc chuỗi `\\0` trong ngôn ngữ C và tránh truy cập ngoài phạm vi bộ nhớ đã cấp phát.';
+  } else if (cat.includes('số') || cat.includes('math')) {
+    categoryGuideVi = 'Triển khai thuật toán số học hoặc kiểm tra tính chất số đặc biệt (số nguyên tố, Amstrong, đối xứng, UCLN/BCNN) tối ưu thời gian.';
+  }
+
   return `### Yêu Cầu Bài Toán: ${viTitle}
 
 Viết chương trình C hoàn chỉnh để giải quyết bài toán theo chuẩn khảo thí môn Lập trình C (PRF192).
+
+**Định hướng thuật toán:**
+- ${categoryGuideVi}
 
 **Yêu cầu kỹ thuật:**
 - Mã nguồn tuân thủ tiêu chuẩn trình biên dịch GCC C11/C17.

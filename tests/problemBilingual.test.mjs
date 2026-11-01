@@ -79,3 +79,18 @@ test('5. createExamSession defaults duration to 90 minutes when 0 or omitted', a
   const sessionCustom = createExamSession(mockCol, 10, 45);
   assert.strictEqual(sessionCustom.timeLimitMinutes, 45, 'Explicit custom 45 minutes must be respected');
 });
+
+test('6. Solution 5: Category-aware fallback synthesis eliminates invisible statement completely', () => {
+  const shapeProb = { id: 's1', title: 'Source 12: Hình tam giác rỗng', category: 'Vẽ Hình' };
+  const arrayProb = { id: 'a1', title: 'Source 33: Mảng số', category: 'Mảng 1 Chiều & Sắp Xếp' };
+  const strProb = { id: 'st1', title: 'Source 55: Xâu', category: 'Chuỗi & Ký Tự' };
+
+  const shapeVi = getProblemStatement(shapeProb, 'vi');
+  assert.ok(shapeVi.includes('vòng lặp lồng nhau') || shapeVi.includes('vẽ hình'), 'Shape should guide nested loops');
+
+  const arrayEn = getProblemStatement(arrayProb, 'en');
+  assert.ok(arrayEn.includes('array of integers') || arrayEn.includes('elements'), 'Array should guide array manipulation');
+
+  const strVi = getProblemStatement(strProb, 'vi');
+  assert.ok(strVi.includes('chuỗi') || strVi.includes('\\0'), 'String should guide null-terminator');
+});

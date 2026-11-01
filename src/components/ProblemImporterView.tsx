@@ -31,7 +31,7 @@ import {
   Star
 } from 'lucide-react';
 import { Problem, Difficulty, TestCaseItem, ProblemCollection, ExamSessionConfig } from '../types';
-import { KaTeXRenderer } from './KaTeXRenderer';
+import { ProblemSpecificationView } from './ProblemSpecificationView';
 import {
   loadCollections,
   saveCollections,
@@ -1824,42 +1824,15 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
               </button>
             </div>
 
-            {/* Statement rendered via KaTeX */}
-            <div className="prose dark:prose-invert max-w-none text-xs sm:text-sm">
-              <KaTeXRenderer content={previewProblem.statement} />
+            {/* Standard Problem Specification Framework (Khung hiển thị chuẩn Khảo Thí) */}
+            <div className="py-2">
+              <ProblemSpecificationView
+                problem={previewProblem}
+                showLangToggle={true}
+                scoreWeight={`${previewProblem.points || 10}đ`}
+                isExamMode={false}
+              />
             </div>
-
-            {/* Samples */}
-            {previewProblem.samples && previewProblem.samples.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <span className="font-bold text-xs uppercase tracking-wider text-slate-400">
-                  Ví Dụ Minh Họa (Samples):
-                </span>
-                {previewProblem.samples.map((s, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className="font-bold text-slate-500 block mb-1">Input:</span>
-                        <pre className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[11px] overflow-x-auto">
-                          {s.input}
-                        </pre>
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-500 block mb-1">Expected Output:</span>
-                        <pre className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[11px] overflow-x-auto">
-                          {s.output}
-                        </pre>
-                      </div>
-                    </div>
-                    {s.explanation && (
-                      <p className="text-[11px] text-slate-400 italic">
-                        💡 Giải thích: {s.explanation}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
               <button

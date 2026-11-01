@@ -11,24 +11,14 @@ import {
   ArrowRight, 
   Check, 
   X,
-  ShieldAlert,
   Sparkles,
-  BarChart3,
-  Terminal,
-  FileCode2
+  BarChart3
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ExamSessionConfig, ExamQuestionState, ExamScorecard, TestResult } from '../types';
 import { CodeEditor } from './CodeEditor';
-import { KaTeXRenderer } from './KaTeXRenderer';
+import { ProblemSpecificationView } from './ProblemSpecificationView';
 import { executeCCode } from '../services/cExecutionEngine';
-import { 
-  getProblemTitle, 
-  getProblemStatement, 
-  getProblemInputFormat, 
-  getProblemOutputFormat, 
-  getProblemConstraints 
-} from '../services/problemBilingualService';
 
 interface ExamSimulationViewProps {
   session: ExamSessionConfig;
@@ -541,115 +531,18 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
 
       {/* 3. EXAM WORKSPACE (SPLIT VIEW: STATEMENT & EDITOR) */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Left: Problem Statement & Constraints */}
-        <div className="w-full md:w-1/2 flex flex-col border-r border-slate-800 bg-slate-900/40 overflow-y-auto p-5 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                {docLang === 'en' ? `Question #${currentIndex + 1}` : `Câu #${currentIndex + 1}`}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                currentProblem.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                currentProblem.difficulty === 'Medium' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                'bg-rose-500/10 text-rose-400 border-rose-500/20'
-              }`}>
-                {currentProblem.difficulty}
-              </span>
-            </div>
-
-            <span className="text-xs font-mono font-bold text-slate-400">
-              {docLang === 'en' ? 'Weight:' : 'Điểm:'} <strong className="text-rose-400">{(10 / totalQuestions).toFixed(1)} / 10.0</strong>
-            </span>
-          </div>
-
-          <div>
-            <h1 className="text-base font-bold text-slate-100">
-              {getProblemTitle(currentProblem, docLang)}
-            </h1>
-            <span className="text-[11px] font-mono text-slate-500">
-              slug: {currentProblem.slug}
-            </span>
-          </div>
-
-          {/* Statement Markdown with automatic fallback (no more "tàng hình"!) */}
-          <div className="prose dark:prose-invert max-w-none text-xs leading-relaxed text-slate-300">
-            <KaTeXRenderer content={getProblemStatement(currentProblem, docLang)} />
-          </div>
-
-          {/* Input Format Block */}
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{docLang === 'en' ? 'Input Specification (stdin):' : 'Định Dạng Đầu Vào (stdin):'}</span>
-            </span>
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans">
-              <KaTeXRenderer content={getProblemInputFormat(currentProblem, docLang)} />
-            </div>
-          </div>
-
-          {/* Output Format Block */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{docLang === 'en' ? 'Output Specification (stdout):' : 'Định Dạng Đầu Ra (stdout):'}</span>
-            </span>
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans">
-              <KaTeXRenderer content={getProblemOutputFormat(currentProblem, docLang)} />
-            </div>
-          </div>
-
-          {/* Constraints Block */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-              <span>{docLang === 'en' ? 'Constraints & Technical Requirements:' : 'Giới Hạn & Ràng Buộc Kỹ Thuật:'}</span>
-            </span>
-            <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400">
-              {getProblemConstraints(currentProblem, docLang)}
-            </div>
-          </div>
-
-          {/* Samples */}
-          {currentProblem.samples && currentProblem.samples.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                {docLang === 'en' ? 'Sample Test Cases:' : 'Ví Dụ Mẫu (Sample Cases):'}
-              </span>
-              {currentProblem.samples.map((s, idx) => (
-                <div key={idx} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="font-bold text-slate-500 block mb-1">Input:</span>
-                      <pre className="p-2 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-200 overflow-x-auto">
-                        {s.input}
-                      </pre>
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-500 block mb-1">
-                        {docLang === 'en' ? 'Expected Output:' : 'Output Chuẩn (Expected):'}
-                      </span>
-                      <pre className="p-2 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px] text-emerald-400 overflow-x-auto">
-                        {s.output}
-                      </pre>
-                    </div>
-                  </div>
-                  {s.explanation && (
-                    <p className="text-[10px] text-slate-400 italic">
-                      💡 {s.explanation}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Locked Hints Notice */}
-          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-2.5">
-            <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>
-              <strong>{docLang === 'en' ? 'Exam Simulation Mode:' : 'Chế độ thi thử:'}</strong> {docLang === 'en' ? 'All pedagogical hints are disabled to maintain strict exam integrity.' : 'Toàn bộ Gợi ý 3 tầng bị vô hiệu hóa để bảo đảm tính nghiêm ngặt.'}
-            </span>
-          </div>
+        {/* Left: Problem Statement & Constraints (Khung hiển thị chuẩn Khảo Thí) */}
+        <div className="w-full md:w-1/2 flex flex-col border-r border-slate-800 bg-slate-900/40 overflow-y-auto p-5">
+          <ProblemSpecificationView
+            problem={currentProblem}
+            lang={docLang}
+            onToggleLang={handleToggleLang}
+            showLangToggle={false}
+            questionNumber={currentIndex + 1}
+            totalQuestions={totalQuestions}
+            scoreWeight={`${(10 / totalQuestions).toFixed(1)} / 10.0`}
+            isExamMode={true}
+          />
         </div>
 
         {/* Right: Code Editor & Execution Arena */}
