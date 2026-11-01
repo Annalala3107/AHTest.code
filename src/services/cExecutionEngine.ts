@@ -132,6 +132,16 @@ export function generatePedagogicalDiagnosis(
       };
     }
 
+    if (rawError.includes('NULL_TERMINATOR') || rawError.includes('out of bounds') || rawError.includes('out-of-bounds') || rawError.includes('tràn chuỗi')) {
+      return {
+        category: 'RUNTIME',
+        badge: 'Lỗi chuỗi (Null-Terminator / Buffer Overflow)',
+        title: 'Tràn bộ đệm chuỗi hoặc thiếu ký tự kết thúc \'\\0\'',
+        explanation: 'Trong ngôn ngữ C, chuỗi ký tự phải luôn kết thúc bằng ký tự \'\\0\'. Khi duyệt mảng mà không có điều kiện dừng \'\\0\' hoặc khai báo mảng char không đủ kích thước cho ký tự kết thúc, chương trình sẽ crash hoặc sinh giá trị rác.',
+        suggestion: '1. Luôn khai báo mảng char s[N+1] với N là độ dài tối đa để chừa 1 ô cho ký tự \'\\0\'.\n2. Khi lặp chuỗi, hãy dùng: while (s[i] != \'\\0\') thay vì số vòng lặp cố định.'
+      };
+    }
+
     if (rawError.includes('SIGSEGV') || rawError.includes('Segmentation fault') || rawError.includes('NULL pointer') || rawError.includes('undefined') || rawError.includes('null')) {
       return {
         category: 'RUNTIME',
@@ -283,6 +293,7 @@ export function checkCSyntax(code: string): { isValid: boolean; error?: string }
  */
 export class VirtualCRuntime {
   private stdinTokens: string[] = [];
+  private stdinLines: string[] = [];
   private stdoutBuffer: string = '';
   private stderrBuffer: string = '';
   private heapMap: Map<number, any> = new Map();
@@ -291,6 +302,7 @@ export class VirtualCRuntime {
   private readonly MAX_STEPS = 100000;
 
   constructor(stdin: string) {
+    this.stdinLines = stdin.replace(/\r\n/g, '\n').split('\n');
     // Split stdin by all whitespace (space, tab, newline)
     this.stdinTokens = stdin.trim().length > 0 ? stdin.trim().split(/\s+/) : [];
   }
@@ -418,17 +430,153 @@ export class VirtualCRuntime {
     return 10; // '\n'
   }
 
-  // String helpers
+  // String & Character helpers (C-Standard Library)
   public strlen(str: any): number {
+    this.tick();
+    if (Array.isArray(str)) {
+      const nullIdx = str.indexOf('\0');
+      if (nullIdx !== -1) return nullIdx;
+      return str.length;
+    }
     return String(str !== undefined && str !== null ? str : '').length;
   }
 
   public strcmp(s1: any, s2: any): number {
-    const str1 = String(s1 || '');
-    const str2 = String(s2 || '');
+    this.tick();
+    const str1 = Array.isArray(s1) ? s1.join('') : String(s1 || '');
+    const str2 = Array.isArray(s2) ? s2.join('') : String(s2 || '');
     if (str1 < str2) return -1;
     if (str1 > str2) return 1;
     return 0;
+  }
+
+  public strcpy(dest: any, src: any): any {
+    this.tick();
+    const s = Array.isArray(src) ? src.join('') : String(src || '');
+    if (Array.isArray(dest)) {
+      dest.length = 0;
+      for (let i = 0; i < s.length; i++) dest.push(s[i]);
+      dest.push('\0');
+      return dest;
+    }
+    return s;
+  }
+
+  public strncpy(dest: any, src: any, n: number): any {
+    this.tick();
+    const s = Array.isArray(src) ? src.join('') : String(src || '');
+    if (Array.isArray(dest)) {
+      dest.length = 0;
+      for (let i = 0; i < Math.min(s.length, n); i++) dest.push(s[i]);
+      return dest;
+    }
+    return s.slice(0, n);
+  }
+
+  public strcat(dest: any, src: any): any {
+    this.tick();
+    const s = Array.isArray(src) ? src.join('') : String(src || '');
+    if (Array.isArray(dest)) {
+      const nullIdx = dest.indexOf('\0');
+      if (nullIdx !== -1) dest.splice(nullIdx, 1);
+      for (let i = 0; i < s.length; i++) dest.push(s[i]);
+      dest.push('\0');
+      return dest;
+    }
+    return String(dest) + s;
+  }
+
+  public strstr(haystack: any, needle: any): any {
+    this.tick();
+    const h = Array.isArray(haystack) ? haystack.join('') : String(haystack || '');
+    const n = Array.isArray(needle) ? needle.join('') : String(needle || '');
+    const idx = h.indexOf(n);
+    return idx === -1 ? null : idx;
+  }
+
+  public strchr(str: any, ch: any): any {
+    this.tick();
+    const s = Array.isArray(str) ? str.join('') : String(str || '');
+    const c = typeof ch === 'number' ? String.fromCharCode(ch) : String(ch || '');
+    const idx = s.indexOf(c);
+    return idx === -1 ? null : idx;
+  }
+
+  public strrev(str: any): any {
+    this.tick();
+    if (Array.isArray(str)) {
+      return str.reverse();
+    }
+    return String(str || '').split('').reverse().join('');
+  }
+
+  public tolower(ch: any): any {
+    if (typeof ch === 'number') {
+      const char = String.fromCharCode(ch).toLowerCase();
+      return char.charCodeAt(0);
+    }
+    return String(ch).toLowerCase();
+  }
+
+  public toupper(ch: any): any {
+    if (typeof ch === 'number') {
+      const char = String.fromCharCode(ch).toUpperCase();
+      return char.charCodeAt(0);
+    }
+    return String(ch).toUpperCase();
+  }
+
+  public isalpha(ch: any): boolean {
+    const c = typeof ch === 'number' ? String.fromCharCode(ch) : String(ch);
+    return /^[a-zA-Z]$/.test(c);
+  }
+
+  public isdigit(ch: any): boolean {
+    const c = typeof ch === 'number' ? String.fromCharCode(ch) : String(ch);
+    return /^[0-9]$/.test(c);
+  }
+
+  public isalnum(ch: any): boolean {
+    const c = typeof ch === 'number' ? String.fromCharCode(ch) : String(ch);
+    return /^[a-zA-Z0-9]$/.test(c);
+  }
+
+  public isspace(ch: any): boolean {
+    const c = typeof ch === 'number' ? String.fromCharCode(ch) : String(ch);
+    return /\s/.test(c);
+  }
+
+  public readLine(): string {
+    this.tick();
+    if (this.stdinLines.length > 0) {
+      return this.stdinLines.shift() || '';
+    }
+    if (this.stdinTokens.length > 0) {
+      return this.stdinTokens.shift() || '';
+    }
+    return '';
+  }
+
+  public gets(target: any): any {
+    const line = this.readLine();
+    if (Array.isArray(target)) {
+      target.length = 0;
+      for (let i = 0; i < line.length; i++) target.push(line[i]);
+      target.push('\0');
+      return target;
+    }
+    return line;
+  }
+
+  public fgets(target: any, size: number, _stream?: any): any {
+    const line = this.readLine().slice(0, size - 1);
+    if (Array.isArray(target)) {
+      target.length = 0;
+      for (let i = 0; i < line.length; i++) target.push(line[i]);
+      target.push('\0');
+      return target;
+    }
+    return line;
   }
 
   // Simulated printf
@@ -606,11 +754,25 @@ function transpileCToJS(cCode: string): string {
   // Array literals: = { 1, 2, 3 } -> = [ 1, 2, 3 ]
   code = code.replace(/=\s*\{\s*([^{};]+?)\s*\}/g, '= [$1]');
 
-  // Step 9: Replace printf, getchar, strlen, strcmp
+  // Step 9: Replace printf, getchar, strlen, strcmp, and string suite
   code = code.replace(/\bprintf\s*\(/g, '__rt.printf(');
   code = code.replace(/\bgetchar\s*\(\s*\)/g, '__rt.getchar()');
   code = code.replace(/\bstrlen\s*\(/g, '__rt.strlen(');
   code = code.replace(/\bstrcmp\s*\(/g, '__rt.strcmp(');
+  code = code.replace(/\bstrcpy\s*\(/g, '__rt.strcpy(');
+  code = code.replace(/\bstrncpy\s*\(/g, '__rt.strncpy(');
+  code = code.replace(/\bstrcat\s*\(/g, '__rt.strcat(');
+  code = code.replace(/\bstrstr\s*\(/g, '__rt.strstr(');
+  code = code.replace(/\bstrchr\s*\(/g, '__rt.strchr(');
+  code = code.replace(/\bstrrev\s*\(/g, '__rt.strrev(');
+  code = code.replace(/\bgets\s*\(/g, '__rt.gets(');
+  code = code.replace(/\bfgets\s*\(/g, '__rt.fgets(');
+  code = code.replace(/\btolower\s*\(/g, '__rt.tolower(');
+  code = code.replace(/\btoupper\s*\(/g, '__rt.toupper(');
+  code = code.replace(/\bisalpha\s*\(/g, '__rt.isalpha(');
+  code = code.replace(/\bisdigit\s*\(/g, '__rt.isdigit(');
+  code = code.replace(/\bisalnum\s*\(/g, '__rt.isalnum(');
+  code = code.replace(/\bisspace\s*\(/g, '__rt.isspace(');
 
   // Step 10: Constants & Math
   code = code.replace(/\bNULL\b/g, 'null');

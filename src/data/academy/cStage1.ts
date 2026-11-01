@@ -311,8 +311,78 @@ int main() {
             ]
           },
           {
+            id: 'c-1-strings',
+            title: "7. Chuỗi Ký Tự & Bí Mật Của Ký Tự Null '\\0' (String Mastery)",
+            durationMinutes: 10,
+            summary: "Bản chất mảng char[], tại sao C không có kiểu string nguyên thủy, bí mật ký tự '\\0' và bẫy đọc tràn bộ nhớ.",
+            content: `### 1. Bản chất của Chuỗi trong C: Không có kiểu "string" nguyên thủy!
+Trong ngôn ngữ C, chuỗi ký tự thực chất là một **mảng một chiều các phần tử kiểu \`char\`**, được đánh dấu kết thúc bởi một ký tự đặc biệt gọi là **Null-Terminator \`'\\0'\`** (mã ASCII là 0).
+
+\`\`\`c
+char s[6] = {'H', 'e', 'l', 'l', 'o', '\\0'};
+char greeting[] = "Hello"; // Trình biên dịch tự động thêm '\\0' vào cuối (kích thước 6 bytes)
+\`\`\`
+
+> [!WARNING]
+> **Phân biệt \`'A'\` và \`"A"\`:**
+> * \`'A'\`: Là một hằng ký tự đơn (single character), chiếm **1 byte**.
+> * \`"A"\`: Là một hằng chuỗi (string literal), bao gồm 2 phần tử \`{'A', '\\0'}\`, chiếm **2 bytes** trong RAM!
+
+### 2. Bẫy tràn bộ đệm (Buffer Overflow) & Thiếu ký tự \`'\\0'\`
+Nếu bạn cần lưu trữ một chuỗi có tối đa $N$ ký tự hiển thị, bạn **bắt buộc phải khai báo mảng có ít nhất $N + 1$ phần tử** để chừa chỗ cho ký tự \`'\\0'\`.
+Nếu quên ký tự \`'\\0'\`, hàm \`printf("%s", s)\` sẽ tiếp tục đọc qua ranh giới mảng, in ra các giá trị rác ngẫu nhiên trong RAM hoặc gây lỗi **Segmentation Fault**!
+
+### 3. Thử thách thực hành:
+Viết chương trình đọc vào một chuỗi ký tự $S$ (không có khoảng trắng, độ dài tối đa 50 ký tự). Hãy:
+1. Đếm độ dài của chuỗi bằng cách duyệt mảng cho đến khi gặp \`'\\0'\` (không dùng hàm \`strlen\`).
+2. Chuyển toàn bộ các chữ cái thường \`'a'-'z'\` thành chữ cái hoa \`'A'-'Z'\` (trừ đi 32).
+3. In kết quả ra màn hình theo 2 dòng:
+\`\`\`
+DO DAI: <do_dai>
+VIET HOA: <chuoi_in_hoa>
+\`\`\``,
+            initialCode: `#include <stdio.h>
+
+int main() {
+    char s[100];
+    if (scanf("%s", s) == 1) {
+        // TODO: 1. Duyệt chuỗi đến khi gặp '\\0' để đếm độ dài
+        // TODO: 2. Đổi các ký tự thường thành chữ in hoa
+        // In ra 2 dòng:
+        // DO DAI: <len>
+        // VIET HOA: <chuoi>
+    }
+    return 0;
+}`,
+            solutionCode: `#include <stdio.h>
+
+int main() {
+    char s[100];
+    if (scanf("%s", s) == 1) {
+        int len = 0;
+        while (s[len] != '\\0') {
+            if (s[len] >= 'a' && s[len] <= 'z') {
+                s[len] = s[len] - 32;
+            }
+            len++;
+        }
+        printf("DO DAI: %d\\n", len);
+        printf("VIET HOA: %s\\n", s);
+    }
+    return 0;
+}`,
+            hints: [
+              "Duyệt mảng bằng vòng lặp: \`while (s[len] != '\\0') len++;\`",
+              "Quy tắc đổi hoa thường: \`if (s[i] >= 'a' && s[i] <= 'z') s[i] = s[i] - 32;\`"
+            ],
+            testcases: [
+              { input: 'helloworld', expectedOutput: 'DO DAI: 10\nVIET HOA: HELLOWORLD' },
+              { input: 'DevCpp', expectedOutput: 'DO DAI: 6\nVIET HOA: DEVCPP' }
+            ]
+          },
+          {
             id: 'c-1-quiz',
-            title: '7. Quiz Trắc Nghiệm Nhận Diện Lỗi Logic',
+            title: '8. Quiz Trắc Nghiệm Nhận Diện Lỗi Logic',
             durationMinutes: 5,
             summary: 'Luyện mắt Code Review: Bẫy vòng lặp vô hạn và nhầm lẫn nguy hiểm giữa toán tử gán (=) và so sánh (==).',
             content: `### 1. Code Review Challenge 1: Vòng lặp vô hạn

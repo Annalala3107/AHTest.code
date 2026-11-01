@@ -15,7 +15,7 @@ export const cCourse: AcademyCourse = {
   level: 'Beginner',
   description: 'Giáo trình chuẩn mực 2 giai đoạn: Giai đoạn 1 (Nền tảng lập trình & Giao tiếp với máy tính) và Giai đoạn 2 (Quản lý bộ nhớ, Con trỏ & Cấu trúc dữ liệu) theo môi trường Embarcadero Dev-C++ / GCC.',
   descriptionEn: 'Comprehensive 2-stage curriculum: Stage 1 (Core Programming & System I/O) and Stage 2 (Memory Management, Pointers & Advanced Structs) based on Embarcadero Dev-C++ / GCC.',
-  totalLessons: 14,
+  totalLessons: 15,
   estimatedHours: 8,
   modules: [cStage1Module, cStage2Module]
 };

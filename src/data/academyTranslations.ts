@@ -113,8 +113,37 @@ Build a mini calculation tool that reads option \`1\` to calculate rectangle are
     ]
   },
 
+  'c-1-strings': {
+    titleEn: "7. C Strings & The Secret of Null-Terminator '\\0' (String Mastery)",
+    summaryEn: "Understanding char[] arrays, why C lacks a native string type, '\\0' delimiter, and buffer overflow prevention.",
+    contentEn: `### 1. The Nature of Strings in C
+In C, a string is simply a **1D array of \`char\` elements terminated by a Null byte \`'\\0'\`** (ASCII value 0).
+
+\`\`\`c
+char s[6] = {'H', 'e', 'l', 'l', 'o', '\\0'};
+char greeting[] = "Hello"; // Compiler automatically appends '\\0' (6 bytes total)
+\`\`\`
+
+> [!WARNING]
+> **Difference between \`'A'\` and \`"A"\`:**
+> * \`'A'\`: Single character literal, occupies **1 byte**.
+> * \`"A"\`: String literal with elements \`{'A', '\\0'}\`, occupies **2 bytes** in RAM!
+
+### 2. Challenge:
+Read a string $S$ (max 50 chars, no spaces). Calculate length without \`strlen\` and convert to UPPERCASE.
+Format:
+\`\`\`
+DO DAI: <len>
+VIET HOA: <upper_string>
+\`\`\``,
+    hintsEn: [
+      "Traverse with: `while (s[len] != '\\0') len++;`",
+      "Uppercase: `if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;`"
+    ]
+  },
+
   'c-1-quiz': {
-    titleEn: '7. Phase 1 Technical Quizzes & Logic Audit',
+    titleEn: '8. Phase 1 Technical Quizzes & Logic Audit',
     summaryEn: 'Operator precedence traps, bitwise parity checks, and interview questions.',
     contentEn: `### 1. C Under-the-Hood Quizzes
 - **Precedence:** Post-increment \`x++\` evaluates to current value before incrementing, whereas \`++x\` increments first.

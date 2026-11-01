@@ -10,7 +10,8 @@ import {
   Copy, 
   Check,
   Terminal,
-  FileCode2
+  FileCode2,
+  Binary
 } from 'lucide-react';
 
 interface DiffViewerProps {
@@ -24,12 +25,12 @@ interface DiffViewerProps {
 
 interface DiagnosisResult {
   hasIssue: boolean;
-  type: 'trailing-space' | 'missing-newline' | 'case-mismatch' | 'precision-mismatch' | 'line-count-mismatch' | 'general';
+  type: 'trailing-space' | 'missing-newline' | 'case-mismatch' | 'precision-mismatch' | 'line-count-mismatch' | 'null-terminator' | 'general';
   message: string;
   recommendation: string;
 }
 
-// Diagnose the top 5 classical student pitfalls
+// Diagnose the top classical student pitfalls
 function diagnoseDiff(actual: string, expected: string): DiagnosisResult {
   const normActual = actual.replace(/\r\n/g, '\n');
   const normExpected = expected.replace(/\r\n/g, '\n');
@@ -40,6 +41,20 @@ function diagnoseDiff(actual: string, expected: string): DiagnosisResult {
       type: 'general',
       message: 'Kết quả hoàn toàn trùng khớp 100%!',
       recommendation: 'Không có lỗi sai.'
+    };
+  }
+
+  // 0. Null-Terminator & Garbage Byte Pitfall in C strings
+  // eslint-disable-next-line no-control-regex
+  const hasGarbageChars = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/.test(actual);
+  const isExpectedPrefixPlusGarbage = normActual.startsWith(normExpected) && normActual.length > normExpected.length && normActual.length <= normExpected.length + 30;
+
+  if (hasGarbageChars || isExpectedPrefixPlusGarbage) {
+    return {
+      hasIssue: true,
+      type: 'null-terminator',
+      message: 'Bẫy Thiếu Ký Tự Null \'\\0\' hoặc Rác Bộ Nhớ (Garbage Values Detected)',
+      recommendation: 'Trong C, chuỗi bắt buộc phải kết thúc bằng ký tự rỗng \'\\0\' (ASCII 0). Nếu bạn duyệt mảng char hoặc copy chuỗi mà quên str[len] = \'\\0\';, hàm printf("%s") sẽ in tràn sang các byte rác kế tiếp trong RAM. Hãy bấm nút "Soi Byte (\\0)" ở trên để xem chi tiết từng ô nhớ.'
     };
   }
 
@@ -140,6 +155,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   className = ''
 }) => {
   const [showWhitespace, setShowWhitespace] = useState<boolean>(true);
+  const [showNullInspector, setShowNullInspector] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'split' | 'unified'>('split');
   const [copiedType, setCopiedType] = useState<'actual' | 'expected' | null>(null);
 
@@ -175,6 +191,20 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
         {/* View Controls */}
         <div className="flex items-center gap-2">
+          {/* Toggle Null-Terminator Byte Inspector */}
+          <button
+            onClick={() => setShowNullInspector(!showNullInspector)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+              showNullInspector
+                ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+            title="Soi từng byte bộ nhớ RAM và ký tự kết thúc chuỗi '\0'"
+          >
+            <Binary className="w-3.5 h-3.5 text-rose-500" />
+            <span className="hidden sm:inline">Soi Byte (\0)</span>
+          </button>
+
           {/* Toggle Whitespace */}
           <button
             onClick={() => setShowWhitespace(!showWhitespace)}
@@ -231,6 +261,85 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             <p className="text-amber-800 dark:text-amber-300/90 leading-relaxed">
               💡 <strong>Gợi ý khắc phục:</strong> {diagnosis.recommendation}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Null-Terminator & Memory Byte Inspector Panel */}
+      {showNullInspector && (
+        <div className="p-4 bg-slate-950 border-b border-slate-800 text-xs font-mono space-y-3">
+          <div className="flex items-center justify-between text-slate-300 font-sans flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Binary className="w-4 h-4 text-rose-400" />
+              <strong className="text-white">Null-Terminator & Memory Byte Inspector (Hardware View)</strong>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              Soi từng byte RAM • Ký tự kết thúc chuỗi: <code className="text-emerald-400 font-bold bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800">\0 (ASCII 0)</code>
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <span className="text-[11px] font-sans font-bold text-rose-400 block mb-1">
+                Actual Output Bytes (Độ dài: {actual.length} bytes):
+              </span>
+              <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-slate-900 border border-slate-800 max-h-40 overflow-y-auto">
+                {Array.from(actual).map((ch, idx) => {
+                  const code = ch.charCodeAt(0);
+                  const isNull = code === 0;
+                  const isControl = (code < 32 && code !== 10 && code !== 9) || code >= 127;
+                  return (
+                    <div 
+                      key={idx}
+                      className={`p-1.5 rounded-lg border text-center min-w-[40px] ${
+                        isNull ? 'bg-emerald-950/80 border-emerald-600 text-emerald-300 font-bold' :
+                        isControl ? 'bg-rose-950/80 border-rose-600 text-rose-300 font-bold animate-pulse' :
+                        'bg-slate-800/80 border-slate-700 text-slate-200'
+                      }`}
+                      title={`Vị trí: [${idx}] | Ký tự: ${JSON.stringify(ch)} | Dec: ${code} | Hex: 0x${code.toString(16).toUpperCase()}`}
+                    >
+                      <span className="text-[9px] text-slate-400 block font-sans">[{idx}]</span>
+                      <span className="font-bold text-xs block">
+                        {isNull ? '\\0' : isControl ? '?' : ch === ' ' ? '·' : ch === '\n' ? '↵' : ch}
+                      </span>
+                      <span className="text-[9px] text-slate-500 block font-mono">0x{code.toString(16).toUpperCase().padStart(2, '0')}</span>
+                    </div>
+                  );
+                })}
+                <div className="p-1.5 rounded-lg border border-dashed border-emerald-500/60 bg-emerald-950/30 text-center min-w-[40px] flex flex-col justify-center">
+                  <span className="text-[9px] text-emerald-400 font-sans block">[\0]</span>
+                  <span className="text-[9px] text-emerald-500 font-mono">EOF</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-sans font-bold text-emerald-400 block mb-1">
+                Expected Output Bytes (Độ dài: {expected.length} bytes):
+              </span>
+              <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-slate-900 border border-slate-800 max-h-40 overflow-y-auto">
+                {Array.from(expected).map((ch, idx) => {
+                  const code = ch.charCodeAt(0);
+                  return (
+                    <div 
+                      key={idx}
+                      className="p-1.5 rounded-lg border bg-slate-800/80 border-slate-700 text-slate-200 text-center min-w-[40px]"
+                      title={`Vị trí: [${idx}] | Dec: ${code} | Hex: 0x${code.toString(16).toUpperCase()}`}
+                    >
+                      <span className="text-[9px] text-slate-400 block font-sans">[{idx}]</span>
+                      <span className="font-bold text-xs block">
+                        {ch === ' ' ? '·' : ch === '\n' ? '↵' : ch}
+                      </span>
+                      <span className="text-[9px] text-slate-500 block font-mono">0x{code.toString(16).toUpperCase().padStart(2, '0')}</span>
+                    </div>
+                  );
+                })}
+                <div className="p-1.5 rounded-lg border border-dashed border-emerald-500/60 bg-emerald-950/30 text-center min-w-[40px] flex flex-col justify-center">
+                  <span className="text-[9px] text-emerald-400 font-sans block">[\0]</span>
+                  <span className="text-[9px] text-emerald-500 font-mono">0x00</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

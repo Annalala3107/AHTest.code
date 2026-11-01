@@ -132,6 +132,29 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
             </button>
           ))}
         </div>
+
+        {/* Quick Topic Shortcut Banner: String Mastery */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 bg-rose-50/50 dark:bg-rose-950/20 -mx-6 -mb-6 p-4 rounded-b-2xl">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+              CHUYÊN ĐỀ MỚI: Chuỗi & Ký Tự (String Mastery)
+            </span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+              9 bài tập chuẩn hóa từ cơ bản đến nâng cao
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedTag(selectedTag === 'Strings' ? 'ALL' : 'Strings')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              selectedTag === 'Strings'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+            }`}
+          >
+            {selectedTag === 'Strings' ? '✓ Đang xem bài tập Chuỗi' : 'Lọc bài tập Chuỗi →'}
+          </button>
+        </div>
       </div>
 
       {/* Problems Table / Cards */}
