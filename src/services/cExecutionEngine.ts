@@ -574,7 +574,10 @@ function transpileCToJS(cCode: string): string {
 
   // Step 6: Memory allocations & sizeof
   code = code.replace(/sizeof\s*\([^)]*\)/g, '4');
-  code = code.replace(/\([a-zA-Z_]\w*\*+\)\s*/g, ''); // strip pointer casts like (int*)
+  // Strip C-style pointer casts: (int*), (char**), (void*), etc.
+  code = code.replace(/\(\s*(?:const\s+)?(?:int|long\s+long|long|short|unsigned(?:\s+int)?|signed(?:\s+int)?|float|double|char|void|bool|auto|\w+_t)\s*\*+\s*\)\s*/g, '');
+  // Strip C-style primitive type casts: (float), (double), (int), (char), (long), etc.
+  code = code.replace(/\(\s*(?:const\s+)?(?:int|long\s+long|long|short|unsigned(?:\s+int)?|signed(?:\s+int)?|float|double|char|void|bool|auto|\w+_t)\s*\)\s*/g, '');
   code = code.replace(/\bmalloc\s*\(/g, '__rt.malloc(');
   code = code.replace(/\bcalloc\s*\(/g, '__rt.calloc(');
   code = code.replace(/\bfree\s*\(/g, '__rt.free(');
