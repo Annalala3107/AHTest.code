@@ -137,3 +137,42 @@ test('Solution 3: Updating an existing problem in batch replaces it without dupl
   assert.strictEqual(matched.length, 1, 'Should not create duplicate problem id');
   assert.strictEqual(matched[0].title, 'Updated Title', 'Should update problem in place');
 });
+
+test('Solution 5: isProblemSolved returns true only when star score > 0 is stored', () => {
+  localStorage.clear();
+  const testProbId = 'prf192_test_prob_42';
+
+  const isSolved = (id) => {
+    try {
+      const star = localStorage.getItem(`ahtest_star_${id}`);
+      return star !== null && Number(star) > 0;
+    } catch {
+      return false;
+    }
+  };
+
+  assert.strictEqual(isSolved(testProbId), false, 'Initially problem is not solved');
+
+  // After student achieves AC (e.g. 3 stars)
+  localStorage.setItem(`ahtest_star_${testProbId}`, '3');
+  assert.strictEqual(isSolved(testProbId), true, 'Problem is marked solved with 3 stars');
+
+  // If score is 0 (failed)
+  localStorage.setItem(`ahtest_star_${testProbId}`, '0');
+  assert.strictEqual(isSolved(testProbId), false, 'Score of 0 is not considered solved');
+});
+
+test('Solution 5 & Image Fix: KaTeX renders constraints expression $1 \\le N \\le 10^7$ without raw syntax leak', async () => {
+  const katex = (await import('katex')).default;
+  const rawExpression = '1 \\le N \\le 10^7';
+
+  const html = katex.renderToString(rawExpression, {
+    displayMode: false,
+    throwOnError: false
+  });
+
+  assert.ok(html.includes('katex'), 'Rendered output must contain katex class');
+  assert.ok(html.includes('le') || html.includes('≤') || html.includes('&#x2264;'), 'Rendered output must contain less-than-or-equal symbol');
+  assert.ok(!html.includes('ParseError'), 'Formula must not fail KaTeX parsing');
+});
+

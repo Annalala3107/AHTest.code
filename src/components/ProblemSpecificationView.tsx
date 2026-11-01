@@ -214,8 +214,8 @@ export const ProblemSpecificationView: React.FC<ProblemSpecificationViewProps> =
           <ShieldAlert className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
           <span>{currentLang === 'en' ? 'Constraints & Technical Requirements:' : 'Giới Hạn & Ràng Buộc Kỹ Thuật:'}</span>
         </span>
-        <div className="p-2.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-400 shadow-2xs">
-          {constraints}
+        <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans shadow-2xs">
+          <KaTeXRenderer content={constraints} />
         </div>
       </div>
 

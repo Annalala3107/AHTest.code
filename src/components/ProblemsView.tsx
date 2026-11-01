@@ -11,6 +11,16 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'ALL'>('ALL');
 
+  // Check if a problem is officially solved by the student (stored rating / stars > 0)
+  const isProblemSolved = (problemId: string): boolean => {
+    try {
+      const star = localStorage.getItem(`ahtest_star_${problemId}`);
+      return star !== null && Number(star) > 0;
+    } catch {
+      return false;
+    }
+  };
+
   // Filtered problems list
   const filteredProblems = useMemo(() => {
     return mockProblems.filter((p) => {
@@ -54,7 +64,7 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
               Kho Bài Tập Lập Trình Thi Đấu
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Tuyển tập hơn 3,000 bài toán từ VOI, Olympic Tin Học, ICPC và các kỳ thi Quốc gia
+              Tuyển tập 115+ bài toán chuẩn hóa từ Khảo thí PRF192, VOI, Olympic Tin Học, ICPC và các kỳ thi Quốc gia
             </p>
           </div>
 
@@ -151,9 +161,17 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
                       onClick={() => onSelectProblem(problem, filteredProblems, 'Kho Bài Tập Tiêu Chuẩn')}
                       className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                     >
-                      {/* Solved Icon */}
+                      {/* Solved Status Icon */}
                       <td className="py-4 px-4 text-center">
-                        <CheckCircle2 className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors mx-auto" />
+                        {isProblemSolved(problem.id) ? (
+                          <span title="Bạn đã giải thành công bài này! (Accepted)">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-500/20 mx-auto" />
+                          </span>
+                        ) : (
+                          <span title="Chưa hoàn thành">
+                            <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 mx-auto group-hover:border-slate-400 dark:group-hover:border-slate-500 transition-colors" />
+                          </span>
+                        )}
                       </td>
 
                       {/* Title */}

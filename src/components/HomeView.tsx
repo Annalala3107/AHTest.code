@@ -17,7 +17,7 @@ import { InlineMath } from './InlineMath';
 import { getStreakState } from '../services/streakService';
 
 interface HomeViewProps {
-  onSelectProblem: (problem: Problem) => void;
+  onSelectProblem: (problem: Problem, problemList?: Problem[], collectionTitle?: string) => void;
   onNavigateTab: (tab: any) => void;
   streakCount: number;
 }
@@ -110,7 +110,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           <div className="space-y-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 mb-5">
             <div className="flex items-start justify-between">
-              <h4 className="font-bold text-lg text-slate-900 dark:text-white hover:text-rose-600 transition-colors cursor-pointer" onClick={() => onSelectProblem(dailyProblem)}>
+              <h4 className="font-bold text-lg text-slate-900 dark:text-white hover:text-rose-600 transition-colors cursor-pointer" onClick={() => onSelectProblem(dailyProblem, mockProblems, 'Thử Thách Hằng Ngày')}>
                 {dailyProblem.title}
               </h4>
               <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
@@ -129,7 +129,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <span>Bộ nhớ: <strong className="text-slate-700 dark:text-slate-200">{dailyProblem.memoryLimit}MB</strong></span>
             </div>
             <button
-              onClick={() => onSelectProblem(dailyProblem)}
+              onClick={() => onSelectProblem(dailyProblem, mockProblems, 'Thử Thách Hằng Ngày')}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all cursor-pointer"
             >
               Vào giải ngay <ArrowRight className="w-4 h-4" />
@@ -246,7 +246,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </h3>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Hơn 3,000 bài toán từ VOI, Olympic Tin học, ICPC và Bedao với KaTeX mượt mà và giao diện làm bài Split-Workbench hiện đại.
+            Tuyển tập 115+ bài toán chuẩn hóa từ Khảo thí PRF192, VOI, Olympic Tin học & ICPC với KaTeX mượt mà và giao diện làm bài Split-Workbench hiện đại.
           </p>
         </div>
       </div>

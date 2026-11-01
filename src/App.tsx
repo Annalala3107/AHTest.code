@@ -11,6 +11,7 @@ import { ExamSimulationView } from './components/ExamSimulationView';
 import { AuthModal } from './components/AuthModal';
 import { Problem, AuthUser, ExamSessionConfig } from './types';
 import { getStreakState } from './services/streakService';
+import { mockProblems } from './data/mockProblems';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
@@ -78,9 +79,10 @@ export function App() {
     if (problemList && problemList.length > 0) {
       setProblemContextList(problemList);
     } else {
-      setProblemContextList([]);
+      const fallback = mockProblems.some(p => p.id === problem.id) ? mockProblems : [problem, ...mockProblems];
+      setProblemContextList(fallback);
     }
-    setCollectionTitle(collTitle);
+    setCollectionTitle(collTitle || 'Kho Bài Tập Tiêu Chuẩn');
   };
 
   const handleBackFromWorkbench = () => {
