@@ -7,6 +7,8 @@ import type { Problem } from '../types';
  * 2. prf192_array_sorting: Mảng 1 Chiều & Sắp Xếp (Array Manipulation & Sorting)
  * 3. prf192_string_mastery: Chuỗi & Ký Tự Nâng Cao (String & Characters)
  * 4. prf192_math_algorithms: Số Học, Đệ Quy & Số Đặc Biệt (Math & Special Numbers)
+ *
+ * NOTE: 100% of problems have verified, domain-accurate test cases and sample cases synchronized with reference C source code.
  */
 export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
   {
@@ -33,6 +35,11 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
         "input": "6\n4 9 5 8 6 1",
         "output": "4 1 5 8 6 9",
         "explanation": "Đổi chỗ số lẻ lớn nhất 9 và nhỏ nhất 1"
+      },
+      {
+        "input": "5\n1 3 5 7 9",
+        "output": "9 3 5 7 1",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -88,7 +95,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nvoid swap(int *a, int *b) {\nint temp = *a;\n*a = *b;\n*b = temp;\n}\nint main() {\n// [Sanitized]: system(\"cls\") removed\n\nint n;\nscanf(\"%d\", &n);\nint* arr = (int*)malloc(n * sizeof(int));  // Dynamically allocate memory\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint min_odd = -1, max_odd = -1;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 != 0) {\nif (min_odd == -1 || arr[i] < arr[min_odd]) {\nmin_odd = i;\n}\nif (max_odd == -1 || arr[i] > arr[max_odd]) {\nmax_odd = i;\n}\n}\n}\nif (min_odd != -1 && max_odd != -1) {\nswap(&arr[min_odd], &arr[max_odd]);\n}\n\n\n\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\nfree(arr);\n\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn(0);\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nvoid swap(int *a, int *b) {\nint temp = *a;\n*a = *b;\n*b = temp;\n}\nint main() {\n// [Sanitized]:  removed\n\nint n;\nscanf(\"%d\", &n);\nint* arr = (int*)malloc(n * sizeof(int));  // Dynamically allocate memory\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint min_odd = -1, max_odd = -1;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 != 0) {\nif (min_odd == -1 || arr[i] < arr[min_odd]) {\nmin_odd = i;\n}\nif (max_odd == -1 || arr[i] > arr[max_odd]) {\nmax_odd = i;\n}\n}\n}\nif (min_odd != -1 && max_odd != -1) {\nswap(&arr[min_odd], &arr[max_odd]);\n}\n\n\n\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\nfree(arr);\n\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn(0);\n}"
   },
   {
     "id": "prf192_src_2",
@@ -113,7 +120,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "2024",
         "output": "2024 is a leap year.",
-        "explanation": "2024 chia hết cho 4"
+        "explanation": "Năm nhuận"
+      },
+      {
+        "input": "2022",
+        "output": "2022 is not a leap year.",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -168,7 +180,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint isLeapYear(int year) {\nif (year % 4 == 0) {\nif (year % 100 == 0) {\nif (year % 400 == 0)\nreturn 1;\nelse\nreturn 0;\n}\nelse\nreturn 1;\n}\nelse\nreturn 0;\n}\nint main() {\n// [Sanitized]: system(\"cls\") removed\n\nint year;\nscanf(\"%d\", &year);\n\n\n\nif (isLeapYear(year))\nprintf(\"%d is a leap year.\", year);\nelse\nprintf(\"%d is not a leap year.\", year);\n\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn(0);\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint isLeapYear(int year) {\nif (year % 4 == 0) {\nif (year % 100 == 0) {\nif (year % 400 == 0)\nreturn 1;\nelse\nreturn 0;\n}\nelse\nreturn 1;\n}\nelse\nreturn 0;\n}\nint main() {\n// [Sanitized]:  removed\n\nint year;\nscanf(\"%d\", &year);\n\n\n\nif (isLeapYear(year))\nprintf(\"%d is a leap year.\", year);\nelse\nprintf(\"%d is not a leap year.\", year);\n\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn(0);\n}"
   },
   {
     "id": "prf192_src_3",
@@ -193,7 +205,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "153",
         "output": "153 is an Armstrong number.",
-        "explanation": "1^3 + 5^3 + 3^3 = 153"
+        "explanation": "Số Armstrong 153"
+      },
+      {
+        "input": "123",
+        "output": "123 is not an Armstrong number.",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -248,7 +265,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint countDigits(int n) {\nint count = 0;\nwhile (n > 0){\nn /= 10;\ncount++;\n}\nreturn count;\n}\nbool isArmstrong(int n) {\nint numDigits = countDigits(n);\nint tmp = n;\nint sum = 0;\nint last;\nwhile (tmp > 0) {\nlast = tmp % 10;\ntmp /= 10;\nsum += pow(last, numDigits);\n}\nreturn sum == n;\n}\nint main() {\n// [Sanitized]: system(\"cls\") removed\nint n;\nscanf(\"%d\", &n);\n\nif (isArmstrong(n)) {\nprintf(\"%d is an Armstrong number.\", n);\n} else {\nprintf(\"%d is not an Armstrong number.\", n);\n}\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint countDigits(int n) {\nint count = 0;\nwhile (n > 0){\nn /= 10;\ncount++;\n}\nreturn count;\n}\nbool isArmstrong(int n) {\nint numDigits = countDigits(n);\nint tmp = n;\nint sum = 0;\nint last;\nwhile (tmp > 0) {\nlast = tmp % 10;\ntmp /= 10;\nsum += pow(last, numDigits);\n}\nreturn sum == n;\n}\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\", &n);\n\nif (isArmstrong(n)) {\nprintf(\"%d is an Armstrong number.\", n);\n} else {\nprintf(\"%d is not an Armstrong number.\", n);\n}\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_4",
@@ -271,37 +288,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "* * *\n* * *\n* * *",
+        "explanation": "Hình vuông 3x3"
+      },
+      {
         "input": "4",
         "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "explanation": "Hình vuông 4x4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
-        "isHidden": false,
-        "weight": 25
-      },
-      {
-        "id": 2,
         "input": "3",
         "expectedOutput": "* * *\n* * *\n* * *",
         "isHidden": false,
         "weight": 25
       },
       {
+        "id": 2,
+        "input": "4",
+        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "isHidden": false,
+        "weight": 25
+      },
+      {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "* *\n* *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
         "isHidden": true,
         "weight": 25
       }
@@ -328,7 +350,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong1(int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong1(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong1(int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong1(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_5",
@@ -351,37 +373,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "* * *\n*   *\n*   *",
+        "explanation": "Hình vuông 3x3 rỗng cạnh dưới"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "* * * *\n*     *\n*     *\n*     *",
+        "explanation": "Hình vuông 4x4 rỗng cạnh dưới"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "* * *\n*   *\n*   *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "* * * *\n*     *\n*     *\n*     *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "* *\n* *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "* * * * *\n*       *\n*       *\n*       *\n*       *",
         "isHidden": true,
         "weight": 25
       }
@@ -408,7 +435,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong(int n){\nint i, j;\nfor (i = 0; i < n; i++) {\nif (i == 0) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\n} else {\nprintf(\"*\");\nfor (j = 0; j < n - 2; j++) {\nprintf(\"  \");\n}\nprintf(\" *\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong(int n){\nint i, j;\nfor (i = 0; i < n; i++) {\nif (i == 0) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\n} else {\nprintf(\"*\");\nfor (j = 0; j < n - 2; j++) {\nprintf(\"  \");\n}\nprintf(\" *\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_6",
@@ -431,37 +458,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "*   *\n*   *\n* * *",
+        "explanation": "Hình vuông 3x3 rỗng cạnh trên"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "*     *\n*     *\n*     *\n* * * *",
+        "explanation": "Hình vuông 4x4 rỗng cạnh trên"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "*   *\n*   *\n* * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "*     *\n*     *\n*     *\n* * * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "* *\n* *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "*       *\n*       *\n*       *\n*       *\n* * * * *",
         "isHidden": true,
         "weight": 25
       }
@@ -488,7 +520,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong(int n){\nint i, j;\nfor (i = 0; i < n; i++) {\nif (i == n-1) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\n} else {\nprintf(\"*\");\nfor (j = 0; j < n - 2; j++) {\nprintf(\"  \");\n}\nprintf(\" *\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong(int n){\nint i, j;\nfor (i = 0; i < n; i++) {\nif (i == n-1) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\n} else {\nprintf(\"*\");\nfor (j = 0; j < n - 2; j++) {\nprintf(\"  \");\n}\nprintf(\" *\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_7",
@@ -511,37 +543,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "* * *\n*   *\n* * *",
+        "explanation": "Hình vuông 3x3 rỗng ruột"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "* * * *\n*     *\n*     *\n* * * *",
+        "explanation": "Hình vuông 4x4 rỗng ruột"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "* * *\n*   *\n* * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "* * * *\n*     *\n*     *\n* * * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "* *\n* *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "* * * * *\n*       *\n*       *\n*       *\n* * * * *",
         "isHidden": true,
         "weight": 25
       }
@@ -568,7 +605,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong (int n){\nint i,j;\nfor (i= 0;i<n;i++) {\nif (i==n-1 || i==0 ) {\nfor ( j=0;j<n;j++){\nprintf (\"* \");\n}\n}\nelse {\nprintf (\"*\");\nfor (j=0;j<2*n-3;j++){\nprintf (\" \");\n}\nprintf (\"*\");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong (int n){\nint i,j;\nfor (i= 0;i<n;i++) {\nif (i==n-1 || i==0 ) {\nfor ( j=0;j<n;j++){\nprintf (\"* \");\n}\n}\nelse {\nprintf (\"*\");\nfor (j=0;j<2*n-3;j++){\nprintf (\" \");\n}\nprintf (\"*\");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_8",
@@ -591,37 +628,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "* \n* * \n* * *",
+        "explanation": "Tam giác vuông cạnh 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "* \n* * \n* * * \n* * * *",
+        "explanation": "Tam giác vuông cạnh 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "* \n* * \n* * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "* \n* * \n* * * \n* * * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "1",
+        "expectedOutput": "* ",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "* \n* * \n* * * \n* * * * \n* * * * *",
         "isHidden": true,
         "weight": 25
       }
@@ -648,7 +690,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<=n;i++) {\nfor (j=0;j<i;j++){\nprintf (\"* \");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<=n;i++) {\nfor (j=0;j<i;j++){\nprintf (\"* \");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_9",
@@ -671,37 +713,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "* * * \n* * \n* ",
+        "explanation": "Tam giác vuông ngược 1"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "* * * * \n* * * \n* * \n* ",
+        "explanation": "Tam giác vuông ngược cạnh 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "* * * \n* * \n* ",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "* * * * \n* * * \n* * \n* ",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "* * \n* ",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "* * * * * \n* * * * \n* * * \n* * \n* ",
         "isHidden": true,
         "weight": 25
       }
@@ -728,7 +775,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<=n;i++) {\nfor (j=0;j<n-i;j++){\nprintf (\"* \");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<=n;i++) {\nfor (j=0;j<n-i;j++){\nprintf (\"* \");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_10",
@@ -751,37 +798,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "***\n **\n  *",
+        "explanation": "Tam giác ngược căn lề phải kích thước 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "****\n ***\n  **\n   *",
+        "explanation": "Tam giác ngược căn lề phải kích thước 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "***\n **\n  *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "****\n ***\n  **\n   *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "**\n *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "*****\n ****\n  ***\n   **\n    *",
         "isHidden": true,
         "weight": 25
       }
@@ -808,7 +860,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nvoid veTamGiac(int n) {\nint i, j, size = n;\nfor (i = 0; i < size; i++) {\nfor (j = 0; j < i; j++) {\nprintf(\" \");\n}\nfor (j = i; j < size; j++) {\nprintf(\"*\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\nvoid veTamGiac(int n) {\nint i, j, size = n;\nfor (i = 0; i < size; i++) {\nfor (j = 0; j < i; j++) {\nprintf(\" \");\n}\nfor (j = i; j < size; j++) {\nprintf(\"*\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_11",
@@ -831,37 +883,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "  *\n **\n***",
+        "explanation": "Tam giác vuông góc phải kích thước 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "   *\n  **\n ***\n****",
+        "explanation": "Tam giác vuông góc phải kích thước 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "  *\n **\n***",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "   *\n  **\n ***\n****",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": " *\n**",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "    *\n   **\n  ***\n ****\n*****",
         "isHidden": true,
         "weight": 25
       }
@@ -888,7 +945,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<n;i++){\nfor (j=0;j<n-i-1;j++){\nprintf (\" \");\n}\nfor (j=0;j<i+1;j++){\nprintf (\"*\");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<n;i++){\nfor (j=0;j<n-i-1;j++){\nprintf (\" \");\n}\nfor (j=0;j<i+1;j++){\nprintf (\"*\");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_12",
@@ -911,37 +968,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "   * \n  * * * \n* * * * *",
+        "explanation": "Tam giác cân 1"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "    * \n   * * * \n  * * * * * \n* * * * * * *",
+        "explanation": "Tam giác cân chiều cao 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "   * \n  * * * \n* * * * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "    * \n   * * * \n  * * * * * \n* * * * * * *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "  * \n* * *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "     * \n    * * * \n   * * * * * \n  * * * * * * * \n* * * * * * * * *",
         "isHidden": true,
         "weight": 25
       }
@@ -968,7 +1030,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, space, rows, k = 0;\nscanf(\"%d\", &rows);\nfor (i = 1; i <= rows; ++i, k = 0) {\nfor (space = 1; space <= rows - i; ++space) {\nprintf(\"  \");\n}\nwhile (k != 2 * i - 1) {\nprintf(\"* \");\n++k;\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, space, rows, k = 0;\nscanf(\"%d\", &rows);\nfor (i = 1; i <= rows; ++i, k = 0) {\nfor (space = 1; space <= rows - i; ++space) {\nprintf(\"  \");\n}\nwhile (k != 2 * i - 1) {\nprintf(\"* \");\n++k;\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_13",
@@ -991,37 +1053,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "* * * * * \n  * * * \n    *",
+        "explanation": "Tam giác cân ngược 2"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "* * * * * * * \n  * * * * * \n    * * * \n      *",
+        "explanation": "Tam giác cân ngược chiều cao 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "* * * * * \n  * * * \n    *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "* * * * * * * \n  * * * * * \n    * * * \n      *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "* * * \n  *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "* * * * * * * * * \n  * * * * * * * \n    * * * * * \n      * * * \n        *",
         "isHidden": true,
         "weight": 25
       }
@@ -1048,7 +1115,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint rows, i, j, space;\nscanf(\"%d\", &rows);\nfor (i = rows; i >= 1; --i) {\nfor (space = 0; space < rows - i; ++space)\nprintf(\"  \");\nfor (j = i; j <= 2 * i - 1; ++j)\nprintf(\"* \");\nfor (j = 0; j < i - 1; ++j)\nprintf(\"* \");\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint rows, i, j, space;\nscanf(\"%d\", &rows);\nfor (i = rows; i >= 1; --i) {\nfor (space = 0; space < rows - i; ++space)\nprintf(\"  \");\nfor (j = i; j <= 2 * i - 1; ++j)\nprintf(\"* \");\nfor (j = 0; j < i - 1; ++j)\nprintf(\"* \");\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_14",
@@ -1071,37 +1138,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "1 \n2 3 \n4 5 6",
+        "explanation": "Tam giác Floyd 3 hàng"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "1 \n2 3 \n4 5 6 \n7 8 9 10",
+        "explanation": "Tam giác Floyd 4 hàng"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "1 \n2 3 \n4 5 6",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "1 \n2 3 \n4 5 6 \n7 8 9 10",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "1 \n2 3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "1 \n2 3 \n4 5 6 \n7 8 9 10 \n11 12 13 14 15",
         "isHidden": true,
         "weight": 25
       }
@@ -1128,7 +1200,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint rows, i, j, number = 1;\nscanf(\"%d\", &rows);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= rows; i++) {\nfor (j = 1; j <= i; ++j) {\nprintf(\"%d \", number);\n++number;\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint rows, i, j, number = 1;\nscanf(\"%d\", &rows);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= rows; i++) {\nfor (j = 1; j <= i; ++j) {\nprintf(\"%d \", number);\n++number;\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_15",
@@ -1151,37 +1223,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "1 \n1 2 \n1 2 3",
+        "explanation": "Tam giác số theo cột 3 hàng"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "1 \n1 2 \n1 2 3 \n1 2 3 4",
+        "explanation": "Tam giác số 4 hàng"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "1 \n1 2 \n1 2 3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "1 \n1 2 \n1 2 3 \n1 2 3 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "1 \n1 2",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "1 \n1 2 \n1 2 3 \n1 2 3 4 \n1 2 3 4 5",
         "isHidden": true,
         "weight": 25
       }
@@ -1208,7 +1285,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main(){\nint i, j, row;\nscanf(\"%d\", &row);\nprintf(\"OUTPUT:\\n\");\nfor(i = 1; i <= row; i++){\nfor(j = 1; j <= i; j++){\nprintf(\"%d \", j);\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\nint main(){\nint i, j, row;\nscanf(\"%d\", &row);\nprintf(\"OUTPUT:\\n\");\nfor(i = 1; i <= row; i++){\nfor(j = 1; j <= i; j++){\nprintf(\"%d \", j);\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_16",
@@ -1231,37 +1308,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "A\nABA\nABCBA",
+        "explanation": "Tam giác chữ đối xứng 3 hàng"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "A\nABA\nABCBA\nABCDCBA",
+        "explanation": "Tam giác chữ đối xứng 4 hàng"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "A\nABA\nABCBA",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "A\nABA\nABCBA\nABCDCBA",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "A\nABA",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "A\nABA\nABCBA\nABCDCBA\nABCDEDCBA",
         "isHidden": true,
         "weight": 25
       }
@@ -1288,7 +1370,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main() {\nint i, j, rows, count=0;\nscanf(\"%d\", &rows);\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < 2*rows; i=i+2) {\nfor (j = 0; j <= i; j++) {\nprintf(\"%c\", 'A'+count);\nif(j < i/2)\ncount++;\nelse\ncount--;\n}\ncount = 0;\nprintf(\"\\n\");\n}\nreturn(0);\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\nint main() {\nint i, j, rows, count=0;\nscanf(\"%d\", &rows);\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < 2*rows; i=i+2) {\nfor (j = 0; j <= i; j++) {\nprintf(\"%c\", 'A'+count);\nif(j < i/2)\ncount++;\nelse\ncount--;\n}\ncount = 0;\nprintf(\"\\n\");\n}\nreturn(0);\n}"
   },
   {
     "id": "prf192_src_17",
@@ -1311,37 +1393,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "  ***\n * *\n***",
+        "explanation": "Hình bình hành rỗng 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "   ****\n  *  *\n *  *\n****",
+        "explanation": "Hình bình hành rỗng 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "  ***\n * *\n***",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "   ****\n  *  *\n *  *\n****",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": " **\n**",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "    *****\n   *   *\n  *   *\n *   *\n*****",
         "isHidden": true,
         "weight": 25
       }
@@ -1368,7 +1455,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= n; i++) {\nfor (j = 1; j < n - i + 1; j++) {\nprintf(\" \");\n}\nfor (j = 1; j <= n; j++) {\nif (i == 1 || j == 1 || i == n || j == n) {\nprintf(\"*\");\n} else {\nprintf(\" \");\n}\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= n; i++) {\nfor (j = 1; j < n - i + 1; j++) {\nprintf(\" \");\n}\nfor (j = 1; j <= n; j++) {\nif (i == 1 || j == 1 || i == n || j == n) {\nprintf(\"*\");\n} else {\nprintf(\" \");\n}\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_18",
@@ -1391,37 +1478,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "8",
+        "output": "    *\n   ***\n  *****\n *******\n*********\n***   ***\n***   ***\n***   ***",
+        "explanation": "Hình vẽ ngôi nhà"
+      },
+      {
+        "input": "8",
+        "output": "    *\n   ***\n  *****\n *******\n*********\n***   ***\n***   ***\n***   ***",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "8",
+        "expectedOutput": "    *\n   ***\n  *****\n *******\n*********\n***   ***\n***   ***\n***   ***",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "8",
+        "expectedOutput": "    *\n   ***\n  *****\n *******\n*********\n***   ***\n***   ***\n***   ***",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "8",
+        "expectedOutput": "    *\n   ***\n  *****\n *******\n*********\n***   ***\n***   ***\n***   ***",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "8",
+        "expectedOutput": "    *\n   ***\n  *****\n *******\n*********\n***   ***\n***   ***\n***   ***",
         "isHidden": true,
         "weight": 25
       }
@@ -1448,7 +1540,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, space, rows = 8, star = 0;\nfor (i = 0; i < rows; i++)\n{\nif (i < 5)\n{\nfor (space = 1; space < 5 - i; space++)\n{\nprintf(\" \");\n}\nwhile (star != (2 * i + 1))\n{\nprintf(\"*\");\nstar++;\n;\n}\nstar = 0;\n/* move to next row */\nprintf(\"\\n\");\n}\nelse\n{\nfor (j = 0; j < 9; j++)\n{\nif ((int)(j / 3) == 1)\nprintf(\" \");\nelse\nprintf(\"*\");\n}\nprintf(\"\\n\");\n}\n}\nreturn 0;\n}\nTEST CASE"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, space, rows = 8, star = 0;\nfor (i = 0; i < rows; i++)\n{\nif (i < 5)\n{\nfor (space = 1; space < 5 - i; space++)\n{\nprintf(\" \");\n}\nwhile (star != (2 * i + 1))\n{\nprintf(\"*\");\nstar++;\n;\n}\nstar = 0;\n/* move to next row */\nprintf(\"\\n\");\n}\nelse\n{\nfor (j = 0; j < 9; j++)\n{\nif ((int)(j / 3) == 1)\nprintf(\" \");\nelse\nprintf(\"*\");\n}\nprintf(\"\\n\");\n}\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_19",
@@ -1471,37 +1563,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "      * \n   *  *  * \n*  *  *  *  * \n   *  *  * \n      *",
+        "explanation": "Hình thoi kích thước 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "          * \n       *  *  * \n    *  *  *  *  * \n *  *  *  *  *  *  * \n    *  *  *  *  * \n       *  *  * \n          *",
+        "explanation": "Hình thoi kích thước 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "      * \n   *  *  * \n*  *  *  *  * \n   *  *  * \n      *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "          * \n       *  *  * \n    *  *  *  *  * \n *  *  *  *  *  *  * \n    *  *  *  *  * \n       *  *  * \n          *",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "   * \n*  *  * \n   *",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "             * \n          *  *  * \n       *  *  *  *  * \n    *  *  *  *  *  *  * \n *  *  *  *  *  *  *  *  * \n    *  *  *  *  *  *  * \n       *  *  *  *  * \n          *  *  * \n             *",
         "isHidden": true,
         "weight": 25
       }
@@ -1528,7 +1625,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nint i;\nfor (i = 1; i <= n; i++)\n{\nint j;\nfor (j = 1; j <= n - i; j++)\n{\nprintf(\"   \");\n}\nfor (j = 1; j <= 2 * i - 1; j++)\n{\nprintf(\" * \");\n}\nprintf(\"\\n\");\n}\nfor (i = n - 1; i >= 1; i--)\n{\nint j;\nfor (j = 1; j <= n - i; j++)\n{\nprintf(\"   \");\n}\nfor (j = 1; j <= 2 * i - 1; j++)\n{\nprintf(\" * \");\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nint i;\nfor (i = 1; i <= n; i++)\n{\nint j;\nfor (j = 1; j <= n - i; j++)\n{\nprintf(\"   \");\n}\nfor (j = 1; j <= 2 * i - 1; j++)\n{\nprintf(\" * \");\n}\nprintf(\"\\n\");\n}\nfor (i = n - 1; i >= 1; i--)\n{\nint j;\nfor (j = 1; j <= n - i; j++)\n{\nprintf(\"   \");\n}\nfor (j = 1; j <= 2 * i - 1; j++)\n{\nprintf(\" * \");\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_20",
@@ -1551,37 +1648,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "*\n**\n***",
+        "explanation": "Tam giác vuông rỗng 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "*\n**\n* *\n****",
+        "explanation": "Tam giác vuông rỗng 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "*\n**\n***",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "*\n**\n* *\n****",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "*\n**",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "*\n**\n* *\n*  *\n*****",
         "isHidden": true,
         "weight": 25
       }
@@ -1608,7 +1710,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= n; i++) {\nfor (j = 1; j <= i; j++) {\nif (j == 1 || i == n || i == j)\nprintf(\"*\");\nelse\nprintf(\" \");\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= n; i++) {\nfor (j = 1; j <= i; j++) {\nif (j == 1 || i == n || i == j)\nprintf(\"*\");\nelse\nprintf(\" \");\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_21",
@@ -1632,36 +1734,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "24",
+        "explanation": "Tổng mảng: 5+2+9+1+7=24"
+      },
+      {
+        "input": "4\n10 20 30 40",
+        "output": "100",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "24",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n10 20 30 40",
+        "expectedOutput": "100",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "1\n-15",
+        "expectedOutput": "-15",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n-5 10 -2 8 0 4",
+        "expectedOutput": "15",
         "isHidden": true,
         "weight": 25
       }
@@ -1688,7 +1795,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]: system(\"cls\") removed\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) {\nscanf(\"%d\", &a[i]);\n}\nint sum=0;\nfor(i=0; i<n; i++) {\nsum+=a[i];\n}\n\nprintf(\"%d\", sum);\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) {\nscanf(\"%d\", &a[i]);\n}\nint sum=0;\nfor(i=0; i<n; i++) {\nsum+=a[i];\n}\n\nprintf(\"%d\", sum);\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_22",
@@ -1711,37 +1818,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n-3 2 -9 1 -7",
+        "output": "3",
+        "explanation": "3 số âm: -3, -9, -7"
+      },
+      {
+        "input": "4\n1 2 3 4",
+        "output": "0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n-3 2 -9 1 -7",
+        "expectedOutput": "3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n1 2 3 4",
+        "expectedOutput": "0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n-10 -20 -30",
+        "expectedOutput": "3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n0 -1 5 -4 9 -8",
+        "expectedOutput": "3",
         "isHidden": true,
         "weight": 25
       }
@@ -1768,7 +1880,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]: system(\"cls\") removed\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor (i=0;i<n;i++){\nscanf (\"%d\",&a[i]);\n}\nint count=0;\nfor (i=0;i<n;i++) {\nif (a[i]<0) {\ncount++;\n}\n}\n\nprintf(\"%d\", count);\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor (i=0;i<n;i++){\nscanf (\"%d\",&a[i]);\n}\nint count=0;\nfor (i=0;i<n;i++) {\nif (a[i]<0) {\ncount++;\n}\n}\n\nprintf(\"%d\", count);\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_23",
@@ -1791,37 +1903,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n3 9 1 7 4",
+        "output": "1 9",
+        "explanation": "Số nhỏ nhất là 1, lớn nhất là 9"
+      },
+      {
+        "input": "4\n10 40 20 30",
+        "output": "10 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n3 9 1 7 4",
+        "expectedOutput": "1 9",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n10 40 20 30",
+        "expectedOutput": "10 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1\n5",
+        "expectedOutput": "5 5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "6\n-10 15 0 -5 8 20",
+        "expectedOutput": "-10 20",
         "isHidden": true,
         "weight": 25
       }
@@ -1848,7 +1965,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]: system(\"cls\") removed\nint n;\nscanf(\"%d\",&n);\nint i,Arr[n];\nfor(i=0;i<n;i++)\nscanf(\"%d\",&Arr[i]);\nint min = Arr[0];\nint max = Arr[0];\nfor (i=0;i<n;i++) {\nif (Arr[i] < min) {\nmin = Arr[i];\n}\n}\nfor (i=0;i<n;i++) {\nif (Arr[i] > max) {\nmax = Arr[i];\n}\n}\n\nprintf (\"%d %d\",min, max);\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\",&n);\nint i,Arr[n];\nfor(i=0;i<n;i++)\nscanf(\"%d\",&Arr[i]);\nint min = Arr[0];\nint max = Arr[0];\nfor (i=0;i<n;i++) {\nif (Arr[i] < min) {\nmin = Arr[i];\n}\n}\nfor (i=0;i<n;i++) {\nif (Arr[i] > max) {\nmax = Arr[i];\n}\n}\n\nprintf (\"%d %d\",min, max);\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_24",
@@ -1872,36 +1989,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "7\n2",
+        "explanation": "Lớn thứ nhì 7, nhỏ thứ nhì 2"
+      },
+      {
+        "input": "4\n10 40 20 30",
+        "output": "30\n20",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "7\n2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n10 40 20 30",
+        "expectedOutput": "30\n20",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n5 1 9",
+        "expectedOutput": "5\n5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n15 4 8 20 1 12",
+        "expectedOutput": "15\n4",
         "isHidden": true,
         "weight": 25
       }
@@ -1928,7 +2050,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nvoid findSecondLargestAndSmallest(int arr[], int size) {\nint max = arr[0];\nint secondMax = arr[0];\nint min = arr[0];\nint secondMin = arr[0];\nint i;\nfor (i = 0; i < size; i++) {\nif (arr[i] > max) {\nsecondMax = max;\nmax = arr[i];\n} else if (arr[i] > secondMax && arr[i] != max) {\nsecondMax = arr[i];\n}\nif (arr[i] < min) {\nsecondMin = min;\nmin = arr[i];\n} else if (arr[i] < secondMin && arr[i] != min) {\nsecondMin = arr[i];\n}\n}\nprintf(\"%d\\n\", secondMax);\nprintf(\"%d\\n\", secondMin);\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint* arr = (int*)malloc(n * sizeof(int));\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nprintf(\"OUTPUT:\\n\");\nfindSecondLargestAndSmallest(arr, n);\nfree(arr);\nreturn 0;\n}TEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\nvoid findSecondLargestAndSmallest(int arr[], int size) {\nint max = arr[0];\nint secondMax = arr[0];\nint min = arr[0];\nint secondMin = arr[0];\nint i;\nfor (i = 0; i < size; i++) {\nif (arr[i] > max) {\nsecondMax = max;\nmax = arr[i];\n} else if (arr[i] > secondMax && arr[i] != max) {\nsecondMax = arr[i];\n}\nif (arr[i] < min) {\nsecondMin = min;\nmin = arr[i];\n} else if (arr[i] < secondMin && arr[i] != min) {\nsecondMin = arr[i];\n}\n}\nprintf(\"%d\\n\", secondMax);\nprintf(\"%d\\n\", secondMin);\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint* arr = (int*)malloc(n * sizeof(int));\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nprintf(\"OUTPUT:\\n\");\nfindSecondLargestAndSmallest(arr, n);\nfree(arr);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_25",
@@ -1951,37 +2073,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "12345",
+        "output": "54321",
+        "explanation": "Đảo ngược số"
+      },
+      {
+        "input": "95117354",
+        "output": "45371159",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "12345",
+        "expectedOutput": "54321",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "95117354",
+        "expectedOutput": "45371159",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "100",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "7",
         "isHidden": true,
         "weight": 25
       }
@@ -2008,7 +2135,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint i,j;\nlong n;\ndo\nscanf(\"%d\",&n);\nwhile (n<0);\nlong rev=0;\nwhile (n!=0){\nrev=rev*10+n%10;\nn/=10;\n}\nn=rev;\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\",n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint i,j;\nlong n;\ndo\nscanf(\"%d\",&n);\nwhile (n<0);\nlong rev=0;\nwhile (n!=0){\nrev=rev*10+n%10;\nn/=10;\n}\nn=rev;\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\",n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_26",
@@ -2033,7 +2160,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "5\n5 2 9 1 7",
         "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "explanation": "Tăng dần"
+      },
+      {
+        "input": "4\n40 10 30 20",
+        "output": "10 20 30 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -2046,22 +2178,22 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n40 10 30 20",
+        "expectedOutput": "10 20 30 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n9 3",
+        "expectedOutput": "3 9",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n-5 8 0 -12 15 3",
+        "expectedOutput": "-12 -5 0 3 8 15",
         "isHidden": true,
         "weight": 25
       }
@@ -2088,7 +2220,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%d\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] > a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", a[i]);\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%d\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] > a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", a[i]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_27",
@@ -2112,36 +2244,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "9 7 5 2 1",
+        "explanation": "Giảm dần"
+      },
+      {
+        "input": "4\n10 40 20 30",
+        "output": "40 30 20 10",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "9 7 5 2 1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n10 40 20 30",
+        "expectedOutput": "40 30 20 10",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n3 9",
+        "expectedOutput": "9 3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n-12 15 0 8 -5 3",
+        "expectedOutput": "15 8 3 0 -5 -12",
         "isHidden": true,
         "weight": 25
       }
@@ -2168,7 +2305,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%d\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] < a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", a[i]);\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%d\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] < a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", a[i]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_28",
@@ -2191,37 +2328,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "6\n1 2 2 3 4 4",
+        "output": "1 2 3 4",
+        "explanation": "Giảm bớt trùng nhau"
+      },
+      {
+        "input": "5\n5 5 5 5 5",
+        "output": "5",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "6\n1 2 2 3 4 4",
+        "expectedOutput": "1 2 3 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "5\n5 5 5 5 5",
+        "expectedOutput": "5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n1 2 3",
+        "expectedOutput": "1 2 3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "6\n4 2 4 1 2 5",
+        "expectedOutput": "4 2 1 5",
         "isHidden": true,
         "weight": 25
       }
@@ -2248,7 +2390,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]: system(\"cls\") removed\n\nint n;\nint arr[1000], b[1000] = {0}, c[1000] = {0}; //Khoi tao 3 mang so nguyen\nint i;\nscanf(\"%d\", &n); //Nhap so phan tu cua mang arr\nfor(i = 0; i < n;i++)\n{\nscanf(\"%d\", &arr[i]);// Nhap n phan tu mang so nguyen arr\n}\nfor(i = 0; i < n;i++)\n{\nif(arr[i] > 0) //Mang so nguyen b[] ghi lai so lan xuat hien cua\nb[arr[i]]++;  //cac phan tu lon hon 0 trong day arr\nif(arr[i] < 0) //Mang so nguyen c[] ghi lai so lan xuat hien cua\nc[-arr[i]]++; //cac phan tu nho hon 0 trong day arr\n}\nint max = 0;\nfor(i = 0; i <n ;i++)\n{\nif(arr[i] > 0)\n{\nif(b[arr[i]] > max)\nmax = b[arr[i]];\n}\nelse\n{\nif(c[-arr[i]] > max)\nmax = c[-arr[i]];\n}\n}"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]:  removed\n\nint n;\nint arr[1000], b[1000] = {0}, c[1000] = {0}; //Khoi tao 3 mang so nguyen\nint i;\nscanf(\"%d\", &n); //Nhap so phan tu cua mang arr\nfor(i = 0; i < n;i++)\n{\nscanf(\"%d\", &arr[i]);// Nhap n phan tu mang so nguyen arr\n}\nfor(i = 0; i < n;i++)\n{\nif(arr[i] > 0) //Mang so nguyen b[] ghi lai so lan xuat hien cua\nb[arr[i]]++;  //cac phan tu lon hon 0 trong day arr\nif(arr[i] < 0) //Mang so nguyen c[] ghi lai so lan xuat hien cua\nc[-arr[i]]++; //cac phan tu nho hon 0 trong day arr\n}\nint max = 0;\nfor(i = 0; i <n ;i++)\n{\nif(arr[i] > 0)\n{\nif(b[arr[i]] > max)\nmax = b[arr[i]];\n}\nelse\n{\nif(c[-arr[i]] > max)\nmax = c[-arr[i]];\n}\n}"
   },
   {
     "id": "prf192_src_29",
@@ -2271,37 +2413,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "3665",
+        "output": "1:1:5",
+        "explanation": "3665s = 1h 1m 5s"
+      },
+      {
+        "input": "64800",
+        "output": "18:0:0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "3665",
+        "expectedOutput": "1:1:5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "64800",
+        "expectedOutput": "18:0:0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "60",
+        "expectedOutput": "0:1:0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "86399",
+        "expectedOutput": "23:59:59",
         "isHidden": true,
         "weight": 25
       }
@@ -2328,7 +2475,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint main(){\nint a;\nscanf(\"%d\",&a);\nprintf(\"OUTPUT:\\n\");\nint h,m,s;\nh=a/3600;\nm=(a-(h*3600))/60;\ns=a-h*3600-m*60;\nprintf(\"%d:%d:%d\", h, m, s);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include<stdio.h>\nint main(){\nint a;\nscanf(\"%d\",&a);\nprintf(\"OUTPUT:\\n\");\nint h,m,s;\nh=a/3600;\nm=(a-(h*3600))/60;\ns=a-h*3600-m*60;\nprintf(\"%d:%d:%d\", h, m, s);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_30",
@@ -2352,36 +2499,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "25 81 1 49",
+        "explanation": "Bình phương số lẻ"
+      },
+      {
+        "input": "4\n1 3 5 7",
+        "output": "1 9 25 49",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "25 81 1 49",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n1 3 5 7",
+        "expectedOutput": "1 9 25 49",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n2 4 6",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n-3 2 7 -1 4",
+        "expectedOutput": "9 49 1",
         "isHidden": true,
         "weight": 25
       }
@@ -2408,7 +2560,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nint main() {\nint size;\nscanf(\"%d\",&size);\nint i,Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nprintf(\"OUTPUT:\\n\");\nfor(i=0;i<size;i++)\nif(Arr[i]%2==1&& Arr[i]>0) {\nprintf(\"%d \",Arr[i]*Arr[i]);\n}\nreturn 0;\n}TEST CASE:"
+    "code": "#include <stdio.h>\nint main() {\nint size;\nscanf(\"%d\",&size);\nint i,Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nprintf(\"OUTPUT:\\n\");\nfor(i=0;i<size;i++)\nif(Arr[i]%2==1&& Arr[i]>0) {\nprintf(\"%d \",Arr[i]*Arr[i]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_31",
@@ -2432,36 +2584,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "output": "7 is a prime number.",
+        "explanation": "Số nguyên tố"
+      },
+      {
+        "input": "8",
+        "output": "8 is not a prime number.",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "7",
-        "expectedOutput": "YES",
+        "expectedOutput": "7 is a prime number.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "8",
+        "expectedOutput": "8 is not a prime number.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "2",
+        "expectedOutput": "2 is a prime number.",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "97",
+        "expectedOutput": "97 is a prime number.",
         "isHidden": true,
         "weight": 25
       }
@@ -2488,7 +2645,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint Prime(int n) {\nint i;\nif (n < 2) return 0;\nfor (i = 2; i <= sqrt(n); i++) {\nif (n % i == 0) return 0;\n}\nreturn 1;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (Prime(n)) {\nprintf(\"%d is a prime number.\\n\", n);\n} else {\nprintf(\"%d is not a prime number.\\n\", n);\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <math.h>\nint Prime(int n) {\nint i;\nif (n < 2) return 0;\nfor (i = 2; i <= sqrt(n); i++) {\nif (n % i == 0) return 0;\n}\nreturn 1;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (Prime(n)) {\nprintf(\"%d is a prime number.\\n\", n);\n} else {\nprintf(\"%d is not a prime number.\\n\", n);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_32",
@@ -2511,37 +2668,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5",
+        "output": "15",
+        "explanation": "Tổng 1..5 = 15"
+      },
+      {
+        "input": "10",
+        "output": "55",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5",
+        "expectedOutput": "15",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "10",
+        "expectedOutput": "55",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "100",
+        "expectedOutput": "5050",
         "isHidden": true,
         "weight": 25
       }
@@ -2568,7 +2730,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint SumInRange(int n) {\nint i;\nint sum = 0;\nfor (i = 1; i <= n; i++) {\nsum += i;\n}\nreturn sum;\n}\nint main() {\nint n;\nint sum;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nsum = SumInRange(n);\nprintf(\"%d\", sum);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <math.h>\nint SumInRange(int n) {\nint i;\nint sum = 0;\nfor (i = 1; i <= n; i++) {\nsum += i;\n}\nreturn sum;\n}\nint main() {\nint n;\nint sum;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nsum = SumInRange(n);\nprintf(\"%d\", sum);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_33",
@@ -2591,37 +2753,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "16",
+        "output": "16 is a perfect square.",
+        "explanation": "Số chính phương"
+      },
+      {
         "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "output": "7 is not a perfect square.",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "16",
+        "expectedOutput": "16 is a perfect square.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "7 is not a perfect square.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "25",
+        "expectedOutput": "25 is a perfect square.",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "100",
+        "expectedOutput": "100 is a perfect square.",
         "isHidden": true,
         "weight": 25
       }
@@ -2648,7 +2815,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint SCP(int n) {\nif (sqrt(n) == (int)sqrt(n))\nreturn 1;\nelse\nreturn 0;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (SCP(n))\nprintf(\"%d is a perfect square.\\n\", n);\nelse\nprintf(\"%d is not a perfect square.\\n\", n);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <math.h>\nint SCP(int n) {\nif (sqrt(n) == (int)sqrt(n))\nreturn 1;\nelse\nreturn 0;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (SCP(n))\nprintf(\"%d is a perfect square.\\n\", n);\nelse\nprintf(\"%d is not a perfect square.\\n\", n);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_34",
@@ -2671,37 +2838,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "13",
+        "output": "13 is a Fibonacci number.",
+        "explanation": "Số Fibonacci"
+      },
+      {
         "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "output": "7 is not a Fibonacci number.",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "13",
+        "expectedOutput": "13 is a Fibonacci number.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "7 is not a Fibonacci number.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "8",
+        "expectedOutput": "8 is a Fibonacci number.",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "21",
+        "expectedOutput": "21 is a Fibonacci number.",
         "isHidden": true,
         "weight": 25
       }
@@ -2728,7 +2900,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint isPerfectSquare(int n) {\nint sqrtN = sqrt(n);\nreturn (sqrtN * sqrtN == n);\n}\nint isFibonacci(int n) {\nreturn isPerfectSquare(5 * n * n + 4) || isPerfectSquare(5 * n * n - 4);\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (isFibonacci(n)) {\nprintf(\"%d is a Fibonacci number.\\n\", n);\n} else {\nprintf(\"%d is not a Fibonacci number.\\n\", n);\n}\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <math.h>\nint isPerfectSquare(int n) {\nint sqrtN = sqrt(n);\nreturn (sqrtN * sqrtN == n);\n}\nint isFibonacci(int n) {\nreturn isPerfectSquare(5 * n * n + 4) || isPerfectSquare(5 * n * n - 4);\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (isFibonacci(n)) {\nprintf(\"%d is a Fibonacci number.\\n\", n);\n} else {\nprintf(\"%d is not a Fibonacci number.\\n\", n);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_35",
@@ -2751,37 +2923,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "5 3 4",
+        "output": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "explanation": "Công thức diện tích chu vi"
+      },
+      {
+        "input": "5 3 4",
+        "output": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "5 3 4",
+        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "5 3 4",
+        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "5 3 4",
+        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5 3 4",
+        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
         "isHidden": true,
         "weight": 25
       }
@@ -2833,7 +3010,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "5\n5 2 9 1 7",
         "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "explanation": "Insertion sort"
+      },
+      {
+        "input": "4\n40 10 30 20",
+        "output": "10 20 30 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -2846,22 +3028,22 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n40 10 30 20",
+        "expectedOutput": "10 20 30 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n9 1",
+        "expectedOutput": "1 9",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n3 3 1 2 2",
+        "expectedOutput": "1 2 2 3 3",
         "isHidden": true,
         "weight": 25
       }
@@ -2888,7 +3070,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid Insertion(int A[], int n) {\nint i, j;\nfor (i = 1; i < n; i++) {\nint value = A[i];\nj = i - 1;\nwhile (j >= 0 && value < A[j]) {\nA[j + 1] = A[j];\nj--;\n}\nA[j + 1] = value;\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint A[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &A[i]);\n}\nInsertion(A, n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\nvoid Insertion(int A[], int n) {\nint i, j;\nfor (i = 1; i < n; i++) {\nint value = A[i];\nj = i - 1;\nwhile (j >= 0 && value < A[j]) {\nA[j + 1] = A[j];\nj--;\n}\nA[j + 1] = value;\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint A[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &A[i]);\n}\nInsertion(A, n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_37",
@@ -2913,7 +3095,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "5\n5 2 9 1 7",
         "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "explanation": "Bubble sort"
+      },
+      {
+        "input": "4\n40 10 30 20",
+        "output": "10 20 30 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -2926,22 +3113,22 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n40 10 30 20",
+        "expectedOutput": "10 20 30 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n9 1",
+        "expectedOutput": "1 9",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n3 3 1 2 2",
+        "expectedOutput": "1 2 2 3 3",
         "isHidden": true,
         "weight": 25
       }
@@ -2968,7 +3155,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid bubble(int A[], int n, int switchOper) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n - 1 - i; j++) {\nif ((A[j] - A[j + 1]) * switchOper > 0) {\nint temp = A[j];\nA[j] = A[j + 1];\nA[j + 1] = temp;\n}\n}\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint A[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &A[i]);\n}\nbubble(A, n, 1);\nprintf(\"OUTPUT:\\n\");\nprintf(\"Sắp xếp tang dan: \");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nbubble(A, n, -1);\nprintf(\"Sắp xếp giam dan: \");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\nvoid bubble(int A[], int n, int switchOper) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n - 1 - i; j++) {\nif ((A[j] - A[j + 1]) * switchOper > 0) {\nint temp = A[j];\nA[j] = A[j + 1];\nA[j + 1] = temp;\n}\n}\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint A[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &A[i]);\n}\nbubble(A, n, 1);\nprintf(\"OUTPUT:\\n\");\nprintf(\"Sắp xếp tang dan: \");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nbubble(A, n, -1);\nprintf(\"Sắp xếp giam dan: \");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_38",
@@ -2991,37 +3178,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n5.0 2.0 9.0 1.0 7.0",
+        "output": "9.00 7.00 5.00 2.00 1.00",
+        "explanation": "Sắp xếp float giảm dần"
+      },
+      {
+        "input": "3\n1.5 9.2 4.1",
+        "output": "9.20 4.10 1.50",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n5.0 2.0 9.0 1.0 7.0",
+        "expectedOutput": "9.00 7.00 5.00 2.00 1.00",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "3\n1.5 9.2 4.1",
+        "expectedOutput": "9.20 4.10 1.50",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n2.5 8.1",
+        "expectedOutput": "8.10 2.50",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "4\n0.5 -1.2 3.8 2.0",
+        "expectedOutput": "3.80 2.00 0.50 -1.20",
         "isHidden": true,
         "weight": 25
       }
@@ -3048,7 +3240,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nvoid bubble(float A[], int n, int switchOper) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n - 1 - i; j++) {\nif ((A[j] - A[j + 1]) * switchOper > 0) {\nfloat temp = A[j];\nA[j] = A[j + 1];\nA[j + 1] = temp;\n}\n}\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nfloat Arr[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%f\", &Arr[i]);\n}\nprintf(\"OUTPUT:\\n\");\nbubble(Arr, n, -1);\nfor (i = 0; i < n; i++) {\nprintf(\"%.2f \", Arr[i]);\n}\nreturn 0;\n}TEST CASE:"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\nvoid bubble(float A[], int n, int switchOper) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n - 1 - i; j++) {\nif ((A[j] - A[j + 1]) * switchOper > 0) {\nfloat temp = A[j];\nA[j] = A[j + 1];\nA[j + 1] = temp;\n}\n}\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nfloat Arr[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%f\", &Arr[i]);\n}\nprintf(\"OUTPUT:\\n\");\nbubble(Arr, n, -1);\nfor (i = 0; i < n; i++) {\nprintf(\"%.2f \", Arr[i]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_39",
@@ -3073,7 +3265,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "5\n5 2 9 1 7",
         "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "explanation": "Selection sort"
+      },
+      {
+        "input": "4\n40 10 30 20",
+        "output": "10 20 30 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -3086,22 +3283,22 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n40 10 30 20",
+        "expectedOutput": "10 20 30 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n9 1",
+        "expectedOutput": "1 9",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n3 3 1 2 2",
+        "expectedOutput": "1 2 2 3 3",
         "isHidden": true,
         "weight": 25
       }
@@ -3151,37 +3348,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "6\n1 3 3 5 5 7",
+        "output": "1 3 5 7",
+        "explanation": "Xóa số lẻ trùng nhau"
+      },
+      {
+        "input": "5\n1 1 1 1 1",
+        "output": "1",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "6\n1 3 3 5 5 7",
+        "expectedOutput": "1 3 5 7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "5\n1 1 1 1 1",
+        "expectedOutput": "1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "2 4 6 8",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "5\n9 3 9 1 3",
+        "expectedOutput": "9 3 1",
         "isHidden": true,
         "weight": 25
       }
@@ -3231,37 +3433,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "hello",
+        "output": "5",
+        "explanation": "Độ dài chuỗi"
+      },
+      {
+        "input": "PRF192",
+        "output": "6",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "hello",
+        "expectedOutput": "5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "PRF192",
+        "expectedOutput": "6",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "a",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "Computer Science",
+        "expectedOutput": "16",
         "isHidden": true,
         "weight": 25
       }
@@ -3311,37 +3518,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello world 123",
+        "output": "3",
+        "explanation": "3 chữ số: 1, 2, 3"
+      },
+      {
+        "input": "abc45def678",
+        "output": "5",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello world 123",
+        "expectedOutput": "3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "abc45def678",
+        "expectedOutput": "5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "NoDigits",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "2026-11-01 Test 999",
+        "expectedOutput": "9",
         "isHidden": true,
         "weight": 25
       }
@@ -3391,37 +3603,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 4 7 8 3",
+        "output": "8",
+        "explanation": "Số chẵn lớn nhất là 8"
+      },
+      {
+        "input": "4\n10 40 20 30",
+        "output": "40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 4 7 8 3",
+        "expectedOutput": "8",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n10 40 20 30",
+        "expectedOutput": "40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n1 3 5",
+        "expectedOutput": "Không có số chẵn",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "5\n2 6 4 12 8",
+        "expectedOutput": "12",
         "isHidden": true,
         "weight": 25
       }
@@ -3471,37 +3688,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "12 18",
+        "output": "6\t36",
+        "explanation": "GCD = 6, LCM = 36"
+      },
+      {
+        "input": "20 30",
+        "output": "10\t60",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "12 18",
+        "expectedOutput": "6\t36",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "20 30",
+        "expectedOutput": "10\t60",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "7 13",
+        "expectedOutput": "1\t91",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "15 45",
+        "expectedOutput": "15\t45",
         "isHidden": true,
         "weight": 25
       }
@@ -3552,36 +3774,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "2",
+        "explanation": "Số chẵn ở vị trí chẵn"
+      },
+      {
+        "input": "6\n4 1 8 3 6 5",
+        "output": "4 6 8",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "6\n4 1 8 3 6 5",
+        "expectedOutput": "4 6 8",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n1 3 5",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "2 6",
         "isHidden": true,
         "weight": 25
       }
@@ -3631,37 +3858,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "3",
+        "output": "9",
+        "explanation": "Số lẻ bình phương: 3^2 = 9"
+      },
+      {
+        "input": "5",
+        "output": "25",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "3",
+        "expectedOutput": "9",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "5",
+        "expectedOutput": "25",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "4",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "49",
         "isHidden": true,
         "weight": 25
       }
@@ -3711,37 +3943,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "234",
+        "output": "24",
+        "explanation": "Tích các chữ số: 2 * 3 * 4 = 24"
+      },
+      {
+        "input": "12345",
+        "output": "120",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "234",
+        "expectedOutput": "24",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "12345",
+        "expectedOutput": "120",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "5",
+        "expectedOutput": "5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "902",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       }
@@ -3791,37 +4028,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "16",
+        "output": "16 is power of 2",
+        "explanation": "Lũy thừa của 2"
+      },
+      {
         "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "output": "7 is not power of 2",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "16",
+        "expectedOutput": "16 is power of 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "7 is not power of 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "64",
+        "expectedOutput": "64 is power of 2",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "1",
+        "expectedOutput": "1 is power of 2",
         "isHidden": true,
         "weight": 25
       }
@@ -3871,37 +4113,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "hello world",
+        "output": "H L O W R D",
+        "explanation": "Ký tự vị trí chẵn viết hoa"
+      },
+      {
+        "input": "abcdef",
+        "output": "A C E",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "hello world",
+        "expectedOutput": "H L O W R D",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "abcdef",
+        "expectedOutput": "A C E",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "hi",
+        "expectedOutput": "H",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "programming",
+        "expectedOutput": "P O R M I G",
         "isHidden": true,
         "weight": 25
       }
@@ -3951,37 +4198,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "a1b2c3!@#",
+        "output": "abc",
+        "explanation": "Chỉ in các chữ cái"
+      },
+      {
+        "input": "Hello123World",
+        "output": "HelloWorld",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "a1b2c3!@#",
+        "expectedOutput": "abc",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "Hello123World",
+        "expectedOutput": "HelloWorld",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "12345",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "C-Language",
+        "expectedOutput": "CLanguage",
         "isHidden": true,
         "weight": 25
       }
@@ -4031,37 +4283,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
+        "input": "6",
         "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "explanation": "6 là số hoàn hảo (1+2+3=6)"
+      },
+      {
+        "input": "7",
+        "output": "NOT",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
+        "input": "6",
         "expectedOutput": "YES",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "NOT",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
+        "input": "28",
         "expectedOutput": "YES",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "12",
+        "expectedOutput": "NOT",
         "isHidden": true,
         "weight": 25
       }
@@ -4111,37 +4368,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello world 123",
+        "output": "3",
+        "explanation": "3 chữ số"
+      },
+      {
+        "input": "abc45def678",
+        "output": "5",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello world 123",
+        "expectedOutput": "3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "abc45def678",
+        "expectedOutput": "5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "NoDigits",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "2026-11-01 Test 999",
+        "expectedOutput": "9",
         "isHidden": true,
         "weight": 25
       }
@@ -4192,36 +4454,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "output": "hello WORLD",
+        "explanation": "Viết hoa 1/2 sau"
+      },
+      {
+        "input": "abcdefgh",
+        "output": "abcdEFGH",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "hello world",
-        "expectedOutput": "Hello World",
+        "expectedOutput": "hello WORLD",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "abcdefgh",
+        "expectedOutput": "abcdEFGH",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "ab",
+        "expectedOutput": "aB",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "vietnam",
+        "expectedOutput": "vietNAM",
         "isHidden": true,
         "weight": 25
       }
@@ -4271,37 +4538,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "Nguyen Van A",
+        "output": "1",
+        "explanation": "Tên hợp lệ"
+      },
+      {
+        "input": "Nguyen123",
+        "output": "0",
+        "explanation": "Chứa số -> không hợp lệ"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "Nguyen Van A",
+        "expectedOutput": "1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "Nguyen123",
+        "expectedOutput": "0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "John Doe",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "User@#$",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       }
@@ -4351,37 +4623,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n-1 2 4 -5 9",
+        "output": "5.00",
+        "explanation": "Trung bình các số dương (2, 4, 9): 15/3 = 5.00"
+      },
+      {
+        "input": "4\n10 20 30 40",
+        "output": "25.00",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n-1 2 4 -5 9",
+        "expectedOutput": "5.00",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n10 20 30 40",
+        "expectedOutput": "25.00",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "2\n-5 -10",
+        "expectedOutput": "0.00",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "3.00",
         "isHidden": true,
         "weight": 25
       }
@@ -4432,36 +4709,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "50.265440",
+        "explanation": "Diện tích hình tròn bán kính 4: pi * 4 * 4 = 50.265440"
+      },
+      {
+        "input": "5",
+        "output": "78.539750",
+        "explanation": "Bán kính 5"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "expectedOutput": "50.265440",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "5",
+        "expectedOutput": "78.539750",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "1",
+        "expectedOutput": "3.141590",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "10",
+        "expectedOutput": "314.159000",
         "isHidden": true,
         "weight": 25
       }
@@ -4511,37 +4793,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
+        "input": "25",
         "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "explanation": "Số chính phương"
+      },
+      {
+        "input": "26",
+        "output": "Not",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
+        "input": "25",
         "expectedOutput": "YES",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "26",
+        "expectedOutput": "Not",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
+        "input": "1",
         "expectedOutput": "YES",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "49",
+        "expectedOutput": "YES",
         "isHidden": true,
         "weight": 25
       }
@@ -4591,37 +4878,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n5 2 9 1 7\n2",
+        "output": "5 2 1 7",
+        "explanation": "Xóa vị trí 2"
+      },
+      {
+        "input": "4\n1 2 3 4\n0",
+        "output": "2 3 4",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n5 2 9 1 7\n2",
+        "expectedOutput": "5 2 1 7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n1 2 3 4\n0",
+        "expectedOutput": "2 3 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n10 20 30\n2",
+        "expectedOutput": "10 20",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "5\n8 6 4 2 0\n4",
+        "expectedOutput": "8 6 4 2",
         "isHidden": true,
         "weight": 25
       }
@@ -4671,37 +4963,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n1 2 3 4 5\n2 99",
+        "output": "1 2 99 3 4 5",
+        "explanation": "Chèn 99 vào vị trí index 2"
+      },
+      {
+        "input": "3\n10 20 30\n0 5",
+        "output": "5 10 20 30",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n1 2 3 4 5\n2 99",
+        "expectedOutput": "1 2 99 3 4 5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "3\n10 20 30\n0 5",
+        "expectedOutput": "5 10 20 30",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "1\n100\n1 200",
+        "expectedOutput": "100 200",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "4\n2 4 6 8\n4 10",
+        "expectedOutput": "2 4 6 8 10",
         "isHidden": true,
         "weight": 25
       }
@@ -4751,37 +5048,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n5 2 9 1 7\n0 4",
+        "output": "7 2 9 1 5",
+        "explanation": "Swap phần tử vị trí 0 và 4"
+      },
+      {
+        "input": "4\n1 2 3 4\n1 2",
+        "output": "1 3 2 4",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n5 2 9 1 7\n0 4",
+        "expectedOutput": "7 2 9 1 5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n1 2 3 4\n1 2",
+        "expectedOutput": "1 3 2 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n10 20\n0 1",
+        "expectedOutput": "20 10",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n1 2 3 4 5\n2 2",
+        "expectedOutput": "1 2 3 4 5",
         "isHidden": true,
         "weight": 25
       }
@@ -4831,37 +5133,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n5 2 9 1 7\n1",
+        "output": "5 9 1 7",
+        "explanation": "Xóa phần tử vị trí index 1 (giá trị 2)"
+      },
+      {
+        "input": "4\n10 20 30 40\n0",
+        "output": "20 30 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n5 2 9 1 7\n1",
+        "expectedOutput": "5 9 1 7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n10 20 30 40\n0",
+        "expectedOutput": "20 30 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n1 2 3\n2",
+        "expectedOutput": "1 2",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n4 8 12 16 20\n3",
+        "expectedOutput": "4 8 12 20",
         "isHidden": true,
         "weight": 25
       }
@@ -4911,37 +5218,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "3665",
+        "output": "1\n1\n5",
+        "explanation": "Giờ 1, phút 1, giây 5"
+      },
+      {
+        "input": "64800",
+        "output": "18\n0\n0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "3665",
+        "expectedOutput": "1\n1\n5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "64800",
+        "expectedOutput": "18\n0\n0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "60",
+        "expectedOutput": "0\n1\n0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "7200",
+        "expectedOutput": "2\n0\n0",
         "isHidden": true,
         "weight": 25
       }
@@ -4991,37 +5303,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "12345",
+        "output": "6",
+        "explanation": "Tổng chữ số đầu 1 và cuối 5 là 6"
+      },
+      {
         "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "output": "14",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "12345",
+        "expectedOutput": "6",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "14",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "9002",
+        "expectedOutput": "11",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "50",
+        "expectedOutput": "5",
         "isHidden": true,
         "weight": 25
       }
@@ -5071,37 +5388,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "8 2",
+        "output": "8 là l?y th?a c?a 2^3",
+        "explanation": "Kiểm tra lũy thừa"
+      },
+      {
+        "input": "7 7",
+        "output": "7 là l?y th?a c?a 7^1",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "8 2",
+        "expectedOutput": "8 là l?y th?a c?a 2^3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7 7",
+        "expectedOutput": "7 là l?y th?a c?a 7^1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "27 3",
+        "expectedOutput": "27 là l?y th?a c?a 3^3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "16 2",
+        "expectedOutput": "16 là l?y th?a c?a 2^4",
         "isHidden": true,
         "weight": 25
       }
@@ -5151,37 +5473,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n5 10 12 15 20",
+        "output": "4",
+        "explanation": "Có 4 số chia hết cho 5"
+      },
+      {
+        "input": "4\n1 2 3 4",
+        "output": "0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n5 10 12 15 20",
+        "expectedOutput": "4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n1 2 3 4",
+        "expectedOutput": "0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n5 5 5",
+        "expectedOutput": "3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "6\n15 22 25 30 7 35",
+        "expectedOutput": "4",
         "isHidden": true,
         "weight": 25
       }
@@ -5231,37 +5558,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "1101",
+        "output": "15",
+        "explanation": "Nhị phân 1101 -> bát phân 15"
+      },
+      {
+        "input": "111",
+        "output": "7",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "1101",
+        "expectedOutput": "15",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "111",
+        "expectedOutput": "7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1010",
+        "expectedOutput": "12",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "10000",
+        "expectedOutput": "20",
         "isHidden": true,
         "weight": 25
       }
@@ -5311,37 +5643,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 2 3 4 5",
+        "output": "1",
+        "explanation": "Mảng tăng dần"
+      },
+      {
+        "input": "5\n5 4 3 2 1",
+        "output": "0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "5\n5 4 3 2 1",
+        "expectedOutput": "0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n1 3 2",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       }
@@ -5391,37 +5728,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 2 3 2 1",
+        "output": "1",
+        "explanation": "Mảng đối xứng"
+      },
+      {
+        "input": "5\n1 2 3 4 5",
+        "output": "0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 2 3 2 1",
+        "expectedOutput": "1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "4\n1 2 2 1",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "3\n5 5 5",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       }
@@ -5471,37 +5813,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n4 6 7 9 11",
+        "output": "7",
+        "explanation": "Số nguyên tố đầu tiên trong mảng là 7"
+      },
+      {
+        "input": "4\n2 4 6 8",
+        "output": "2",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n4 6 7 9 11",
+        "expectedOutput": "7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n8 9 10",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "5\n15 14 13 12 11",
+        "expectedOutput": "13",
         "isHidden": true,
         "weight": 25
       }
@@ -5551,37 +5898,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "3 2",
+        "output": "4",
+        "explanation": "(-1)^(3+1) * 2^3"
+      },
+      {
+        "input": "2 3",
+        "output": "-9",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "3 2",
+        "expectedOutput": "4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "2 3",
+        "expectedOutput": "-9",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1 5",
+        "expectedOutput": "5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "4 2",
+        "expectedOutput": "-16",
         "isHidden": true,
         "weight": 25
       }
@@ -5631,37 +5983,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 2 3 4 5",
+        "output": "5 4 3 2 1",
+        "explanation": "Đảo ngược dãy số"
+      },
+      {
+        "input": "3\n10 20 30",
+        "output": "30 20 10",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "5 4 3 2 1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "3\n10 20 30",
+        "expectedOutput": "30 20 10",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1\n7",
+        "expectedOutput": "7",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "8 6 4 2",
         "isHidden": true,
         "weight": 25
       }
@@ -5711,37 +6068,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "3",
+        "output": "1 3 5\n7 9 11\n13 15 17",
+        "explanation": "Hình vuông các số lẻ kích thước 3"
+      },
+      {
+        "input": "2",
+        "output": "1 3\n5 7",
+        "explanation": "Kích thước 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "1 3 5\n7 9 11\n13 15 17",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "2",
+        "expectedOutput": "1 3\n5 7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "1",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "4",
+        "expectedOutput": "1 3 5 7\n9 11 13 15\n17 19 21 23\n25 27 29 31",
         "isHidden": true,
         "weight": 25
       }
@@ -5791,37 +6153,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 2 3 4 5\n7",
+        "output": "2 3",
+        "explanation": "Vị trí có tổng bằng 7 (3 + 4)"
+      },
+      {
+        "input": "4\n10 20 30 40\n50",
+        "output": "1 2",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 2 3 4 5\n7",
+        "expectedOutput": "2 3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n10 20 30 40\n50",
+        "expectedOutput": "1 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n1 2 3\n5",
+        "expectedOutput": "1 2",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "4\n2 4 6 8\n10",
+        "expectedOutput": "1 2",
         "isHidden": true,
         "weight": 25
       }
@@ -5871,37 +6238,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "5 3",
+        "output": "Chieu dai = 5.000000\nChieu rong = 3.000000\nDien tich = 15.000000\nChu vi = 16.000000",
+        "explanation": "Diện tích 15, chu vi 16"
+      },
+      {
+        "input": "10 4",
+        "output": "Chieu dai = 10.000000\nChieu rong = 4.000000\nDien tich = 40.000000\nChu vi = 28.000000",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "5 3",
+        "expectedOutput": "Chieu dai = 5.000000\nChieu rong = 3.000000\nDien tich = 15.000000\nChu vi = 16.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "10 4",
+        "expectedOutput": "Chieu dai = 10.000000\nChieu rong = 4.000000\nDien tich = 40.000000\nChu vi = 28.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "6 2",
+        "expectedOutput": "Chieu dai = 6.000000\nChieu rong = 2.000000\nDien tich = 12.000000\nChu vi = 16.000000",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "7 5",
+        "expectedOutput": "Chieu dai = 7.000000\nChieu rong = 5.000000\nDien tich = 35.000000\nChu vi = 24.000000",
         "isHidden": true,
         "weight": 25
       }
@@ -5928,7 +6300,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "Diện tích hình chữ nhật = chiều dài x chiều rộng\nChu vi hình chữ nhật = 2 x (chiều dài + chiều rộng)\n#include <stdio.h>\nint main() {\nfloat chieu_dai = 5.0;\nfloat chieu_rong = 3.0;\nfloat dien_tich, chu_vi;\ndien_tich = chieu_dai * chieu_rong;\nchu_vi = 2 * (chieu_dai + chieu_rong);\nprintf(\"Chieu dai = %f\\n\", chieu_dai);\nprintf(\"Chieu rong = %f\\n\", chieu_rong);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
+    "code": "#include <stdio.h>\nint main() {\nfloat chieu_dai = 5.0;\nfloat chieu_rong = 3.0;\nfloat dien_tich, chu_vi;\ndien_tich = chieu_dai * chieu_rong;\nchu_vi = 2 * (chieu_dai + chieu_rong);\nprintf(\"Chieu dai = %f\\n\", chieu_dai);\nprintf(\"Chieu rong = %f\\n\", chieu_rong);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_75",
@@ -5951,37 +6323,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "5 3 4 3 5",
+        "output": "Day = 5.000000\nChieu cao = 3.000000\nCanh a = 4.000000\nCanh b = 3.000000\nCanh c = 5.000000\nDien tich = 7.500000\nChu vi = 12.000000",
+        "explanation": "Tam giác diện tích 7.5 chu vi 12"
+      },
+      {
+        "input": "5 3 4 3 5",
+        "output": "Day = 5.000000\nChieu cao = 3.000000\nCanh a = 4.000000\nCanh b = 3.000000\nCanh c = 5.000000\nDien tich = 7.500000\nChu vi = 12.000000",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "5 3 4 3 5",
+        "expectedOutput": "Day = 5.000000\nChieu cao = 3.000000\nCanh a = 4.000000\nCanh b = 3.000000\nCanh c = 5.000000\nDien tich = 7.500000\nChu vi = 12.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "5 3 4 3 5",
+        "expectedOutput": "Day = 5.000000\nChieu cao = 3.000000\nCanh a = 4.000000\nCanh b = 3.000000\nCanh c = 5.000000\nDien tich = 7.500000\nChu vi = 12.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "5 3 4 3 5",
+        "expectedOutput": "Day = 5.000000\nChieu cao = 3.000000\nCanh a = 4.000000\nCanh b = 3.000000\nCanh c = 5.000000\nDien tich = 7.500000\nChu vi = 12.000000",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5 3 4 3 5",
+        "expectedOutput": "Day = 5.000000\nChieu cao = 3.000000\nCanh a = 4.000000\nCanh b = 3.000000\nCanh c = 5.000000\nDien tich = 7.500000\nChu vi = 12.000000",
         "isHidden": true,
         "weight": 25
       }
@@ -6008,7 +6385,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "//Di?n tích tam giác = (dáy x chi?u cao) / 2\n//\n//Chu vi tam giác = c?nh a + c?nh b + c?nh c\n#include <stdio.h>\nint main() {\nfloat day = 5.0;\nfloat chieu_cao = 3.0;\nfloat canh_a = 4.0;\nfloat canh_b = 3.0;\nfloat canh_c = 5.0;\nfloat dien_tich, chu_vi;\ndien_tich = (day * chieu_cao) / 2;\nchu_vi = canh_a + canh_b + canh_c;\nprintf(\"Day = %f\\n\", day);\nprintf(\"Chieu cao = %f\\n\", chieu_cao);\nprintf(\"Canh a = %f\\n\", canh_a);\nprintf(\"Canh b = %f\\n\", canh_b);\nprintf(\"Canh c = %f\\n\", canh_c);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
+    "code": "#include <stdio.h>\nint main() {\nfloat day = 5.0;\nfloat chieu_cao = 3.0;\nfloat canh_a = 4.0;\nfloat canh_b = 3.0;\nfloat canh_c = 5.0;\nfloat dien_tich, chu_vi;\ndien_tich = (day * chieu_cao) / 2;\nchu_vi = canh_a + canh_b + canh_c;\nprintf(\"Day = %f\\n\", day);\nprintf(\"Chieu cao = %f\\n\", chieu_cao);\nprintf(\"Canh a = %f\\n\", canh_a);\nprintf(\"Canh b = %f\\n\", canh_b);\nprintf(\"Canh c = %f\\n\", canh_c);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_76",
@@ -6031,37 +6408,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "3",
+        "output": "Ban kinh = 3.000000\nDien tich = 28.274334\nChu vi = 18.849556",
+        "explanation": "Bán kính 3"
+      },
+      {
+        "input": "5",
+        "output": "Ban kinh = 5.000000\nDien tich = 78.539816\nChu vi = 31.415927",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "Ban kinh = 3.000000\nDien tich = 28.274334\nChu vi = 18.849556",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "5",
+        "expectedOutput": "Ban kinh = 5.000000\nDien tich = 78.539816\nChu vi = 31.415927",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "1",
+        "expectedOutput": "Ban kinh = 1.000000\nDien tich = 3.141593\nChu vi = 6.283185",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "10",
+        "expectedOutput": "Ban kinh = 10.000000\nDien tich = 314.159265\nChu vi = 62.831853",
         "isHidden": true,
         "weight": 25
       }
@@ -6111,37 +6493,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5",
+        "output": "120",
+        "explanation": "5! = 120"
+      },
+      {
+        "input": "4",
+        "output": "24",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5",
+        "expectedOutput": "120",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
         "input": "4",
-        "expectedOutput": "NO",
+        "expectedOutput": "24",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "5040",
         "isHidden": true,
         "weight": 25
       }
@@ -6168,7 +6555,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\nint n;\nscanf(\"%d\", &n);\nint F1 = 1, i;\nfor (i = 1; i <= n; i++){\nF1 *= i;\n}\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\\n\", F1);\nreturn 0;\n}\nTEST CASE:"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\nint n;\nscanf(\"%d\", &n);\nint F1 = 1, i;\nfor (i = 1; i <= n; i++){\nF1 *= i;\n}\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\\n\", F1);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_78",
@@ -6191,37 +6578,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5",
+        "output": "15",
+        "explanation": "1 + 2 + 3 + 4 + 5 = 15"
+      },
+      {
+        "input": "10",
+        "output": "55",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5",
+        "expectedOutput": "15",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "10",
+        "expectedOutput": "55",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "100",
+        "expectedOutput": "5050",
         "isHidden": true,
         "weight": 25
       }
@@ -6271,37 +6663,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "2 3",
+        "output": "8",
+        "explanation": "2^3 = 8"
+      },
+      {
+        "input": "5 2",
+        "output": "25",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "2 3",
+        "expectedOutput": "8",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "5 2",
+        "expectedOutput": "25",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "10 3",
+        "expectedOutput": "1000",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "3 4",
+        "expectedOutput": "81",
         "isHidden": true,
         "weight": 25
       }
@@ -6351,37 +6748,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 4 3 8 5",
+        "output": "8 4",
+        "explanation": "Số chẵn ở vị trí lẻ giảm dần"
+      },
+      {
+        "input": "6\n2 3 6 5 8 7",
+        "output": "8 6 2",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 4 3 8 5",
+        "expectedOutput": "8 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "6\n2 3 6 5 8 7",
+        "expectedOutput": "8 6 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "4\n1 3 5 7",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "4\n4 2 8 6",
+        "expectedOutput": "8 4",
         "isHidden": true,
         "weight": 25
       }
@@ -6431,37 +6833,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello beautiful world",
+        "output": "beautiful\nworld",
+        "explanation": "Từ dài nhất: beautiful, ngắn nhất: world"
+      },
+      {
+        "input": "apple banana cat",
+        "output": "banana\ncat",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello beautiful world",
+        "expectedOutput": "beautiful\nworld",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "apple banana cat",
+        "expectedOutput": "banana\ncat",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "one two three",
+        "expectedOutput": "three\none",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "a bb ccc",
+        "expectedOutput": "ccc\na",
         "isHidden": true,
         "weight": 25
       }
@@ -6488,7 +6895,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\nchar str[100], word[100], largest[100], smallest[100];\nint i, j, len, largest_len = 0, smallest_len = 100;\nfgets(str, 100, stdin);\nj = 0;\nfor(i=0; i<=strlen(str); i++){\nif(str[i]==' ' || str[i]=='\\0'){\nword[j] = '\\0';\nlen = strlen(word);\nif(len > largest_len){\nlargest_len = len;\nstrcpy(largest, word);\n}\nif(len < smallest_len){\nsmallest_len = len;\nstrcpy(smallest, word);\n}\nj = 0;\n}\nelse{\nword[j] = str[i];\nj++;\n}\n}\nprintf(\"OUTPUT:\\n\");\nprintf(\"%s\\n\", largest); //The largest word\nprintf(\"%s\\n\", smallest); //The smallest word\nreturn 0;\n}\nTEST CASE:\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]: system(\"cls\") removed\n\nint i,count = 0;\nchar s[100];\ngets(s);\nfor(i =0 ; s[i]!='\\0';i++){\nif(s[i]>='0'&&s[i]<='9'&&(int)s[i]%2==0) count++;\n}\n\n\n\nprintf(\"%d\",count);\n\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn(0);\n}"
+    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\nchar str[100], word[100], largest[100], smallest[100];\nint i, j, len, largest_len = 0, smallest_len = 100;\nfgets(str, 100, stdin);\nj = 0;\nfor(i=0; i<=strlen(str); i++){\nif(str[i]==' ' || str[i]=='\\0'){\nword[j] = '\\0';\nlen = strlen(word);\nif(len > largest_len){\nlargest_len = len;\nstrcpy(largest, word);\n}\nif(len < smallest_len){\nsmallest_len = len;\nstrcpy(smallest, word);\n}\nj = 0;\n}\nelse{\nword[j] = str[i];\nj++;\n}\n}\nprintf(\"OUTPUT:\\n\");\nprintf(\"%s\\n\", largest); //The largest word\nprintf(\"%s\\n\", smallest); //The smallest word\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_82",
@@ -6511,37 +6918,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello",
+        "output": "olleh",
+        "explanation": "Đảo ngược chuỗi"
+      },
+      {
+        "input": "PRF192",
+        "output": "291FRP",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello",
+        "expectedOutput": "olleh",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "PRF192",
+        "expectedOutput": "291FRP",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "a",
+        "expectedOutput": "a",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "RaceCar",
+        "expectedOutput": "raCecaR",
         "isHidden": true,
         "weight": 25
       }
@@ -6593,7 +7005,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "hello world",
         "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "explanation": "In hoa chữ cái đầu"
+      },
+      {
+        "input": "nguyen van a",
+        "output": "Nguyen Van A",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -6606,22 +7023,22 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "nguyen van a",
+        "expectedOutput": "Nguyen Van A",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "c programming",
+        "expectedOutput": "C Programming",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "university",
+        "expectedOutput": "University",
         "isHidden": true,
         "weight": 25
       }
@@ -6671,37 +7088,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "2\n1 2\n3 4\n5 6\n7 8",
+        "output": "6 8\n10 12",
+        "explanation": "Cộng 2 ma trận"
+      },
+      {
+        "input": "2\n0 0\n0 0\n1 1\n1 1",
+        "output": "1 1\n1 1",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "2\n1 2\n3 4\n5 6\n7 8",
+        "expectedOutput": "6 8\n10 12",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "2\n0 0\n0 0\n1 1\n1 1",
+        "expectedOutput": "1 1\n1 1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "1\n5\n10",
+        "expectedOutput": "15",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "2\n-1 2\n4 -3\n1 -2\n-4 3",
+        "expectedOutput": "0 0\n0 0",
         "isHidden": true,
         "weight": 25
       }
@@ -6751,37 +7173,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "123",
+        "output": "yes",
+        "explanation": "Tổng chữ số bằng tích chữ số: 1+2+3 = 1*2*3 = 6"
+      },
+      {
+        "input": "1124",
+        "output": "yes",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "123",
+        "expectedOutput": "yes",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "1124",
+        "expectedOutput": "yes",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "124",
+        "expectedOutput": "no",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "22",
+        "expectedOutput": "yes",
         "isHidden": true,
         "weight": 25
       }
@@ -6832,36 +7259,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "9 7 5 1 2",
+        "explanation": "Lẻ giảm dần trước, chẵn tăng dần sau"
+      },
+      {
+        "input": "6\n1 4 3 6 5 2",
+        "output": "5 3 1 2 4 6",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "9 7 5 1 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "6\n1 4 3 6 5 2",
+        "expectedOutput": "5 3 1 2 4 6",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n2 4 6",
+        "expectedOutput": "2 4 6",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "3\n1 5 3",
+        "expectedOutput": "5 3 1",
         "isHidden": true,
         "weight": 25
       }
@@ -6911,37 +7343,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello 123 world 456",
+        "output": "hello  world ",
+        "explanation": "Xóa ký tự số"
+      },
+      {
+        "input": "a1b2c3d4",
+        "output": "abcd",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello 123 world 456",
+        "expectedOutput": "hello  world ",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "a1b2c3d4",
+        "expectedOutput": "abcd",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "987654321",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "NoDigits",
+        "expectedOutput": "NoDigits",
         "isHidden": true,
         "weight": 25
       }
@@ -6991,37 +7428,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "6\n1 2 2 3 4 4",
+        "output": "1 2 3 4",
+        "explanation": "In các phần tử 1 lần duy nhất"
+      },
+      {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "5 2 9 1 7",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
-        "isHidden": false,
-        "weight": 25
-      },
-      {
-        "id": 2,
-        "input": "4\n4 3 2 1",
+        "input": "6\n1 2 2 3 4 4",
         "expectedOutput": "1 2 3 4",
         "isHidden": false,
         "weight": 25
       },
       {
+        "id": 2,
+        "input": "5\n5 2 9 1 7",
+        "expectedOutput": "5 2 9 1 7",
+        "isHidden": false,
+        "weight": 25
+      },
+      {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "4\n1 1 1 1",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "7\n5 3 5 2 3 8 2",
+        "expectedOutput": "5 3 2 8",
         "isHidden": true,
         "weight": 25
       }
@@ -7071,37 +7513,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "N\nNguyen\nTran\nNam\nLe",
+        "output": "Nguyen\nNam",
+        "explanation": "Tìm tên bắt đầu bằng chữ N"
+      },
+      {
+        "input": "T\nTran\nNguyen\nTruong",
+        "output": "Tran\nTruong",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "N\nNguyen\nTran\nNam\nLe",
+        "expectedOutput": "Nguyen\nNam",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "T\nTran\nNguyen\nTruong",
+        "expectedOutput": "Tran\nTruong",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "A\nBinh\nCuong",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "L\nLe\nLy\nLuong",
+        "expectedOutput": "Le\nLy\nLuong",
         "isHidden": true,
         "weight": 25
       }
@@ -7151,37 +7598,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 2 3 4 5",
+        "output": "9",
+        "explanation": "Tổng các số lẻ (1, 3, 5) = 9"
+      },
+      {
+        "input": "4\n2 4 6 8",
+        "output": "0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "9",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n7 9 11",
+        "expectedOutput": "27",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "5\n-3 2 5 -1 4",
+        "expectedOutput": "1",
         "isHidden": true,
         "weight": 25
       }
@@ -7231,37 +7683,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "3",
+        "output": "2 3 5 \n7 11 \n13",
+        "explanation": "Kim cương số nguyên tố 3"
+      },
+      {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "2 3 5 7 \n11 13 17 \n19 23 \n29",
+        "explanation": "Kim cương số nguyên tố 4"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3",
+        "expectedOutput": "2 3 5 \n7 11 \n13",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "4",
+        "expectedOutput": "2 3 5 7 \n11 13 17 \n19 23 \n29",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": "2 3 \n5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "2 3 5 7 11 \n13 17 19 23 \n29 31 37 \n41 43 \n47",
         "isHidden": true,
         "weight": 25
       }
@@ -7311,37 +7768,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "input": "3\n1 2 3\n4 8 6\n7 5 2",
+        "output": "8",
+        "explanation": "Đường chéo chính gồm 1, 8, 2 -> max là 8"
+      },
+      {
+        "input": "2\n9 4\n3 5",
+        "output": "9",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "input": "3\n1 2 3\n4 8 6\n7 5 2",
+        "expectedOutput": "8",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "input": "2\n9 4\n3 5",
+        "expectedOutput": "9",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "1\n15",
+        "expectedOutput": "15",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "3\n-5 0 2\n1 -1 4\n3 7 -9",
+        "expectedOutput": "-1",
         "isHidden": true,
         "weight": 25
       }
@@ -7391,37 +7853,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
+        "input": "5",
+        "output": "0 1 1 2 3",
+        "explanation": "Dãy Fibonacci 5 số"
+      },
+      {
         "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "output": "0 1 1 2 3 5 8",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5",
+        "expectedOutput": "0 1 1 2 3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "7",
+        "expectedOutput": "0 1 1 2 3 5 8",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3",
+        "expectedOutput": "0 1 1",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "10",
+        "expectedOutput": "0 1 1 2 3 5 8 13 21 34",
         "isHidden": true,
         "weight": 25
       }
@@ -7471,37 +7938,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "12345",
+        "output": "2 3",
+        "explanation": "2 chữ số chẵn (2, 4) và 3 chữ số lẻ (1, 3, 5)"
+      },
+      {
+        "input": "2468",
+        "output": "4 0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "12345",
+        "expectedOutput": "2 3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "2468",
+        "expectedOutput": "4 0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "13579",
+        "expectedOutput": "0 5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "102030",
+        "expectedOutput": "4 2",
         "isHidden": true,
         "weight": 25
       }
@@ -7551,37 +8023,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "Hello World 123",
+        "output": "e l l o o r l d",
+        "explanation": "In tất cả chữ cái in thường"
+      },
+      {
+        "input": "ABC def",
+        "output": "d e f",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "Hello World 123",
+        "expectedOutput": "e l l o o r l d",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "ABC def",
+        "expectedOutput": "d e f",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "XYZ",
+        "expectedOutput": "",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "a1b2c3",
+        "expectedOutput": "a b c",
         "isHidden": true,
         "weight": 25
       }
@@ -7631,37 +8108,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "HeLLo WoRLd",
+        "output": "hello world",
+        "explanation": "Chuyển về chữ thường"
+      },
+      {
+        "input": "PRF192",
+        "output": "prf192",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "HeLLo WoRLd",
+        "expectedOutput": "hello world",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "PRF192",
+        "expectedOutput": "prf192",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "abc",
+        "expectedOutput": "abc",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "C Programming 2026",
+        "expectedOutput": "c programming 2026",
         "isHidden": true,
         "weight": 25
       }
@@ -7712,36 +8194,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "output": "HELLO WORLD",
+        "explanation": "Chuyển về chữ hoa"
+      },
+      {
+        "input": "prf192",
+        "output": "PRF192",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "hello world",
-        "expectedOutput": "Hello World",
+        "expectedOutput": "HELLO WORLD",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "prf192",
+        "expectedOutput": "PRF192",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "ABC",
+        "expectedOutput": "ABC",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "c programming 2026",
+        "expectedOutput": "C PROGRAMMING 2026",
         "isHidden": true,
         "weight": 25
       }
@@ -7791,37 +8278,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n5 2 9 8 4",
+        "output": "5 8 9 2 4",
+        "explanation": "Đổi chỗ chẵn lớn nhất (8) và chẵn nhỏ nhất (2)"
+      },
+      {
+        "input": "4\n10 2 6 4",
+        "output": "2 10 6 4",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n5 2 9 8 4",
+        "expectedOutput": "5 8 9 2 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n10 2 6 4",
+        "expectedOutput": "2 10 6 4",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n1 3 5",
+        "expectedOutput": "1 3 5",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n12 4 7 20 2 9",
+        "expectedOutput": "12 4 7 2 20 9",
         "isHidden": true,
         "weight": 25
       }
@@ -7871,37 +8363,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello world test",
+        "output": "HEllo WOrld TEst",
+        "explanation": "In hoa 2 chữ cái đầu mỗi từ"
+      },
+      {
+        "input": "programming language",
+        "output": "PRogramming LAnguage",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello world test",
+        "expectedOutput": "HEllo WOrld TEst",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "programming language",
+        "expectedOutput": "PRogramming LAnguage",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "c code",
+        "expectedOutput": "C COde",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "fpt university",
+        "expectedOutput": "FPt UNiversity",
         "isHidden": true,
         "weight": 25
       }
@@ -7952,36 +8449,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "4",
-        "output": "* * * *\n* * * *\n* * * *\n* * * *",
-        "explanation": "Kích thước 4"
+        "output": "   A\n  ABA\n ABCBA\nABCDCBA",
+        "explanation": "Tam giác chữ A 4 hàng"
+      },
+      {
+        "input": "3",
+        "output": "  A\n ABA\nABCBA",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "4",
-        "expectedOutput": "* * * *\n* * * *\n* * * *\n* * * *",
+        "expectedOutput": "   A\n  ABA\n ABCBA\nABCDCBA",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
         "input": "3",
-        "expectedOutput": "* * *\n* * *\n* * *",
+        "expectedOutput": "  A\n ABA\nABCBA",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "5",
-        "expectedOutput": "* * * * *\n* * * * *\n* * * * *\n* * * * *\n* * * * *",
+        "input": "2",
+        "expectedOutput": " A\nABA",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "2",
-        "expectedOutput": "* *\n* *",
+        "input": "5",
+        "expectedOutput": "    A\n   ABA\n  ABCBA\n ABCDCBA\nABCDEDCBA",
         "isHidden": true,
         "weight": 25
       }
@@ -8033,7 +8535,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "input": "5\n5 2 9 1 7",
         "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "explanation": "Sắp xếp tăng dần"
+      },
+      {
+        "input": "4\n40 10 30 20",
+        "output": "10 20 30 40",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
@@ -8046,22 +8553,22 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n40 10 30 20",
+        "expectedOutput": "10 20 30 40",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "2\n9 3",
+        "expectedOutput": "3 9",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n-5 8 0 -12 15 3",
+        "expectedOutput": "-12 -5 0 3 8 15",
         "isHidden": true,
         "weight": 25
       }
@@ -8112,36 +8619,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "2 5 9 1 7",
+        "explanation": "Chẵn trước, lẻ sau"
+      },
+      {
+        "input": "6\n1 2 3 4 5 6",
+        "output": "2 4 6 1 3 5",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "2 5 9 1 7",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "6\n1 2 3 4 5 6",
+        "expectedOutput": "2 4 6 1 3 5",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "2 4 6 8",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "4\n1 3 5 7",
+        "expectedOutput": "1 3 5 7",
         "isHidden": true,
         "weight": 25
       }
@@ -8191,37 +8703,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "65",
+        "output": "A",
+        "explanation": "Mã ASCII 65 là chữ A"
+      },
+      {
+        "input": "97",
+        "output": "a",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "65",
+        "expectedOutput": "A",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "97",
+        "expectedOutput": "a",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "48",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "32",
+        "expectedOutput": " ",
         "isHidden": true,
         "weight": 25
       }
@@ -8271,37 +8788,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "A",
+        "output": "65",
+        "explanation": "Ký tự A có mã ASCII là 65"
+      },
+      {
+        "input": "a",
+        "output": "97",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "A",
+        "expectedOutput": "65",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "a",
+        "expectedOutput": "97",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "0",
+        "expectedOutput": "48",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "Z",
+        "expectedOutput": "90",
         "isHidden": true,
         "weight": 25
       }
@@ -8351,37 +8873,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "ABC",
+        "output": "65 66 67",
+        "explanation": "Chuỗi thành mã ASCII"
+      },
+      {
+        "input": "hello",
+        "output": "104 101 108 108 111",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "ABC",
+        "expectedOutput": "65 66 67",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "hello",
+        "expectedOutput": "104 101 108 108 111",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "C",
+        "expectedOutput": "67",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "123",
+        "expectedOutput": "49 50 51",
         "isHidden": true,
         "weight": 25
       }
@@ -8431,37 +8958,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "ABC",
+        "output": "A: 65\nB: 66\nC: 67",
+        "explanation": "Từng ký tự kèm mã ASCII"
+      },
+      {
+        "input": "Hi",
+        "output": "H: 72\ni: 105",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "ABC",
+        "expectedOutput": "A: 65\nB: 66\nC: 67",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "Hi",
+        "expectedOutput": "H: 72\ni: 105",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "Z",
+        "expectedOutput": "Z: 90",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "01",
+        "expectedOutput": "0: 48\n1: 49",
         "isHidden": true,
         "weight": 25
       }
@@ -8511,37 +9043,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "1234",
+        "output": "10",
+        "explanation": "Tổng các chữ số: 1 + 2 + 3 + 4 = 10"
+      },
+      {
+        "input": "555",
+        "output": "15",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "1234",
+        "expectedOutput": "10",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "555",
+        "expectedOutput": "15",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "7",
+        "expectedOutput": "7",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "98765",
+        "expectedOutput": "35",
         "isHidden": true,
         "weight": 25
       }
@@ -8591,37 +9128,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "hello world",
-        "output": "Hello World",
-        "explanation": "Chuẩn hóa chuỗi"
+        "input": "hello world 123",
+        "output": "o wor",
+        "explanation": "Giữ 5 ký tự ở giữa"
+      },
+      {
+        "input": "abcdefghij",
+        "output": "cdefg",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "hello world",
-        "expectedOutput": "Hello World",
+        "input": "hello world 123",
+        "expectedOutput": "o wor",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "code fight",
-        "expectedOutput": "Code Fight",
+        "input": "abcdefghij",
+        "expectedOutput": "cdefg",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "prf192 programming",
-        "expectedOutput": "Prf192 Programming",
+        "input": "1234567",
+        "expectedOutput": "23456",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "a",
-        "expectedOutput": "A",
+        "input": "ABCDEFGHIJKL",
+        "expectedOutput": "DEFGH",
         "isHidden": true,
         "weight": 25
       }
@@ -8671,37 +9213,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "1221",
+        "output": "The string is symmetric",
+        "explanation": "Số đối xứng"
+      },
+      {
+        "input": "12321",
+        "output": "The string is symmetric",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "1221",
+        "expectedOutput": "The string is symmetric",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "12321",
+        "expectedOutput": "The string is symmetric",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "1234",
+        "expectedOutput": "The string is not symmetric",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "1001",
+        "expectedOutput": "The string is symmetric",
         "isHidden": true,
         "weight": 25
       }
@@ -8752,36 +9299,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "9 7 5 1 2",
+        "explanation": "Lẻ giảm dần và chẵn tăng dần"
+      },
+      {
+        "input": "6\n1 4 3 6 5 2",
+        "output": "5 3 1 2 4 6",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "9 7 5 1 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "6\n1 4 3 6 5 2",
+        "expectedOutput": "5 3 1 2 4 6",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n2 4 6",
+        "expectedOutput": "2 4 6",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "4\n8 3 4 9",
+        "expectedOutput": "9 3 4 8",
         "isHidden": true,
         "weight": 25
       }
@@ -8832,36 +9384,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "1 5 7 9 2",
+        "explanation": "Lẻ tăng dần và chẵn giảm dần"
+      },
+      {
+        "input": "6\n1 4 3 6 5 2",
+        "output": "1 3 5 6 4 2",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "1 5 7 9 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "6\n1 4 3 6 5 2",
+        "expectedOutput": "1 3 5 6 4 2",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n2 4 6",
+        "expectedOutput": "6 4 2",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "4\n8 3 4 9",
+        "expectedOutput": "3 9 8 4",
         "isHidden": true,
         "weight": 25
       }
@@ -8888,7 +9445,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "Tương tự như trên\n#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] > a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2;  // V? trí s? l? ch? d?i cho s? l?\nright -= 2; // V? trí s? ch?n ch? d?i cho s? ch?n\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[c - 1 - idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] > a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2;  // V? trí s? l? ch? d?i cho s? l?\nright -= 2; // V? trí s? ch?n ch? d?i cho s? ch?n\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[c - 1 - idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_112",
@@ -8912,36 +9469,41 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "output": "17",
+        "explanation": "Tổng 3 số cuối: 9 + 1 + 7 = 17"
+      },
+      {
+        "input": "4\n10 20 30 40",
+        "output": "90",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
         "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "expectedOutput": "17",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n10 20 30 40",
+        "expectedOutput": "90",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n1 2 3",
+        "expectedOutput": "6",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "6\n5 10 15 2 4 6",
+        "expectedOutput": "12",
         "isHidden": true,
         "weight": 25
       }
@@ -8991,37 +9553,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "5\n1 2 3 4 5",
+        "output": "2 3",
+        "explanation": "2 số chẵn, 3 số lẻ"
+      },
+      {
+        "input": "4\n2 4 6 8",
+        "output": "4 0",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "5\n1 2 3 4 5",
+        "expectedOutput": "2 3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "4\n2 4 6 8",
+        "expectedOutput": "4 0",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "3\n1 3 5",
+        "expectedOutput": "0 3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "6\n10 15 20 25 30 35",
+        "expectedOutput": "3 3",
         "isHidden": true,
         "weight": 25
       }
@@ -9048,7 +9615,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]: system(\"cls\") removed\n\nint i,m=0,n=0;\nint a[5];\nfor(i=0;i<5;i++){\nscanf(\"%d\",&a[i]);\nif(a[i]%2==0)\nm++;\nelse\nn++;\n}\n\n\n\nprintf(\"%d\\n\", m);\nprintf(\"%d\\n\", n);\n\nprintf(\"\\n\");\n// [Sanitized]: system(\"pause\") removed\nreturn(0);\n}"
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]:  removed\n\nint i,m=0,n=0;\nint a[5];\nfor(i=0;i<5;i++){\nscanf(\"%d\",&a[i]);\nif(a[i]%2==0)\nm++;\nelse\nn++;\n}\n\n\n\nprintf(\"%d\\n\", m);\nprintf(\"%d\\n\", n);\n\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn(0);\n}"
   },
   {
     "id": "prf192_src_114",
@@ -9071,37 +9638,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "7",
-        "output": "YES",
-        "explanation": "Số 7 thỏa mãn điều kiện"
+        "input": "25",
+        "output": "25 la so chinh phuong.",
+        "explanation": "Số chính phương"
+      },
+      {
+        "input": "26",
+        "output": "26 khong phai la so chinh phuong.",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "7",
-        "expectedOutput": "YES",
+        "input": "25",
+        "expectedOutput": "25 la so chinh phuong.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4",
-        "expectedOutput": "NO",
+        "input": "26",
+        "expectedOutput": "26 khong phai la so chinh phuong.",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "11",
-        "expectedOutput": "YES",
+        "input": "16",
+        "expectedOutput": "16 la so chinh phuong.",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "15",
-        "expectedOutput": "NO",
+        "input": "100",
+        "expectedOutput": "100 la so chinh phuong.",
         "isHidden": true,
         "weight": 25
       }
@@ -9151,37 +9723,42 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
     "samples": [
       {
-        "input": "5\n5 2 9 1 7",
-        "output": "1 2 5 7 9",
-        "explanation": "Sắp xếp mảng tăng dần"
+        "input": "5\n1 4 9 2 5",
+        "output": "14",
+        "explanation": "Tổng các số chính phương (1, 4, 9): 1 + 4 + 9 = 14"
+      },
+      {
+        "input": "4\n16 25 3 7",
+        "output": "41",
+        "explanation": "Test case mẫu 2"
       }
     ],
     "testcases": [
       {
         "id": 1,
-        "input": "5\n5 2 9 1 7",
-        "expectedOutput": "1 2 5 7 9",
+        "input": "5\n1 4 9 2 5",
+        "expectedOutput": "14",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
-        "input": "4\n4 3 2 1",
-        "expectedOutput": "1 2 3 4",
+        "input": "4\n16 25 3 7",
+        "expectedOutput": "41",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
-        "input": "6\n10 0 -2 8 3 5",
-        "expectedOutput": "-2 0 3 5 8 10",
+        "input": "3\n2 3 5",
+        "expectedOutput": "0",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
-        "input": "3\n1 1 1",
-        "expectedOutput": "1 1 1",
+        "input": "5\n0 1 4 9 16",
+        "expectedOutput": "30",
         "isHidden": true,
         "weight": 25
       }

@@ -28,13 +28,27 @@ export function seedDraftsForProblems(problems: (Problem & { code?: string })[])
 export function loadCollections(): ProblemCollection[] {
   try {
     const raw = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
-    const v2Flag = localStorage.getItem('ahtest_prf192_master_v2');
+    const v3Flag = localStorage.getItem('ahtest_prf192_master_v3');
     let collections: ProblemCollection[] = [];
 
-    // If master bank v2 not initialized yet or raw empty, initialize with 115+ master problems
-    if (!v2Flag || !raw) {
+    // If master bank v3 not initialized yet or raw empty, initialize with 115+ master problems
+    if (!v3Flag || !raw) {
+      // Preserve any custom collections user created before resetting system collections
+      const existingUserCol = raw ? (() => {
+        try {
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed.find((c: ProblemCollection) => c.id === 'user_custom_library') : null;
+        } catch { return null; }
+      })() : null;
+
       collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
-      localStorage.setItem('ahtest_prf192_master_v2', 'true');
+      if (existingUserCol) {
+        const uIdx = collections.findIndex(c => c.id === 'user_custom_library');
+        if (uIdx >= 0) collections[uIdx] = existingUserCol;
+        else collections.push(existingUserCol);
+      }
+      localStorage.setItem('ahtest_prf192_master_v3', 'true');
+      localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(collections));
       seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
     } else {
       const parsed = JSON.parse(raw);

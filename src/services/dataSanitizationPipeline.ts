@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { Difficulty, SampleCase, TestCaseItem } from '../types';
+import type { Difficulty, SampleCase, TestCaseItem } from '../types';
 
 export interface SanitizationReport {
   originalLength: number;
@@ -384,14 +384,88 @@ export function synthesizeDomainTestCases(title: string, _code?: string): {
   // 5. Triangle Pattern
   if (tLower.includes('tam giác') || tLower.includes('triangle')) {
     const samples: SampleCase[] = [
-      { input: '3', output: '*\n* *\n* * *', explanation: 'Tam giác vuông cạnh 3' },
-      { input: '4', output: '*\n* *\n* * *\n* * * *', explanation: 'Tam giác vuông cạnh 4' }
+      { input: '3', output: '* \n* * \n* * *', explanation: 'Tam giác vuông cạnh 3' },
+      { input: '4', output: '* \n* * \n* * * \n* * * *', explanation: 'Tam giác vuông cạnh 4' }
     ];
     const testcases: TestCaseItem[] = [
-      { id: 1, input: '3', expectedOutput: '*\n* *\n* * *', isHidden: false, weight: 25 },
-      { id: 2, input: '4', expectedOutput: '*\n* *\n* * *\n* * * *', isHidden: false, weight: 25 },
-      { id: 3, input: '5', expectedOutput: '*\n* *\n* * *\n* * * *\n* * * * *', isHidden: true, weight: 25 },
-      { id: 4, input: '1', expectedOutput: '*', isHidden: true, weight: 25 }
+      { id: 1, input: '3', expectedOutput: '* \n* * \n* * *', isHidden: false, weight: 25 },
+      { id: 2, input: '4', expectedOutput: '* \n* * \n* * * \n* * * *', isHidden: false, weight: 25 },
+      { id: 3, input: '5', expectedOutput: '* \n* * \n* * * \n* * * * \n* * * * *', isHidden: true, weight: 25 },
+      { id: 4, input: '1', expectedOutput: '* ', isHidden: true, weight: 25 }
+    ];
+    return { samples, testcases };
+  }
+
+  // 6. Array Sorting (Tăng dần / Giảm dần)
+  if (tLower.includes('tăng dần') || tLower.includes('sort ascending') || tLower.includes('sắp xếp tăng')) {
+    const samples: SampleCase[] = [
+      { input: '5\n5 2 9 1 7', output: '1 2 5 7 9', explanation: 'Mảng sau khi sắp xếp tăng dần' },
+      { input: '4\n40 10 30 20', output: '10 20 30 40', explanation: 'Mảng tăng dần' }
+    ];
+    const testcases: TestCaseItem[] = [
+      { id: 1, input: '5\n5 2 9 1 7', expectedOutput: '1 2 5 7 9', isHidden: false, weight: 25 },
+      { id: 2, input: '4\n40 10 30 20', expectedOutput: '10 20 30 40', isHidden: false, weight: 25 },
+      { id: 3, input: '2\n9 3', expectedOutput: '3 9', isHidden: true, weight: 25 },
+      { id: 4, input: '6\n-5 8 0 -12 15 3', expectedOutput: '-12 -5 0 3 8 15', isHidden: true, weight: 25 }
+    ];
+    return { samples, testcases };
+  }
+
+  if (tLower.includes('giảm dần') || tLower.includes('sort descending') || tLower.includes('sắp xếp giảm')) {
+    const samples: SampleCase[] = [
+      { input: '5\n5 2 9 1 7', output: '9 7 5 2 1', explanation: 'Mảng sau khi sắp xếp giảm dần' },
+      { input: '4\n10 40 20 30', output: '40 30 20 10', explanation: 'Mảng giảm dần' }
+    ];
+    const testcases: TestCaseItem[] = [
+      { id: 1, input: '5\n5 2 9 1 7', expectedOutput: '9 7 5 2 1', isHidden: false, weight: 25 },
+      { id: 2, input: '4\n10 40 20 30', expectedOutput: '40 30 20 10', isHidden: false, weight: 25 },
+      { id: 3, input: '2\n3 9', expectedOutput: '9 3', isHidden: true, weight: 25 },
+      { id: 4, input: '6\n-12 15 0 8 -5 3', expectedOutput: '15 8 3 0 -5 -12', isHidden: true, weight: 25 }
+    ];
+    return { samples, testcases };
+  }
+
+  // 7. Array Sum / Calculation
+  if (tLower.includes('tổng các') || tLower.includes('tính tổng') || tLower.includes('sum of array')) {
+    const samples: SampleCase[] = [
+      { input: '5\n5 2 9 1 7', output: '24', explanation: 'Tổng các phần tử: 5 + 2 + 9 + 1 + 7 = 24' },
+      { input: '4\n10 20 30 40', output: '100', explanation: 'Tổng: 10 + 20 + 30 + 40 = 100' }
+    ];
+    const testcases: TestCaseItem[] = [
+      { id: 1, input: '5\n5 2 9 1 7', expectedOutput: '24', isHidden: false, weight: 25 },
+      { id: 2, input: '4\n10 20 30 40', expectedOutput: '100', isHidden: false, weight: 25 },
+      { id: 3, input: '1\n-15', expectedOutput: '-15', isHidden: true, weight: 25 },
+      { id: 4, input: '6\n-5 10 -2 8 0 4', expectedOutput: '15', isHidden: true, weight: 25 }
+    ];
+    return { samples, testcases };
+  }
+
+  // 8. Factorial / Fibonacci
+  if (tLower.includes('giai thừa') || tLower.includes('factorial')) {
+    const samples: SampleCase[] = [
+      { input: '5', output: '120', explanation: '5! = 120' },
+      { input: '4', output: '24', explanation: '4! = 24' }
+    ];
+    const testcases: TestCaseItem[] = [
+      { id: 1, input: '5', expectedOutput: '120', isHidden: false, weight: 25 },
+      { id: 2, input: '4', expectedOutput: '24', isHidden: false, weight: 25 },
+      { id: 3, input: '1', expectedOutput: '1', isHidden: true, weight: 25 },
+      { id: 4, input: '7', expectedOutput: '5040', isHidden: true, weight: 25 }
+    ];
+    return { samples, testcases };
+  }
+
+  // 9. Reverse Number / String
+  if (tLower.includes('đảo ngược') || tLower.includes('reverse')) {
+    const samples: SampleCase[] = [
+      { input: '12345', output: '54321', explanation: 'Đảo ngược số 12345' },
+      { input: '95117354', output: '45371159', explanation: 'Đảo ngược các chữ số' }
+    ];
+    const testcases: TestCaseItem[] = [
+      { id: 1, input: '12345', expectedOutput: '54321', isHidden: false, weight: 25 },
+      { id: 2, input: '95117354', expectedOutput: '45371159', isHidden: false, weight: 25 },
+      { id: 3, input: '100', expectedOutput: '1', isHidden: true, weight: 25 },
+      { id: 4, input: '7', expectedOutput: '7', isHidden: true, weight: 25 }
     ];
     return { samples, testcases };
   }

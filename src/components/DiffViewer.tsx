@@ -196,9 +196,9 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       {/* Header Bar */}
       <div className="px-4 py-3 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
-          <FileCode2 className="w-4 h-4 text-rose-500" />
+          <FileCode2 className={`w-4 h-4 ${isActuallyMatched ? 'text-emerald-500' : 'text-rose-500'}`} />
           <span className="font-bold text-slate-800 dark:text-slate-200">
-            {title} {testId !== undefined && <span className="text-rose-600 dark:text-rose-400">#{testId}</span>}
+            {title} {testId !== undefined && <span className={isActuallyMatched ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>#{testId}</span>}
           </span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
             isActuallyMatched
@@ -378,7 +378,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             <div className="flex flex-col">
               <div className={`px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-bold ${
                 isActuallyMatched
-                  ? 'bg-slate-100/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300'
+                  ? 'bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
                   : 'bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
               }`}>
                 <span className="flex items-center gap-1.5">
@@ -387,7 +387,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                   ) : (
                     <XCircle className="w-3.5 h-3.5 text-rose-500" />
                   )}
-                  <span>{isActuallyMatched ? 'Output của bạn (Khớp chuẩn)' : 'Output của bạn (Actual)'}</span>
+                  <span>{isActuallyMatched ? 'Output của bạn (Khớp chuẩn 100%)' : 'Output của bạn (Actual)'}</span>
                 </span>
                 <button
                   onClick={() => handleCopy(actual, 'actual')}
@@ -429,7 +429,9 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                         <span className="w-8 text-[11px] font-mono text-right pr-2 mr-2 border-r border-slate-200 dark:border-slate-800 text-slate-400 select-none shrink-0 mt-0.5">{idx + 1}</span>
                         <pre className="flex-1 whitespace-pre-wrap break-all">
                           {renderVisibleWhitespace(line, showWhitespace)}
-                          {showWhitespace && idx < actualLines.length - 1 && <span className="text-rose-400/80 select-none">↵</span>}
+                          {showWhitespace && idx < actualLines.length - 1 && (
+                            <span className={`select-none ${!isActuallyMatched && isDiff ? 'text-rose-400/80' : 'text-slate-400 dark:text-slate-600'}`}>↵</span>
+                          )}
                         </pre>
                       </div>
                     );
@@ -541,11 +543,13 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       {/* Footer Legend */}
       <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between text-[11px] text-slate-500">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500" /> Dòng sai khác
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Dòng chuẩn
+          {!isActuallyMatched && (
+            <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-rose-500" /> Dòng sai khác
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" /> {isActuallyMatched ? 'Tất cả dòng khớp chuẩn 100%' : 'Dòng chuẩn'}
           </span>
           {showWhitespace && (
             <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
