@@ -12,7 +12,8 @@ import {
   Check, 
   X,
   Sparkles,
-  BarChart3
+  BarChart3,
+  Bookmark
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ExamSessionConfig, ExamQuestionState, ExamScorecard, TestResult } from '../types';
@@ -25,14 +26,13 @@ interface ExamSimulationViewProps {
   onExit: () => void;
 }
 
-const DEFAULT_C_TEMPLATE = (title: string) => `#include <stdio.h>
+const DEFAULT_C_TEMPLATE = `#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 int main() {
-    // ${title}
-    
     return 0;
 }
 `;
@@ -40,12 +40,49 @@ int main() {
 export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session, onExit }) => {
   const totalQuestions = session.problems.length;
   const initialSeconds = session.timeLimitMinutes * 60;
+  const endTimestampKey = `ahtest_exam_end_${session.collectionId}`;
 
-  // Countdown timer state
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(initialSeconds);
+  // Countdown timer state persisted against F5 reload using real wall-clock timestamp
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(endTimestampKey);
+      if (stored) {
+        const remaining = Math.max(0, Math.floor((Number(stored) - Date.now()) / 1000));
+        return remaining;
+      }
+      const newEndTime = Date.now() + initialSeconds * 1000;
+      localStorage.setItem(endTimestampKey, String(newEndTime));
+      return initialSeconds;
+    } catch {
+      return initialSeconds;
+    }
+  });
+
   const [isExamFinished, setIsExamFinished] = useState<boolean>(false);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState<boolean>(false);
   const [scorecard, setScorecard] = useState<ExamScorecard | null>(null);
+
+  // Flagged / Bookmarked questions for review
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Record<number, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(`ahtest_exam_flags_${session.collectionId}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleFlagCurrentQuestion = () => {
+    setFlaggedQuestions(prev => {
+      const updated = { ...prev, [currentIndex]: !prev[currentIndex] };
+      try {
+        localStorage.setItem(`ahtest_exam_flags_${session.collectionId}`, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
 
   // Bilingual state (VI / EN)
   const [docLang, setDocLang] = useState<'vi' | 'en'>(() => {
@@ -74,7 +111,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
 
       states[idx] = {
         problemId: p.id,
-        code: savedCode || DEFAULT_C_TEMPLATE(p.title),
+        code: savedCode || DEFAULT_C_TEMPLATE,
         status: 'unattempted',
         score: 0,
         testResults: []
@@ -159,13 +196,34 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
     }, 350);
   };
 
-  // Timer Tick Interval
+  // Timer Tick Interval with real wall-clock sync & BeforeUnload Guard
   const finalSubmitRef = useRef<((isAuto?: boolean) => void) | null>(null);
 
   useEffect(() => {
     if (isExamFinished) return;
 
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     const timer = setInterval(() => {
+      try {
+        const stored = localStorage.getItem(endTimestampKey);
+        if (stored) {
+          const diffSecs = Math.max(0, Math.floor((Number(stored) - Date.now()) / 1000));
+          setRemainingSeconds(diffSecs);
+          if (diffSecs <= 0) {
+            clearInterval(timer);
+            finalSubmitRef.current?.(true);
+          }
+          return;
+        }
+      } catch {
+        // ignore
+      }
+
       setRemainingSeconds(prev => {
         if (prev <= 1) {
           clearInterval(timer);
@@ -176,8 +234,11 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isExamFinished]);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isExamFinished, endTimestampKey]);
 
   // Format seconds to HH:MM:SS or MM:SS
   const formatTimer = (totalSecs: number) => {
@@ -326,6 +387,13 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
     setIsSubmitConfirmOpen(false);
     setIsExamFinished(true);
 
+    try {
+      localStorage.removeItem(endTimestampKey);
+      localStorage.removeItem(`ahtest_exam_flags_${session.collectionId}`);
+    } catch {
+      // ignore
+    }
+
     const timeSpent = initialSeconds - remainingSeconds;
 
     // Grade all questions that haven't been graded yet
@@ -341,7 +409,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       let state = finalStates[idx];
       // If code buffer was edited on current index, ensure it's saved
       const codeToGrade = idx === currentIndex ? codeBuffer : state.code;
-      const isTouched = codeToGrade.trim().length > 25 && codeToGrade.includes('main') && codeToGrade.trim() !== DEFAULT_C_TEMPLATE(p.title).trim();
+      const isTouched = codeToGrade.trim().length > 25 && codeToGrade.includes('main') && codeToGrade.trim() !== DEFAULT_C_TEMPLATE.trim();
 
       const tests = p.testcases && p.testcases.length > 0
         ? p.testcases
@@ -540,6 +608,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
         {session.problems.map((p, idx) => {
           const st = questionStates[idx];
           const isCurrent = idx === currentIndex;
+          const isFlagged = flaggedQuestions[idx];
 
           let badgeStyle = 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border-slate-700';
           let statusIcon = null;
@@ -565,6 +634,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
             >
               <span>{idx + 1}</span>
               {statusIcon}
+              {isFlagged && <Bookmark className="w-2.5 h-2.5 text-amber-400 fill-amber-400 shrink-0" />}
             </button>
           );
         })}
@@ -614,7 +684,19 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
               <span>Trình soạn thảo C (MinGW GCC 16)</span>
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleFlagCurrentQuestion}
+                className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
+                  flaggedQuestions[currentIndex]
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-xs'
+                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                }`}
+                title="Cắm cờ câu hỏi để quay lại kiểm tra trước khi nộp"
+              >
+                <Bookmark className={`w-3.5 h-3.5 ${flaggedQuestions[currentIndex] ? 'fill-amber-400 text-amber-400' : ''}`} />
+                <span>{flaggedQuestions[currentIndex] ? 'Đã cắm cờ' : 'Cắm cờ xem lại'}</span>
+              </button>
               <span className="text-[11px] text-slate-500 font-mono">
                 {codeBuffer.length}/5,000 ký tự
               </span>

@@ -363,6 +363,69 @@ export class VirtualCRuntime {
     }
   }
 
+  // Pointer Reference wrapper for &var and &arr[i]
+  public ref(getter: () => any, setter: (val: any) => void) {
+    return {
+      __isRef: true,
+      get: getter,
+      set: setter
+    };
+  }
+
+  // Pointer Dereference: *ptr
+  public getDeref(ptr: any): any {
+    this.tick();
+    if (ptr === null || ptr === undefined || ptr === 0) {
+      throw new Error('RUNTIME_ERROR: SIGSEGV: Segmentation fault (Dereferencing NULL pointer - Truy cập vùng nhớ con trỏ NULL).');
+    }
+    if (typeof ptr === 'object' && ptr.__isRef) {
+      return ptr.get();
+    }
+    if (Array.isArray(ptr)) {
+      return ptr[0];
+    }
+    if (typeof ptr === 'number') {
+      const block = this.heapMap.get(ptr);
+      if (block) return block[0];
+    }
+    return ptr;
+  }
+
+  // Pointer Dereference Assignment: *ptr = val
+  public setDeref(ptr: any, val: any) {
+    this.tick();
+    if (ptr === null || ptr === undefined || ptr === 0) {
+      throw new Error('RUNTIME_ERROR: SIGSEGV: Segmentation fault (Dereferencing NULL pointer - Truy cập vùng nhớ con trỏ NULL).');
+    }
+    if (typeof ptr === 'object' && ptr.__isRef) {
+      ptr.set(val);
+      return;
+    }
+    if (Array.isArray(ptr)) {
+      ptr[0] = val;
+      return;
+    }
+    if (typeof ptr === 'number') {
+      const block = this.heapMap.get(ptr);
+      if (block) {
+        block[0] = val;
+        return;
+      }
+    }
+    if (typeof ptr === 'object') {
+      ptr.val = val;
+    }
+  }
+
+  // Integer Division Helper (truncates toward zero per C standard)
+  public idiv(a: number, b: number): number {
+    this.tick();
+    if (b === 0) {
+      throw new Error('RUNTIME_ERROR: SIGFPE: Division by zero (Lỗi chia cho 0).');
+    }
+    return Math.trunc(a / b);
+  }
+
   // Formatted scanf with setter callbacks: scanf("%d %d", (v) => a = v, (v) => b = v)
   public scanf(format: string, ...setterFns: ((val: any) => void)[]): number {
     this.tick();
@@ -674,7 +737,7 @@ export class VirtualCRuntime {
  * 3. TRANSPILER & EXECUTION ENGINE
  * Robustly converts C/C++ source code into a sandboxed JavaScript function.
  */
-function transpileCToJS(cCode: string): string {
+export function transpileCToJS(cCode: string): string {
   // Step 1: Protect string literals
   const stringLiterals: string[] = [];
   let code = cCode.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match) => {
@@ -697,15 +760,23 @@ function transpileCToJS(cCode: string): string {
   code = code.replace(/^\s*#define\s+.*$/gm, '');
   code = code.replace(/\busing\s+namespace\s+std\s*;/g, '');
 
+  // Step 2.5: Struct & Typedef definitions
+  code = code.replace(/\btypedef\s+struct\s*(?:[a-zA-Z_]\w*)?\s*\{[\s\S]*?\}\s*([a-zA-Z_]\w*)\s*;/g, '// typedef struct $1');
+  code = code.replace(/\bstruct\s+([a-zA-Z_]\w*)\s*\{[\s\S]*?\}\s*;/g, '// struct $1');
+  code = code.replace(/\bstruct\s+[a-zA-Z_]\w*\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*;/g, 'let $1 = Array.from({ length: $2 }, () => ({}))');
+  code = code.replace(/\bstruct\s+[a-zA-Z_]\w*\s+([a-zA-Z_]\w*)\s*;/g, 'let $1 = {}');
+
   // Step 3: Functions MUST be transformed BEFORE variable declarations!
   // Main entrypoint
   code = code.replace(/\b(?:int|void)\s+main\s*\((.*?)\)\s*\{/g, 'function __c_main() {');
 
   // Other function signatures: int add(int a, int b) -> function add(a, b)
-  code = code.replace(/\b(?:int|void|float|double|char|long|short)\s*\*?\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{/g, (_, fnName, params) => {
+  // Cleanly handles array parameters: int arr[], char s[100] and pointer parameters: int *a
+  code = code.replace(/\b(?:int|void|float|double|char|long|short|bool)\s*\*?\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{/g, (_, fnName, params) => {
     const cleanParams = params.split(',').map((p: string) => {
       const parts = p.trim().split(/\s+/);
-      return parts[parts.length - 1].replace(/^\*+/, '');
+      const last = parts[parts.length - 1];
+      return last.replace(/^[*&]+/, '').replace(/\[.*?\]/g, '');
     }).filter(Boolean).join(', ');
     return `function ${fnName}(${cleanParams}) {`;
   });
@@ -794,8 +865,18 @@ function transpileCToJS(cCode: string): string {
   // Step 8: Replace type declarations
   // Strip pointer symbols in variable declarations: int *arr -> let arr
   code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double|char|void)\s*\*+\s*([a-zA-Z_]\w*)/g, 'let $1');
-  // Fixed size arrays: int arr[100]; -> let arr = new Array(100).fill(0)
-  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]/g, 'let $1 = new Array($2).fill(0)');
+  // 2D numeric arrays: int a[3][3];
+  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*\[\s*(\d+|\w+)\s*\](?:\s*=\s*\{.*?\})?/g,
+    'let $1 = Array.from({ length: $2 }, () => new Array($3).fill(0))');
+  // 2D char arrays: char s[10][50];
+  code = code.replace(/\bchar\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*\[\s*(\d+|\w+)\s*\](?:\s*=\s*\{.*?\})?/g,
+    'let $1 = Array.from({ length: $2 }, () => [])');
+
+  // 1D numeric arrays WITH initializer: int a[4] = { ... } or int a[] = { ... }
+  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(?:\d+|\w+)?\s*\]\s*=\s*\{/g, 'let $1 = {');
+
+  // Fixed size 1D arrays WITHOUT initializer: int arr[100]; -> let arr = new Array(100).fill(0)
+  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]/g, 'let $1 = new Array($2).fill(0)');
   // Normal declarations: int a = 5;
   code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)/g, 'let $1');
   // Char arrays
@@ -805,6 +886,26 @@ function transpileCToJS(cCode: string): string {
 
   // Array literals: = { 1, 2, 3 } -> = [ 1, 2, 3 ]
   code = code.replace(/=\s*\{\s*([^{};]+?)\s*\}/g, '= [$1]');
+
+  // Step 8.5: Pointer arithmetic, dereference & address-of
+  // Pointer arithmetic: *(p + i) -> p[i]
+  code = code.replace(/\*\(([a-zA-Z_]\w*)\s*\+\s*([^)]+)\)/g, '$1[$2]');
+  code = code.replace(/\*\(([a-zA-Z_]\w*)\s*-\s*([^)]+)\)/g, '$1[-($2)]');
+
+  // Dereference assignment: *ptr = val;
+  code = code.replace(/(?<=^|[;{}()\s])\*([a-zA-Z_]\w*)\s*=\s*([^;]+);/g, '__rt.setDeref($1, $2);');
+
+  // Dereference in expressions: *ptr
+  code = code.replace(/(?<=^|[=+\-*/%<>&|!?:,(\s])\*([a-zA-Z_]\w*)/g, '__rt.getDeref($1)');
+
+  // Address-of in function calls or assignments: &var, &arr[i]
+  code = code.replace(/(?<!&)&([a-zA-Z_]\w*(?:\[[^\]]+\])?)(?!&)/g, (_, target) => {
+    return `__rt.ref(() => ${target}, (v) => { ${target} = v; })`;
+  });
+
+  // Step 8.6: Integer Division Truncation
+  code = code.replace(/([a-zA-Z_]\w*)\s*\/=\s*([^;]+);/g, '$1 = Math.trunc($1 / ($2));');
+  code = code.replace(/\[\s*([a-zA-Z_]\w*|\d+)\s*\/\s*([a-zA-Z_]\w*|\d+)\s*\]/g, '[Math.trunc($1 / $2)]');
 
   // Step 9: Replace printf, getchar, strlen, strcmp, and string suite
   code = code.replace(/\bprintf\s*\(/g, '__rt.printf(');
