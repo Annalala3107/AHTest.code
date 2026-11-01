@@ -4,7 +4,6 @@ import {
   UploadCloud, 
   Plus, 
   Search, 
-  CheckCircle2, 
   Play, 
   Eye, 
   Trash2, 
@@ -40,7 +39,7 @@ import {
 } from '../services/collectionStorage';
 
 interface ProblemImporterViewProps {
-  onSelectProblem?: (problem: Problem) => void;
+  onSelectProblem?: (problem: Problem, list?: Problem[], collectionTitle?: string) => void;
   onStartExam?: (session: ExamSessionConfig) => void;
 }
 
@@ -532,6 +531,22 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
             </div>
           </div>
 
+          {/* Section Header: DANH MỤC CÁC BỘ ĐỀ & THƯ MỤC CHUYÊN ĐỀ */}
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Folder className="w-4 h-4 text-rose-500" />
+                <span>DANH MỤC CÁC BỘ ĐỀ LUYỆN TẬP (COLLECTIONS HUB)</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Chọn một thư mục để truy cập bài tập hoặc khởi tạo phòng thi thử nghiệm.
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-slate-400">
+              Hiển thị {filteredCollections.length} / {collections.length} bộ đề
+            </span>
+          </div>
+
           {/* Collection Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredCollections.map((col) => {
@@ -706,6 +721,17 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
             );
           })()}
 
+          {/* Section Header: PHƯƠNG THỨC TRẢI NGHIỆM */}
+          <div className="flex items-center justify-between pt-1">
+            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>BẢNG LỰA CHỌN PHƯƠNG THỨC TRẢI NGHIỆM (DUAL-MODE ARENA)</span>
+            </h2>
+            <span className="text-[11px] text-slate-400">
+              Chọn Ôn thi bấm giờ hoặc Luyện tập có trợ lý gợi ý
+            </span>
+          </div>
+
           {/* DUAL MODE SELECTION HERO CARDS (Chế độ Ôn thi vs Chế độ Luyện tập) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Mode 1: Ôn Thi (Exam Simulation) */}
@@ -820,13 +846,26 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                 </div>
               </div>
 
-              <a
-                href="#problem-list-section"
-                className="w-full py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Khám Phá Danh Sách Bài Tập Bên Dưới ↓</span>
-              </a>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    if (onSelectProblem && activeCollection.problems.length > 0) {
+                      onSelectProblem(activeCollection.problems[0], activeCollection.problems, activeCollection.title);
+                    }
+                  }}
+                  disabled={activeCollection.problems.length === 0}
+                  className="w-full py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Bắt Đầu Luyện Tập Từ Câu 1 →</span>
+                </button>
+                <a
+                  href="#problem-list-section"
+                  className="w-full py-2 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                >
+                  <span>Xem Toàn Bộ {activeCollection.problems.length} Bài Tập Bên Dưới ↓</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -947,7 +986,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                           )}
 
                           <button
-                            onClick={() => onSelectProblem && onSelectProblem(prob)}
+                            onClick={() => onSelectProblem && onSelectProblem(prob, activeCollection.problems, activeCollection.title)}
                             className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                           >
                             <Play className="w-3.5 h-3.5 fill-current" />

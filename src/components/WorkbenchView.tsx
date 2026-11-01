@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Play, 
@@ -24,20 +24,35 @@ import {
   Trash2,
   FlaskConical,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Star,
+  ArrowRight,
+  ShieldAlert,
+  BookOpen,
+  FolderGit2
 } from 'lucide-react';
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
+import { resolveProgressiveHints } from '../services/progressiveHintService';
 import { CodeEditor } from './CodeEditor';
 
 interface WorkbenchViewProps {
   problem: Problem;
   onBack: () => void;
+  onNextProblem?: () => void;
+  hasNextProblem?: boolean;
+  collectionTitle?: string;
 }
 
-export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ problem, onBack }) => {
+export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ 
+  problem, 
+  onBack,
+  onNextProblem,
+  hasNextProblem = false,
+  collectionTitle
+}) => {
   const [activeTab, setActiveTab] = useState<'statement' | 'editorial' | 'submissions' | 'comments'>('statement');
   const [language, setLanguage] = useState<'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust'>('cpp20');
   const [copiedSample, setCopiedSample] = useState<number | null>(null);
@@ -241,6 +256,81 @@ fn main() {
   const [selectedTestResult, setSelectedTestResult] = useState<TestResult | null>(null);
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
   const [aiHint, setAiHint] = useState<string | null>(null);
+
+  // Progressive Hints & Mastery Star System (Deep Practice Mode)
+  const progressiveHints = useMemo(() => resolveProgressiveHints(problem), [problem]);
+  const [isHintDrawerOpen, setIsHintDrawerOpen] = useState<boolean>(false);
+  const [unlockedHintTier, setUnlockedHintTier] = useState<number>(() => {
+    const saved = localStorage.getItem(`ahtest_hint_tier_${problem.id}`);
+    return saved ? Number(saved) : 0;
+  });
+  const [copiedTier3Code, setCopiedTier3Code] = useState<boolean>(false);
+
+  // Sync unlocked hint tier when problem changes
+  useEffect(() => {
+    const saved = localStorage.getItem(`ahtest_hint_tier_${problem.id}`);
+    setUnlockedHintTier(saved ? Number(saved) : 0);
+    setIsHintDrawerOpen(false);
+  }, [problem.id]);
+
+  // Keyboard shortcut: Shift + Enter to go to next problem when AC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'Enter' && finalVerdict === 'AC' && hasNextProblem && onNextProblem) {
+        e.preventDefault();
+        onNextProblem();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [finalVerdict, hasNextProblem, onNextProblem]);
+
+  const handleUnlockHintTier = (tier: number) => {
+    if (tier > unlockedHintTier) {
+      setUnlockedHintTier(tier);
+      localStorage.setItem(`ahtest_hint_tier_${problem.id}`, String(tier));
+    }
+  };
+
+  const getMasteryRating = (tier: number) => {
+    if (tier === 0) {
+      return {
+        stars: 3,
+        badge: '⭐⭐⭐ Tự Lực 100%',
+        title: 'Bậc Thầy Thuật Toán (Tự Lực Đỉnh Cao)',
+        description: 'Bạn đã độc lập giải quyết bài toán và vượt qua 100% test cases mà không cần bất kỳ gợi ý nào!',
+        textColor: 'text-amber-400',
+        borderColor: 'border-amber-500/30',
+        bgColor: 'bg-amber-500/10'
+      };
+    }
+    if (tier === 1 || tier === 2) {
+      return {
+        stars: 2,
+        badge: '⭐⭐ Khá Giỏi (Gợi Ý Tư Duy)',
+        title: 'Hiểu Sâu Bản Chất (Tiếp Thu Nhanh)',
+        description: 'Bạn đã tận dụng tốt gợi ý thuật toán / cảnh báo bẫy ngầm và tự tay cài đặt thuật toán chuẩn xác.',
+        textColor: 'text-emerald-400',
+        borderColor: 'border-emerald-500/30',
+        bgColor: 'bg-emerald-500/10'
+      };
+    }
+    return {
+      stars: 1,
+      badge: '⭐ Đã Thông Suốt',
+      title: 'Học Qua Khung Mã Giả (Xây Dựng Nền Móng)',
+      description: 'Bạn đã tham khảo khung mã giả để vượt qua bế tắc cú pháp. Hãy thử làm thêm bài tương tự tự lực nhé!',
+      textColor: 'text-blue-400',
+      borderColor: 'border-blue-500/30',
+      bgColor: 'bg-blue-500/10'
+    };
+  };
+
+  const handleCopyTier3Code = (scaffoldText: string) => {
+    navigator.clipboard.writeText(scaffoldText);
+    setCopiedTier3Code(true);
+    setTimeout(() => setCopiedTier3Code(false), 2000);
+  };
 
   const handleCopySample = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -632,10 +722,6 @@ fn main() {
     }, 120);
   };
 
-  const requestAiHint = () => {
-    setAiHint('Gợi ý từ AI Trợ giảng: Bài toán yêu cầu tính số nghịch thế. Thay vì dùng 2 vòng lặp lồng nhau O(N^2) gây TLE, hãy áp dụng thuật toán nén tọa độ (Coordinate Compression) kết hợp Cây Fenwick (Binary Indexed Tree) hoặc Segment Tree để tính tổng trong O(N log N). Chú ý sử dụng kiểu long long cho biến đếm kết quả để tránh tràn số.');
-  };
-
   return (
     <div className="flex flex-col h-[calc(100vh-4.5rem)] w-full bg-slate-50 dark:bg-slate-950">
       {/* Top Workbench Action Bar */}
@@ -648,7 +734,16 @@ fn main() {
             ← Danh sách bài
           </button>
           <span className="text-slate-300 dark:text-slate-700">|</span>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[260px] sm:max-w-md">
+          {collectionTitle && (
+            <>
+              <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800/80 text-rose-500 dark:text-rose-400 border border-slate-200 dark:border-slate-700">
+                <FolderGit2 className="w-3 h-3" />
+                <span className="truncate max-w-[150px]">{collectionTitle}</span>
+              </div>
+              <span className="hidden lg:inline text-slate-300 dark:text-slate-700">•</span>
+            </>
+          )}
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md">
             {problem.title}
           </h2>
           <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
@@ -698,14 +793,45 @@ fn main() {
             </div>
           )}
 
-          {/* AI Hint Trigger */}
+          {/* Progressive 3-Tier Hint Trigger */}
           <button
-            onClick={requestAiHint}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 cursor-pointer transition-colors"
+            onClick={() => {
+              const willOpen = !isHintDrawerOpen;
+              setIsHintDrawerOpen(willOpen);
+              if (willOpen && unlockedHintTier === 0) {
+                setUnlockedHintTier(1);
+                localStorage.setItem(`ahtest_hint_tier_${problem.id}`, '1');
+              }
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+              isHintDrawerOpen
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-xs'
+                : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
+            }`}
+            title="Mở Ngăn Kéo Gợi Ý 3 Tầng (Chống Mất Gốc Ngầm)"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Gợi ý AI</span>
+            <Lightbulb className={`w-3.5 h-3.5 ${unlockedHintTier > 0 ? 'text-amber-400' : 'text-indigo-400'}`} />
+            <span className="hidden sm:inline">Gợi Ý 3 Tầng</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${
+              unlockedHintTier > 0 
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' 
+                : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+            }`}>
+              {unlockedHintTier === 0 ? 'Mở' : `T${unlockedHintTier}/3`}
+            </span>
           </button>
+
+          {/* Next Problem Shortcut in Action Bar */}
+          {hasNextProblem && onNextProblem && (
+            <button
+              onClick={onNextProblem}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer transition-colors"
+              title="Chuyển sang bài tập tiếp theo trong bộ đề (Shift + Enter sau khi AC)"
+            >
+              <span className="hidden sm:inline">Bài sau</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {/* Run & Submit CTAs with Keyboard Shortcut Badges */}
           <button
@@ -805,6 +931,205 @@ fn main() {
 
           {/* Content Area with smooth scrolling */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Deep Practice Solved Banner (Mastery Star Rating & Next Problem CTA) */}
+            {finalVerdict === 'AC' && (() => {
+              const rating = getMasteryRating(unlockedHintTier);
+              return (
+                <div className={`p-5 rounded-2xl border ${rating.borderColor} ${rating.bgColor} space-y-3 shadow-lg animate-fadeIn relative overflow-hidden`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-xl">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-6 h-6 ${
+                              i < rating.stars
+                                ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                                : 'text-slate-600 dark:text-slate-700'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${rating.borderColor} ${rating.textColor}`}>
+                            {rating.badge}
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
+                            {rating.title}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                          {rating.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {hasNextProblem && onNextProblem && (
+                      <button
+                        onClick={onNextProblem}
+                        className="px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105 shrink-0"
+                      >
+                        <span>Luyện Tập Bài Tiếp Theo →</span>
+                        <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.2 rounded bg-emerald-800/80 border border-emerald-500/40 text-emerald-200 font-mono">
+                          Shift+↵
+                        </kbd>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Progressive 3-Tier Hint Drawer (Chống Mất Gốc Ngầm) */}
+            {isHintDrawerOpen && (
+              <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-amber-500/30 text-white space-y-4 shadow-xl animate-fadeIn relative">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                      <Lightbulb className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Trợ Lý Gợi Ý 3 Tầng</span>
+                        <span className="text-[10px] text-slate-400 font-normal">| Học sâu • Tránh mất gốc</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        {unlockedHintTier === 0 
+                          ? 'Đang giữ: ⭐⭐⭐ Tự Lực (100% sao)' 
+                          : unlockedHintTier <= 2 
+                            ? 'Đang nhận: ⭐⭐ Khá Giỏi (Gợi ý tư duy)' 
+                            : 'Đang nhận: ⭐ Đã Thông Suốt (Dùng mã giả)'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsHintDrawerOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-xs flex items-center gap-1"
+                  >
+                    <span>Thu gọn</span>
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* 3 Tiers Stack */}
+                <div className="space-y-3">
+                  {/* TIER 1: CONCEPTUAL (Always unlocked when drawer is open) */}
+                  <div className="p-3.5 rounded-xl bg-slate-800/80 border border-emerald-500/30 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Tầng 1: Tư Duy Thuật Toán Cốt Lõi
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-400">Đã mở khóa</span>
+                    </div>
+                    <h5 className="text-xs font-bold text-slate-200">
+                      {progressiveHints[0]?.title}
+                    </h5>
+                    <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/60 font-sans">
+                      <KaTeXRenderer content={progressiveHints[0]?.content || ''} />
+                    </div>
+                  </div>
+
+                  {/* TIER 2: TRAP & MEMORY PITFALL WARNING */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${
+                    unlockedHintTier >= 2 
+                      ? 'bg-slate-800/80 border-amber-500/40' 
+                      : 'bg-slate-950/60 border-slate-800'
+                  } space-y-2`}>
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                        <ShieldAlert className="w-3 h-3" /> Tầng 2: Cảnh Báo Bẫy Ngầm & Bộ Nhớ C
+                      </span>
+                      {unlockedHintTier >= 2 ? (
+                        <span className="text-[10px] font-bold text-amber-400">Đã mở khóa</span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Đang khóa (⭐ Giữ 3 Sao)
+                        </span>
+                      )}
+                    </div>
+
+                    {unlockedHintTier >= 2 ? (
+                      <>
+                        <h5 className="text-xs font-bold text-slate-200">
+                          {progressiveHints[1]?.title}
+                        </h5>
+                        <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/60 font-sans whitespace-pre-line">
+                          {progressiveHints[1]?.content}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <p className="text-[11px] text-slate-400 line-clamp-1 italic">
+                          Cảnh báo bẫy khoảng trắng scanf, null-terminator '\0', tràn mảng char, và lỗi rác bộ nhớ...
+                        </p>
+                        <button
+                          onClick={() => handleUnlockHintTier(2)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shrink-0 shadow-xs cursor-pointer transition-colors"
+                        >
+                          Mở Khóa Tầng 2
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* TIER 3: PSEUDOCODE SCAFFOLD */}
+                  <div className={`p-3.5 rounded-xl border transition-all ${
+                    unlockedHintTier >= 3 
+                      ? 'bg-slate-800/80 border-blue-500/40' 
+                      : 'bg-slate-950/60 border-slate-800'
+                  } space-y-2`}>
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> Tầng 3: Khung Mã Giả Định Hướng (Pseudocode)
+                      </span>
+                      {unlockedHintTier >= 3 ? (
+                        <span className="text-[10px] font-bold text-blue-400">Đã mở khóa</span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                          <Lock className="w-3 h-3" /> Đang khóa (⭐ Giữ 2 Sao)
+                        </span>
+                      )}
+                    </div>
+
+                    {unlockedHintTier >= 3 ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-xs font-bold text-slate-200">
+                            {progressiveHints[2]?.title}
+                          </h5>
+                          <button
+                            onClick={() => handleCopyTier3Code(progressiveHints[2]?.content || '')}
+                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/40 flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            {copiedTier3Code ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{copiedTier3Code ? 'Đã chép khung' : 'Sao chép khung code'}</span>
+                          </button>
+                        </div>
+                        <pre className="text-[11px] font-mono text-blue-100 bg-slate-950 p-3 rounded-lg border border-slate-800 overflow-x-auto leading-relaxed">
+                          {progressiveHints[2]?.content}
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <p className="text-[11px] text-slate-400 line-clamp-1 italic">
+                          Cung cấp sườn code chuẩn C từ khai báo, xử lý chuỗi đến in kết quả để người học điền vào...
+                        </p>
+                        <button
+                          onClick={() => handleUnlockHintTier(3)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shrink-0 shadow-xs cursor-pointer transition-colors"
+                        >
+                          Mở Khóa Mã Giả
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* AI Hint Banner if triggered */}
             {aiHint && (
               <div className="p-4 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-200 space-y-1.5 animate-fadeIn">

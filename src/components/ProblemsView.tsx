@@ -4,7 +4,7 @@ import { Problem, Difficulty } from '../types';
 import { mockProblems } from '../data/mockProblems';
 
 interface ProblemsViewProps {
-  onSelectProblem: (problem: Problem) => void;
+  onSelectProblem: (problem: Problem, list?: Problem[], collectionTitle?: string) => void;
 }
 
 export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) => {
@@ -187,7 +187,7 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
                   return (
                     <tr
                       key={problem.id}
-                      onClick={() => onSelectProblem(problem)}
+                      onClick={() => onSelectProblem(problem, filteredProblems, 'Kho Bài Tập Tiêu Chuẩn')}
                       className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                     >
                       {/* Solved Icon */}

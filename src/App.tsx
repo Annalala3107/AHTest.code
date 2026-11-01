@@ -14,6 +14,8 @@ import { Problem, AuthUser, ExamSessionConfig } from './types';
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+  const [problemContextList, setProblemContextList] = useState<Problem[]>([]);
+  const [collectionTitle, setCollectionTitle] = useState<string | undefined>(undefined);
   const [activeExamSession, setActiveExamSession] = useState<ExamSessionConfig | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('ahtest_theme');
@@ -56,12 +58,27 @@ export function App() {
     }
   }, [isDarkMode]);
 
-  const handleSelectProblem = (problem: Problem) => {
+  const handleSelectProblem = (problem: Problem, problemList?: Problem[], collTitle?: string) => {
     setSelectedProblem(problem);
+    if (problemList && problemList.length > 0) {
+      setProblemContextList(problemList);
+    } else {
+      setProblemContextList([]);
+    }
+    setCollectionTitle(collTitle);
   };
 
   const handleBackFromWorkbench = () => {
     setSelectedProblem(null);
+  };
+
+  const currentProblemIndex = problemContextList.findIndex(p => p.id === selectedProblem?.id);
+  const hasNextProblem = currentProblemIndex >= 0 && currentProblemIndex < problemContextList.length - 1;
+
+  const handleNextProblem = () => {
+    if (hasNextProblem) {
+      setSelectedProblem(problemContextList[currentProblemIndex + 1]);
+    }
   };
 
   const handleSelectTab = (tab: NavTab) => {
@@ -116,6 +133,9 @@ export function App() {
           <WorkbenchView
             problem={selectedProblem}
             onBack={handleBackFromWorkbench}
+            onNextProblem={handleNextProblem}
+            hasNextProblem={hasNextProblem}
+            collectionTitle={collectionTitle}
           />
         ) : (
           <>
