@@ -1,6 +1,6 @@
-import { ProblemCollection, Problem, ExamSessionConfig } from '../types';
-import { DEFAULT_PROBLEM_COLLECTIONS } from '../data/prf192Collections';
-import { PRF192_MASTER_PROBLEMS } from '../data/prf192MasterDataset';
+import type { ProblemCollection, Problem, ExamSessionConfig } from '../types';
+import { DEFAULT_PROBLEM_COLLECTIONS } from '../data/prf192Collections.ts';
+import { PRF192_MASTER_PROBLEMS } from '../data/prf192MasterDataset.ts';
 
 export const COLLECTIONS_STORAGE_KEY = 'ahtest_problem_collections';
 export const LEGACY_PROBLEMS_STORAGE_KEY = 'ahtest_imported_problems';
@@ -236,12 +236,15 @@ export function deleteCollection(collectionId: string): ProblemCollection[] {
 export function createExamSession(
   target: ProblemCollection | ProblemCollection[],
   questionCount: number,
-  timeLimitMinutes: number,
+  timeLimitMinutes: number = 90,
   titleOverride?: string
 ): ExamSessionConfig {
   const isMultiCollection = Array.isArray(target);
   const collections = isMultiCollection ? target : [target];
   
+  // Safe default: 90 minutes for standard PE Lab if <= 0 or omitted
+  const actualTimeLimit = timeLimitMinutes && timeLimitMinutes > 0 ? timeLimitMinutes : 90;
+
   // Target question count clamped between 10 and 20
   const clampedCount = Math.min(20, Math.max(10, questionCount));
   
@@ -287,7 +290,7 @@ export function createExamSession(
     collectionId,
     collectionTitle: sessionTitle,
     totalQuestions: selectedProblems.length,
-    timeLimitMinutes,
+    timeLimitMinutes: actualTimeLimit,
     problems: selectedProblems
   };
 }

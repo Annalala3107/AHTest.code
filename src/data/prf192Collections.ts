@@ -1,5 +1,5 @@
-import { ProblemCollection } from '../types';
-import { PRF192_MASTER_PROBLEMS } from './prf192MasterDataset';
+import type { ProblemCollection } from '../types';
+import { PRF192_MASTER_PROBLEMS } from './prf192MasterDataset.ts';
 
 export const DEFAULT_PROBLEM_COLLECTIONS: ProblemCollection[] = [
   // 1. SHAPE & STAR PATTERNS

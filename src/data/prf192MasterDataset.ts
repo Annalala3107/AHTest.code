@@ -1,4 +1,4 @@
-import { Problem } from '../types';
+import type { Problem } from '../types';
 
 /**
  * 115 Sanitized PRF192 Problems extracted directly from '1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx'.

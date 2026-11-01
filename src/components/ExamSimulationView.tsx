@@ -13,13 +13,22 @@ import {
   X,
   ShieldAlert,
   Sparkles,
-  BarChart3
+  BarChart3,
+  Terminal,
+  FileCode2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ExamSessionConfig, ExamQuestionState, ExamScorecard, TestResult } from '../types';
 import { CodeEditor } from './CodeEditor';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { executeCCode } from '../services/cExecutionEngine';
+import { 
+  getProblemTitle, 
+  getProblemStatement, 
+  getProblemInputFormat, 
+  getProblemOutputFormat, 
+  getProblemConstraints 
+} from '../services/problemBilingualService';
 
 interface ExamSimulationViewProps {
   session: ExamSessionConfig;
@@ -47,6 +56,20 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
   const [isExamFinished, setIsExamFinished] = useState<boolean>(false);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState<boolean>(false);
   const [scorecard, setScorecard] = useState<ExamScorecard | null>(null);
+
+  // Bilingual state (VI / EN)
+  const [docLang, setDocLang] = useState<'vi' | 'en'>(() => {
+    return (localStorage.getItem('ahtest_doc_lang') as 'vi' | 'en') || 'vi';
+  });
+
+  const handleToggleLang = (lang: 'vi' | 'en') => {
+    setDocLang(lang);
+    try {
+      localStorage.setItem('ahtest_doc_lang', lang);
+    } catch {
+      // ignore
+    }
+  };
 
   // Active question index
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -376,30 +399,62 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span>PHÒNG THI THẬT</span>
+            <span>{docLang === 'en' ? 'OFFICIAL LAB EXAM' : 'PHÒNG THI THẬT'}</span>
           </div>
 
           <div className="hidden sm:block">
             <h2 className="text-xs font-extrabold text-slate-200 truncate max-w-xs">
-              {session.collectionTitle}
+              {docLang === 'en' ? 'PRF192 Comprehensive Lab Exam' : session.collectionTitle}
             </h2>
             <span className="text-[10px] text-slate-400">
-              Đề thi tổng hợp ({totalQuestions} câu hỏi • MinGW GCC Sandbox)
+              {docLang === 'en' 
+                ? `Standard Practical Assessment (${totalQuestions} problems • MinGW GCC Sandbox)` 
+                : `Đề thi tổng hợp (${totalQuestions} câu hỏi • MinGW GCC Sandbox)`}
             </span>
           </div>
         </div>
 
-        {/* Center: Live Countdown Timer */}
-        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border text-sm font-mono font-bold tracking-wider ${timerColor}`}>
-          <Timer className="w-4 h-4" />
-          <span>{formatTimer(remainingSeconds)}</span>
+        {/* Center: Live Countdown Timer & Bilingual Switcher */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className={`flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-xl border text-xs sm:text-sm font-mono font-bold tracking-wider ${timerColor}`}>
+            <Timer className="w-4 h-4" />
+            <span>{formatTimer(remainingSeconds)}</span>
+          </div>
+
+          {/* Bilingual Switcher (VI / EN) */}
+          <div className="flex items-center bg-slate-950 p-0.5 rounded-xl border border-slate-800 text-xs shadow-xs">
+            <button
+              onClick={() => handleToggleLang('vi')}
+              className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] ${
+                docLang === 'vi'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Đề thi Tiếng Việt"
+            >
+              <span>🇻🇳</span>
+              <span>VI</span>
+            </button>
+            <button
+              onClick={() => handleToggleLang('en')}
+              className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 text-[11px] ${
+                docLang === 'en'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="English Practical Exam (Exam Mode)"
+            >
+              <span>🇬🇧</span>
+              <span>EN</span>
+            </button>
+          </div>
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
           <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 font-semibold px-2">
-            <span>Tiến độ:</span>
-            <span className="text-rose-400 font-bold">{answeredCount}/{totalQuestions} câu</span>
+            <span>{docLang === 'en' ? 'Progress:' : 'Tiến độ:'}</span>
+            <span className="text-rose-400 font-bold">{answeredCount}/{totalQuestions} {docLang === 'en' ? 'done' : 'câu'}</span>
           </div>
 
           <button
@@ -407,7 +462,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
             className="px-4 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30 flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>Nộp Toàn Bộ Bài Thi</span>
+            <span>{docLang === 'en' ? 'Submit Entire Exam' : 'Nộp Toàn Bộ Bài Thi'}</span>
           </button>
 
           <button
@@ -491,7 +546,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                Câu #{currentIndex + 1}
+                {docLang === 'en' ? `Question #${currentIndex + 1}` : `Câu #${currentIndex + 1}`}
               </span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                 currentProblem.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
@@ -503,29 +558,62 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
             </div>
 
             <span className="text-xs font-mono font-bold text-slate-400">
-              Điểm: <strong className="text-rose-400">{(10 / totalQuestions).toFixed(1)} / 10.0</strong>
+              {docLang === 'en' ? 'Weight:' : 'Điểm:'} <strong className="text-rose-400">{(10 / totalQuestions).toFixed(1)} / 10.0</strong>
             </span>
           </div>
 
           <div>
             <h1 className="text-base font-bold text-slate-100">
-              {currentProblem.title}
+              {getProblemTitle(currentProblem, docLang)}
             </h1>
             <span className="text-[11px] font-mono text-slate-500">
               slug: {currentProblem.slug}
             </span>
           </div>
 
-          {/* Statement Markdown */}
+          {/* Statement Markdown with automatic fallback (no more "tàng hình"!) */}
           <div className="prose dark:prose-invert max-w-none text-xs leading-relaxed text-slate-300">
-            <KaTeXRenderer content={currentProblem.statement} />
+            <KaTeXRenderer content={getProblemStatement(currentProblem, docLang)} />
+          </div>
+
+          {/* Input Format Block */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{docLang === 'en' ? 'Input Specification (stdin):' : 'Định Dạng Đầu Vào (stdin):'}</span>
+            </span>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans">
+              <KaTeXRenderer content={getProblemInputFormat(currentProblem, docLang)} />
+            </div>
+          </div>
+
+          {/* Output Format Block */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{docLang === 'en' ? 'Output Specification (stdout):' : 'Định Dạng Đầu Ra (stdout):'}</span>
+            </span>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans">
+              <KaTeXRenderer content={getProblemOutputFormat(currentProblem, docLang)} />
+            </div>
+          </div>
+
+          {/* Constraints Block */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <span>{docLang === 'en' ? 'Constraints & Technical Requirements:' : 'Giới Hạn & Ràng Buộc Kỹ Thuật:'}</span>
+            </span>
+            <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400">
+              {getProblemConstraints(currentProblem, docLang)}
+            </div>
           </div>
 
           {/* Samples */}
           {currentProblem.samples && currentProblem.samples.length > 0 && (
             <div className="space-y-3 pt-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                Ví Dụ Mẫu (Sample Cases):
+                {docLang === 'en' ? 'Sample Test Cases:' : 'Ví Dụ Mẫu (Sample Cases):'}
               </span>
               {currentProblem.samples.map((s, idx) => (
                 <div key={idx} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
@@ -537,7 +625,9 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
                       </pre>
                     </div>
                     <div>
-                      <span className="font-bold text-slate-500 block mb-1">Expected Output:</span>
+                      <span className="font-bold text-slate-500 block mb-1">
+                        {docLang === 'en' ? 'Expected Output:' : 'Output Chuẩn (Expected):'}
+                      </span>
                       <pre className="p-2 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px] text-emerald-400 overflow-x-auto">
                         {s.output}
                       </pre>
@@ -557,7 +647,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
           <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-2.5">
             <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
             <span>
-              <strong>Chế độ thi thử:</strong> Toàn bộ Gợi ý 3 tầng bị vô hiệu hóa để bảo đảm tính nghiêm ngặt.
+              <strong>{docLang === 'en' ? 'Exam Simulation Mode:' : 'Chế độ thi thử:'}</strong> {docLang === 'en' ? 'All pedagogical hints are disabled to maintain strict exam integrity.' : 'Toàn bộ Gợi ý 3 tầng bị vô hiệu hóa để bảo đảm tính nghiêm ngặt.'}
             </span>
           </div>
         </div>
@@ -598,7 +688,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
                 className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Play className="w-3.5 h-3.5 text-blue-400 fill-current" />
-                <span>Chạy Thử Mẫu</span>
+                <span>{docLang === 'en' ? 'Run Sample Test' : 'Chạy Thử Mẫu'}</span>
               </button>
 
               <button
@@ -607,7 +697,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
                 className="px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Chấm Điểm Câu Này</span>
+                <span>{docLang === 'en' ? 'Grade Question' : 'Chấm Điểm Câu Này'}</span>
               </button>
             </div>
 
@@ -617,7 +707,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
                 onClick={() => handleSelectQuestion(currentIndex + 1)}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 flex items-center gap-1 cursor-pointer disabled:opacity-30"
               >
-                <span>Câu Tiếp Theo</span>
+                <span>{docLang === 'en' ? 'Next Question' : 'Câu Tiếp Theo'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -633,7 +723,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
                     consoleTab === 'sample' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  Kết Quả Chạy Mẫu {sampleRunStatus && `(${sampleRunStatus})`}
+                  {docLang === 'en' ? 'Sample Execution' : 'Kết Quả Chạy Mẫu'} {sampleRunStatus && `(${sampleRunStatus})`}
                 </button>
                 <button
                   onClick={() => setConsoleTab('results')}
@@ -641,7 +731,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
                     consoleTab === 'results' ? 'text-rose-400' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  Bảng Chấm Test ({currentState.score}%)
+                  {docLang === 'en' ? 'Test Results' : 'Bảng Chấm Test'} ({currentState.score}%)
                 </button>
               </div>
 

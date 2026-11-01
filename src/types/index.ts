@@ -25,7 +25,9 @@ export interface Problem {
   id: string;
   slug: string;
   title: string;
+  titleEn?: string;
   category: string;
+  categoryEn?: string;
   difficulty: Difficulty;
   points: number;
   timeLimit: number; // in seconds
@@ -34,9 +36,13 @@ export interface Problem {
   solvedCount: number;
   totalSubmissions: number;
   statement: string;
+  statementEn?: string;
   inputFormat: string;
+  inputFormatEn?: string;
   outputFormat: string;
+  outputFormatEn?: string;
   constraints: string;
+  constraintsEn?: string;
   samples: SampleCase[];
   subtasks?: Subtask[];
   editorial?: string;

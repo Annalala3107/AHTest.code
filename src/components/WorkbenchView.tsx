@@ -36,6 +36,13 @@ import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
 import { resolveProgressiveHints } from '../services/progressiveHintService';
+import { 
+  getProblemTitle, 
+  getProblemStatement, 
+  getProblemInputFormat, 
+  getProblemOutputFormat, 
+  getProblemConstraints 
+} from '../services/problemBilingualService';
 import { CodeEditor } from './CodeEditor';
 
 interface WorkbenchViewProps {
@@ -56,6 +63,20 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
   const [activeTab, setActiveTab] = useState<'statement' | 'editorial' | 'submissions' | 'comments'>('statement');
   const [language, setLanguage] = useState<'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust'>('cpp20');
   const [copiedSample, setCopiedSample] = useState<number | null>(null);
+
+  // Bilingual state (VI / EN)
+  const [docLang, setDocLang] = useState<'vi' | 'en'>(() => {
+    return (localStorage.getItem('ahtest_doc_lang') as 'vi' | 'en') || 'vi';
+  });
+
+  const handleToggleLang = (lang: 'vi' | 'en') => {
+    setDocLang(lang);
+    try {
+      localStorage.setItem('ahtest_doc_lang', lang);
+    } catch {
+      // ignore
+    }
+  };
 
   // Code editor state
   const defaultCodes: Record<string, string> = {
@@ -750,7 +771,7 @@ fn main() {
             </>
           )}
           <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md">
-            {problem.title}
+            {getProblemTitle(problem, docLang)}
           </h2>
           <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
             {problem.difficulty}
@@ -758,6 +779,34 @@ fn main() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Bilingual Switcher (VI / EN) */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
+            <button
+              onClick={() => handleToggleLang('vi')}
+              className={`px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer flex items-center gap-1 text-[10px] ${
+                docLang === 'vi'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+              title="Đề bài Tiếng Việt"
+            >
+              <span>🇻🇳</span>
+              <span>VI</span>
+            </button>
+            <button
+              onClick={() => handleToggleLang('en')}
+              className={`px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer flex items-center gap-1 text-[10px] ${
+                docLang === 'en'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+              title="English Statement"
+            >
+              <span>🇬🇧</span>
+              <span>EN</span>
+            </button>
+          </div>
+
           {/* Zen Mode Toggle */}
           <button
             onClick={() => setIsZenMode(!isZenMode)}
@@ -1166,39 +1215,37 @@ fn main() {
                   <span>Điểm: <strong className="text-rose-600 font-bold">{problem.points}đ</strong></span>
                 </div>
 
-                {/* Statement Body (Rendered with KaTeX) */}
+                {/* Statement Body (Rendered with KaTeX) with safe bilingual fallback */}
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Mô tả bài toán
+                    {docLang === 'en' ? 'Problem Description' : 'Mô tả bài toán'}
                   </h3>
-                  <KaTeXRenderer content={problem.statement} />
+                  <KaTeXRenderer content={getProblemStatement(problem, docLang)} />
                 </div>
 
                 {/* Input Format */}
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Dữ liệu vào (Input)
+                    {docLang === 'en' ? 'Input Specification (stdin)' : 'Dữ liệu vào (Input)'}
                   </h3>
-                  <KaTeXRenderer content={problem.inputFormat} />
+                  <KaTeXRenderer content={getProblemInputFormat(problem, docLang)} />
                 </div>
 
                 {/* Output Format */}
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Dữ liệu ra (Output)
+                    {docLang === 'en' ? 'Output Specification (stdout)' : 'Dữ liệu ra (Output)'}
                   </h3>
-                  <KaTeXRenderer content={problem.outputFormat} />
+                  <KaTeXRenderer content={getProblemOutputFormat(problem, docLang)} />
                 </div>
 
                 {/* Constraints & Subtasks */}
-                {problem.constraints && (
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                      Ràng buộc & Subtasks
-                    </h3>
-                    <KaTeXRenderer content={problem.constraints} />
-                  </div>
-                )}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    {docLang === 'en' ? 'Constraints & Technical Requirements' : 'Ràng buộc & Subtasks'}
+                  </h3>
+                  <KaTeXRenderer content={getProblemConstraints(problem, docLang)} />
+                </div>
 
                 {/* Sample Cases with 1-click Copy */}
                 <div className="space-y-4">

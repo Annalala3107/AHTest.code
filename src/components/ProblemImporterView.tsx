@@ -73,9 +73,9 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
   const [previewProblem, setPreviewProblem] = useState<Problem | null>(null);
   const [activeModalTab, setActiveModalTab] = useState<'form' | 'file'>('form');
 
-  // Exam Simulation Mode State
+  // Exam Simulation Mode State (Default: 90 minutes standard Lab Practical Exam)
   const [examQuestionCount, setExamQuestionCount] = useState<number>(10);
-  const [examDurationMinutes, setExamDurationMinutes] = useState<number>(60);
+  const [examDurationMinutes, setExamDurationMinutes] = useState<number>(90);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [pendingExamSession, setPendingExamSession] = useState<ExamSessionConfig | null>(null);
 
@@ -696,7 +696,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-300">
-                <span className="flex items-center gap-1.5 font-semibold text-rose-300"><Timer className="w-3.5 h-3.5 text-rose-400" /> 45 / 60 / 90 phút</span>
+                <span className="flex items-center gap-1.5 font-semibold text-rose-300"><Timer className="w-3.5 h-3.5 text-rose-400" /> 90 phút (Chuẩn Lab PE) • 45 - 120 phút</span>
                 <span>•</span>
                 <span className="flex items-center gap-1.5 font-semibold text-amber-300"><ShieldAlert className="w-3.5 h-3.5 text-amber-400" /> Khóa Gợi Ý Thi Thật</span>
                 <span>•</span>
@@ -710,7 +710,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                 className="px-5 py-3 rounded-2xl text-xs font-black bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white shadow-lg shadow-rose-600/40 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105"
               >
                 <Flame className="w-4 h-4 fill-current" />
-                <span>Vào Thi Thử Toàn Diện (10-20 câu) →</span>
+                <span>Vào Thi Thử Toàn Diện (90 phút) →</span>
               </button>
             </div>
           </div>
@@ -979,17 +979,22 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-400 font-medium">Thời gian thi:</span>
                     <div className="flex items-center gap-1.5">
-                      {[45, 60, 90].map((min) => (
+                      {[
+                        { mins: 45, label: '45p' },
+                        { mins: 90, label: '⭐ 90p' },
+                        { mins: 120, label: '120p' }
+                      ].map(({ mins, label }) => (
                         <button
-                          key={min}
-                          onClick={() => setExamDurationMinutes(min)}
+                          key={mins}
+                          onClick={() => setExamDurationMinutes(mins)}
                           className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                            examDurationMinutes === min
-                              ? 'bg-rose-600 text-white'
+                            examDurationMinutes === mins
+                              ? 'bg-rose-600 text-white shadow-xs'
                               : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                           }`}
+                          title={mins === 90 ? '90 phút - Chuẩn khảo thí Lab PE' : `${mins} phút`}
                         >
-                          {min} phút
+                          {label}
                         </button>
                       ))}
                     </div>
@@ -1730,9 +1735,31 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                   <span className="text-slate-400 font-medium">Số lượng câu đã trộn:</span>
                   <span className="font-bold text-rose-400">{pendingExamSession.problems.length} câu</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between py-1">
                   <span className="text-slate-400 font-medium">Thời gian làm bài:</span>
-                  <span className="font-bold text-amber-400">{pendingExamSession.timeLimitMinutes} phút</span>
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { mins: 45, label: '45p' },
+                      { mins: 90, label: '⭐ 90p (Lab PE)' },
+                      { mins: 120, label: '120p' }
+                    ].map(preset => (
+                      <button
+                        key={preset.mins}
+                        type="button"
+                        onClick={() => {
+                          setExamDurationMinutes(preset.mins);
+                          setPendingExamSession(prev => prev ? { ...prev, timeLimitMinutes: preset.mins } : null);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          pendingExamSession.timeLimitMinutes === preset.mins
+                            ? 'bg-amber-500 text-slate-950 font-black shadow-xs ring-1 ring-amber-400'
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400 font-medium">Cơ chế chấm:</span>
