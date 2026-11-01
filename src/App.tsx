@@ -6,8 +6,6 @@ import { ProblemsView } from './components/ProblemsView';
 import { WorkbenchView } from './components/WorkbenchView';
 import { AcademyView } from './components/AcademyView';
 import { ProblemImporterView } from './components/ProblemImporterView';
-import { ContestsView } from './components/ContestsView';
-import { LeaderboardView } from './components/LeaderboardView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { AuthModal } from './components/AuthModal';
 import { Problem, AuthUser } from './types';
@@ -130,9 +128,9 @@ export function App() {
               <ProblemsView onSelectProblem={handleSelectProblem} />
             )}
             {currentTab === 'academy' && <AcademyView />}
-            {currentTab === 'importer' && <ProblemImporterView />}
-            {currentTab === 'contests' && <ContestsView />}
-            {currentTab === 'leaderboard' && <LeaderboardView />}
+            {currentTab === 'importer' && (
+              <ProblemImporterView onSelectProblem={handleSelectProblem} />
+            )}
             {currentTab === 'admin' && (
               <AdminDashboardView
                 currentUser={currentUser}

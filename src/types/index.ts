@@ -12,6 +12,15 @@ export interface Subtask {
   description: string;
 }
 
+export interface TestCaseItem {
+  id?: number;
+  input: string;
+  expectedOutput: string;
+  isHidden?: boolean;
+  explanation?: string;
+  weight?: number;
+}
+
 export interface Problem {
   id: string;
   slug: string;
@@ -34,6 +43,8 @@ export interface Problem {
   author: string;
   source: string;
   createdAt: string;
+  testcases?: TestCaseItem[];
+  isCustom?: boolean;
 }
 
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RTE' | 'CE' | 'PENDING' | 'GRADING';

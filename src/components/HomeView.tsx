@@ -69,16 +69,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 min-w-[200px]">
             <button
-              onClick={() => onNavigateTab('contests')}
+              onClick={() => onNavigateTab('problems')}
               className="px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-lg shadow-rose-600/30 transition-all transform hover:-translate-y-0.5 cursor-pointer text-center"
             >
-              Đăng ký tham gia ngay
+              Vào Luyện Tập Ngay
             </button>
             <button
-              onClick={() => onNavigateTab('contests')}
+              onClick={() => onNavigateTab('importer')}
               className="px-6 py-3 rounded-xl font-semibold text-sm bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 transition-colors cursor-pointer text-center"
             >
-              Xem thể lệ & danh sách
+              Kho Đề Ngoại Nhập ↗
             </button>
           </div>
         </div>

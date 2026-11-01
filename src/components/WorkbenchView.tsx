@@ -284,16 +284,16 @@ fn main() {
 
     setTimeout(() => {
       setIsGrading(false);
-      const sample = problem.samples[0];
-      const input = sample?.input || '';
-      const exec = executeCCode(code, input);
+      const sampleInput = problem.samples[0]?.input ?? (problem.testcases?.[0]?.input || '');
+      const sampleOutput = problem.samples[0]?.output ?? (problem.testcases?.[0]?.expectedOutput || '');
+      const exec = executeCCode(code, sampleInput);
       setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
       if (exec.status === 'CE') verdict = 'CE';
       else if (exec.status === 'RTE') verdict = 'RTE';
       else if (exec.status === 'TLE') verdict = 'TLE';
-      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === (sample?.output || '').replace(/\r\n/g, '\n').trim()) {
+      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === sampleOutput.replace(/\r\n/g, '\n').trim()) {
         verdict = 'AC';
       }
 
@@ -316,9 +316,9 @@ fn main() {
         score: verdict === 'AC' ? problem.points : 0,
         maxScore: problem.points,
         isHidden: false,
-        input: sample?.input || '',
+        input: sampleInput,
         actualOutput: exec.status === 'CE' ? exec.stderr : (exec.stdout || '(Không có output ra stdout)'),
-        expectedOutput: sample?.output || '3'
+        expectedOutput: sampleOutput || '3'
       };
 
       setCustomOutput(exec.status === 'CE' ? exec.stderr : (exec.stdout || 'Chương trình thực thi không có output.'));
@@ -364,16 +364,17 @@ fn main() {
 
     setTimeout(() => {
       setIsGrading(false);
-      const sample = problem.samples[index] || problem.samples[0];
-      const input = sample?.input || '';
-      const exec = executeCCode(code, input);
+      const sample = problem.samples[index] || (problem.testcases?.[index] ? { input: problem.testcases[index].input, output: problem.testcases[index].expectedOutput } : problem.samples[0]);
+      const sampleInput = sample?.input ?? (problem.testcases?.[index]?.input || '');
+      const sampleOutput = sample?.output ?? (problem.testcases?.[index]?.expectedOutput || '');
+      const exec = executeCCode(code, sampleInput);
       setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
       if (exec.status === 'CE') verdict = 'CE';
       else if (exec.status === 'RTE') verdict = 'RTE';
       else if (exec.status === 'TLE') verdict = 'TLE';
-      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === (sample?.output || '').replace(/\r\n/g, '\n').trim()) {
+      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === sampleOutput.replace(/\r\n/g, '\n').trim()) {
         verdict = 'AC';
       }
 
@@ -495,49 +496,58 @@ fn main() {
       return;
     }
 
-    // 2-Tier Testcases: 2 Public Samples + 3 Hidden System Edge Cases
-    const testDefinitions = [
-      {
-        id: 1,
-        testName: 'Sample 1',
-        input: problem.samples[0]?.input || '5 3\n4 2 1 5 3',
-        expectedOutput: problem.samples[0]?.output || '3',
-        isHidden: false,
-        weight: 20
-      },
-      {
-        id: 2,
-        testName: 'Sample 2',
-        input: problem.samples[1]?.input || '3 1\n10 1 5',
-        expectedOutput: problem.samples[1]?.output || '-1',
-        isHidden: false,
-        weight: 20
-      },
-      {
-        id: 3,
-        testName: 'Hidden Case 3 (Ràng buộc biên K = 0)',
-        input: '4 0\n2 2 2 2',
-        expectedOutput: '0',
-        isHidden: true,
-        weight: 20
-      },
-      {
-        id: 4,
-        testName: 'Hidden Case 4 (Số âm & Nghịch thế)',
-        input: '5 5\n10 8 6 4 2',
-        expectedOutput: '10',
-        isHidden: true,
-        weight: 20
-      },
-      {
-        id: 5,
-        testName: 'Hidden Case 5 (Stress Test quy mô lớn)',
-        input: '5 2\n1 2 3 4 5',
-        expectedOutput: '2',
-        isHidden: true,
-        weight: 20
-      }
-    ];
+    // Dynamic Testcases: Custom imported testcases OR Default 2-Tier Testcases
+    const testDefinitions = (problem.testcases && problem.testcases.length > 0)
+      ? problem.testcases.map((tc, idx) => ({
+          id: tc.id || (idx + 1),
+          testName: tc.isHidden ? `Test ẩn #${idx + 1}` : `Test #${idx + 1}${idx < problem.samples.length ? ' (Mẫu)' : ''}`,
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          isHidden: !!tc.isHidden,
+          weight: tc.weight || Math.max(1, Math.round(100 / problem.testcases!.length))
+        }))
+      : [
+          {
+            id: 1,
+            testName: 'Sample 1',
+            input: problem.samples[0]?.input || '5 3\n4 2 1 5 3',
+            expectedOutput: problem.samples[0]?.output || '3',
+            isHidden: false,
+            weight: 20
+          },
+          {
+            id: 2,
+            testName: 'Sample 2',
+            input: problem.samples[1]?.input || '3 1\n10 1 5',
+            expectedOutput: problem.samples[1]?.output || '-1',
+            isHidden: false,
+            weight: 20
+          },
+          {
+            id: 3,
+            testName: 'Hidden Case 3 (Ràng buộc biên K = 0)',
+            input: '4 0\n2 2 2 2',
+            expectedOutput: '0',
+            isHidden: true,
+            weight: 20
+          },
+          {
+            id: 4,
+            testName: 'Hidden Case 4 (Số âm & Nghịch thế)',
+            input: '5 5\n10 8 6 4 2',
+            expectedOutput: '10',
+            isHidden: true,
+            weight: 20
+          },
+          {
+            id: 5,
+            testName: 'Hidden Case 5 (Stress Test quy mô lớn)',
+            input: '5 2\n1 2 3 4 5',
+            expectedOutput: '2',
+            isHidden: true,
+            weight: 20
+          }
+        ];
 
     const mockTotalTests = testDefinitions.length;
     const simulatedTests: TestResult[] = [];
@@ -1228,7 +1238,9 @@ fn main() {
                         <span className="font-bold">Bảng Kiểm Thử 2 Tầng: Công khai & Test Ẩn</span>
                       </div>
                       <span className="text-xs text-slate-400">
-                        {problem.samples.length} Test mẫu • 3 Test ẩn của hệ thống
+                        {problem.testcases 
+                          ? `${problem.testcases.filter(t => !t.isHidden).length} Test mẫu • ${problem.testcases.filter(t => t.isHidden).length} Test ẩn`
+                          : `${problem.samples.length} Test mẫu • 3 Test ẩn của hệ thống`}
                       </span>
                     </div>
 

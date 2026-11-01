@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Code2, 
   BookOpen, 
-  Trophy, 
-  UploadCloud, 
-  Users, 
+  FolderGit2,
   Flame, 
   Sun, 
   Moon, 
@@ -21,7 +19,7 @@ import {
 } from 'lucide-react';
 import { AuthUser } from '../types';
 
-export type NavTab = 'home' | 'problems' | 'academy' | 'importer' | 'contests' | 'leaderboard' | 'admin';
+export type NavTab = 'home' | 'problems' | 'academy' | 'importer' | 'admin' | 'contests' | 'leaderboard';
 
 interface NavbarProps {
   currentTab: NavTab;
@@ -61,14 +59,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Streamlined nav items with Admin Dashboard access
+  // Streamlined Navbar 2.0: 5 focused, high-value destinations
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: LayoutDashboard },
     { id: 'problems', label: 'Luyện tập', icon: Code2 },
     { id: 'academy', label: 'Khóa học', icon: BookOpen },
-    { id: 'contests', label: 'Kỳ thi', icon: Trophy },
-    { id: 'importer', label: 'Import Đề', icon: UploadCloud },
-    { id: 'leaderboard', label: 'Xếp hạng', icon: Users },
+    { id: 'importer', label: 'Kho Đề Ngoại Nhập', icon: FolderGit2 },
     { id: 'admin', label: 'Quản trị', icon: Shield },
   ];
 
