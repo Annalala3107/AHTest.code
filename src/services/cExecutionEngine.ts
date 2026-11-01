@@ -366,6 +366,11 @@ export class VirtualCRuntime {
   // Formatted scanf with setter callbacks: scanf("%d %d", (v) => a = v, (v) => b = v)
   public scanf(format: string, ...setterFns: ((val: any) => void)[]): number {
     this.tick();
+    // Standard C: if stdin is already empty before any conversion, return EOF (-1)
+    if (this.stdinTokens.length === 0) {
+      return -1;
+    }
+
     const specifiers = (format.match(/%(?:d|i|f|lf|s|c|lld|ld)/g) || []);
     let count = 0;
 
@@ -392,6 +397,12 @@ export class VirtualCRuntime {
         count++;
       }
     }
+
+    // Standard C: if EOF occurred before any conversion could be completed, return -1 (EOF)
+    if (count === 0 && this.stdinTokens.length === 0) {
+      return -1;
+    }
+
     return count;
   }
 
@@ -715,10 +726,51 @@ function transpileCToJS(cCode: string): string {
     return vars.map((v: string) => `${v} = __rt.scanfNext("int");`).join('; ') + ';';
   });
 
-  // Step 5: Wrap loops with runtime.tick() watchdog
-  code = code.replace(/while\s*\((.*?)\)\s*\{/g, 'while ($1) { __rt.tick(); ');
-  code = code.replace(/for\s*\((.*?)\)\s*\{/g, 'for ($1) { __rt.tick(); ');
-  code = code.replace(/do\s*\{/g, 'do { __rt.tick(); ');
+  // Step 5: Wrap loops with runtime.tick() watchdog (including unbraced and empty loop bodies)
+  // 5.1 Normalize do-while loops:
+  code = code.replace(/\bdo\s*\{/g, 'do { __rt.tick(); ');
+  code = code.replace(/\bdo\s+([^{;\s][^;]*;)\s*while\s*\(([^)]+)\)\s*;/g, (_, stmt, cond) => {
+    return `do { __rt.tick(); ${stmt} } while (${cond});`;
+  });
+
+  // Temporarily protect '} while (cond);' of do-while
+  const doWhileEnds: string[] = [];
+  code = code.replace(/\}\s*while\s*\(([^)]+)\)\s*;/g, (_, cond) => {
+    doWhileEnds.push(cond);
+    return `} __DO_WHILE_END_${doWhileEnds.length - 1}__;`;
+  });
+
+  // 5.2 Empty loop bodies: while(cond); and for(...);
+  code = code.replace(/\bwhile\s*\(([^)]+)\)\s*;/g, (_, cond) => {
+    return `while (${cond}) { __rt.tick(); }`;
+  });
+  code = code.replace(/\bfor\s*\(([^)]+)\)\s*;/g, (_, cond) => {
+    return `for (${cond}) { __rt.tick(); }`;
+  });
+
+  // 5.3 Unbraced single-statement loop body (e.g. while (cond) x++; or for (...) x++;)
+  // Repeat up to 3 passes so that after inner loop is braced, outer loop gets braced properly
+  for (let pass = 0; pass < 3; pass++) {
+    code = code.replace(/\b(while|for)\s*(\([^)]+\))\s*(?!\s*(?:\{|;|\bfor\b|\bwhile\b))([^{;\s][^;{}]*;)/g, (_, kw, cond, stmt) => {
+      return `${kw} ${cond} { __rt.tick(); ${stmt} }`;
+    });
+    code = code.replace(/\b(while|for)\s*(\([^)]+\))\s*(?!\s*\{)(\s*(?:while|for)\s*\([^)]+\)\s*\{[\s\S]*?\})/g, (_, kw, cond, inner) => {
+      return `${kw} ${cond} { __rt.tick(); ${inner} }`;
+    });
+  }
+
+  // 5.4 Inject __rt.tick() into any remaining while/for blocks that don't have it yet
+  code = code.replace(/\bwhile\s*\(([^)]+)\)\s*\{(?!\s*__rt\.tick\(\);)/g, (_, cond) => {
+    return `while (${cond}) { __rt.tick(); `;
+  });
+  code = code.replace(/\bfor\s*\(([^)]+)\)\s*\{(?!\s*__rt\.tick\(\);)/g, (_, cond) => {
+    return `for (${cond}) { __rt.tick(); `;
+  });
+
+  // 5.5 Restore do-while ends
+  code = code.replace(/__DO_WHILE_END_(\d+)__;/g, (_, idx) => {
+    return `while (${doWhileEnds[Number(idx)]});`;
+  });
 
   // Step 6: Memory allocations & sizeof
   code = code.replace(/sizeof\s*\([^)]*\)/g, '4');
@@ -776,6 +828,7 @@ function transpileCToJS(cCode: string): string {
 
   // Step 10: Constants & Math
   code = code.replace(/\bNULL\b/g, 'null');
+  code = code.replace(/\bEOF\b/g, '(-1)');
   code = code.replace(/\bsqrt\s*\(/g, 'Math.sqrt(');
   code = code.replace(/\babs\s*\(/g, 'Math.abs(');
   code = code.replace(/\bfabs\s*\(/g, 'Math.abs(');
@@ -790,6 +843,8 @@ function transpileCToJS(cCode: string): string {
   code = code.replace(/__CHAR_LITERAL_(\d+)__/g, (_, idx) => charLiterals[Number(idx)]);
 
   return `
+    const EOF = -1;
+    const NULL = null;
     ${code}
     if (typeof __c_main === 'function') {
       __c_main();
