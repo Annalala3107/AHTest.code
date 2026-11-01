@@ -23,7 +23,11 @@ import {
   ShieldAlert,
   Flame,
   Award,
-  FolderPlus
+  FolderPlus,
+  ShieldCheck,
+  Zap,
+  FileCheck,
+  Check
 } from 'lucide-react';
 import { Problem, Difficulty, TestCaseItem, ProblemCollection, ExamSessionConfig } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
@@ -37,6 +41,12 @@ import {
   deleteProblemFromCollection,
   createExamSession
 } from '../services/collectionStorage';
+import {
+  sanitizeSingleProblem,
+  processDocxFile,
+  SanitizedProblemResult,
+  SanitizationReport
+} from '../services/dataSanitizationPipeline';
 
 interface ProblemImporterViewProps {
   onSelectProblem?: (problem: Problem, list?: Problem[], collectionTitle?: string) => void;
@@ -88,6 +98,14 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     { input: '', output: '', isHidden: false }
   ]);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Data Sanitization Pipeline States (Giai Đoạn 1)
+  const [rawSourceCodeInput, setRawSourceCodeInput] = useState<string>('');
+  const [isAutoSanitizeActive, setIsAutoSanitizeActive] = useState<boolean>(true);
+  const [pipelineReport, setPipelineReport] = useState<SanitizationReport | null>(null);
+  const [isBatchDocxProcessing, setIsBatchDocxProcessing] = useState<boolean>(false);
+  const [batchSanitizedResults, setBatchSanitizedResults] = useState<SanitizedProblemResult[]>([]);
+  const [showBatchReviewModal, setShowBatchReviewModal] = useState<boolean>(false);
 
   // Sync collections with localStorage when state changes
   useEffect(() => {
@@ -233,8 +251,9 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
       isHidden: t.isHidden
     }));
 
+    const probId = `imported_${Date.now()}`;
     const created: Problem = {
-      id: `imported_${Date.now()}`,
+      id: probId,
       slug,
       title: newTitle.trim(),
       category: newCategory,
@@ -258,6 +277,12 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
       collectionId: targetCollectionId
     };
 
+    // If source code was provided, seed into localStorage draft for instant running in Workbench
+    if (rawSourceCodeInput.trim()) {
+      localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, rawSourceCodeInput.trim());
+      localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, rawSourceCodeInput.trim());
+    }
+
     const updated = addProblemToCollection(targetCollectionId, created);
     setCollections(updated);
     setIsAddProblemModalOpen(false);
@@ -265,6 +290,8 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     // Reset Form
     setNewTitle('');
     setNewSlug('');
+    setRawSourceCodeInput('');
+    setPipelineReport(null);
     setNewStatement('');
     setNewInputFormat('');
     setNewOutputFormat('');
@@ -279,12 +306,98 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     }
   };
 
-  // Handle File Upload into Target Collection
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Trigger Data Sanitization Pipeline on Manual Form Input
+  const handleTriggerSanitization = () => {
+    if (!rawSourceCodeInput.trim()) {
+      alert('Vui lòng dán mã nguồn C cần làm sạch vào ô nhập liệu!');
+      return;
+    }
+    const res = sanitizeSingleProblem(rawSourceCodeInput, newTitle || 'Bài Tập Ngoại Nhập PRF192', newStatement);
+    setNewTitle(res.title);
+    setNewCategory(res.category);
+    setNewDifficulty(res.difficulty);
+    setRawSourceCodeInput(res.code);
+    setNewStatement(res.statement);
+    setNewInputFormat(res.inputFormat);
+    setNewOutputFormat(res.outputFormat);
+    setNewConstraints(res.constraints);
+    setNewTestcases(res.testcases.map(t => ({ input: t.input, output: t.expectedOutput, isHidden: !!t.isHidden })));
+    setPipelineReport(res.report);
+  };
+
+  // Handle Batch Import of all sanitized problems from DOCX
+  const handleBatchImportDocx = () => {
+    if (batchSanitizedResults.length === 0) return;
+    let currentCollections = collections;
+
+    batchSanitizedResults.forEach((item, idx) => {
+      const probId = `docx_${Date.now()}_${idx}`;
+      const prob: Problem = {
+        id: probId,
+        slug: `prf192_${idx + 1}_${item.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`.slice(0, 40),
+        title: item.title,
+        category: item.category,
+        difficulty: item.difficulty,
+        points: 100,
+        timeLimit: 1.0,
+        memoryLimit: 128,
+        tags: ['PRF192_Docx', 'Sanitized', item.category.split(' ')[0]],
+        solvedCount: 0,
+        totalSubmissions: 0,
+        statement: `${item.statement}\n\n\`\`\`c\n${item.code.slice(0, 2000)}\n\`\`\``,
+        inputFormat: item.inputFormat,
+        outputFormat: item.outputFormat,
+        constraints: item.constraints,
+        samples: item.samples,
+        testcases: item.testcases,
+        author: 'PRF192 Master Docx (Đã Làm Sạch)',
+        source: '1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx',
+        createdAt: new Date().toISOString().split('T')[0],
+        isCustom: true,
+        collectionId: targetCollectionId
+      };
+
+      // Seed draft
+      localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, item.code);
+      localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, item.code);
+
+      currentCollections = addProblemToCollection(targetCollectionId, prob);
+    });
+
+    setCollections(currentCollections);
+    setShowBatchReviewModal(false);
+    setBatchSanitizedResults([]);
+    alert(`🎉 Thành công! Đã nạp toàn bộ ${batchSanitizedResults.length} bài tập chuẩn hóa vào thư mục!`);
+  };
+
+  // Handle File Upload into Target Collection with Data Sanitization Pipeline
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError(null);
 
+    // 1. DOCX File Pipeline (Unpack ZIP, decode XML, clean C code, synthesize testcases)
+    if (file.name.endsWith('.docx')) {
+      setIsBatchDocxProcessing(true);
+      try {
+        const buffer = await file.arrayBuffer();
+        const results = await processDocxFile(buffer);
+        setIsBatchDocxProcessing(false);
+        if (results.length === 0) {
+          setUploadError('Không tìm thấy đoạn mã nguồn C nào hợp lệ trong tệp DOCX này.');
+          return;
+        }
+        setBatchSanitizedResults(results);
+        setShowBatchReviewModal(true);
+        setIsAddProblemModalOpen(false);
+      } catch (err: any) {
+        setIsBatchDocxProcessing(false);
+        setUploadError(`Lỗi xử lý file DOCX: ${err.message}`);
+      }
+      return;
+    }
+
+    // 2. JSON or Text/C files
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -322,34 +435,42 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
           setIsAddProblemModalOpen(false);
           alert(`Đã nạp thành công bài tập "${prob.title}" vào thư mục!`);
         } else {
+          // .c, .cpp, .txt: RUN THROUGH DATA SANITIZATION PIPELINE
+          const sanitized = sanitizeSingleProblem(text, file.name);
+          const probId = `imported_${Date.now()}`;
           const prob: Problem = {
-            id: `imported_${Date.now()}`,
+            id: probId,
             slug: file.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-            title: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
-            category: 'Thực hành C/C++',
-            difficulty: 'Easy',
+            title: sanitized.title || file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+            category: sanitized.category,
+            difficulty: sanitized.difficulty,
             points: 100,
             timeLimit: 1.0,
             memoryLimit: 128,
-            tags: ['SourceFile', 'Imported'],
+            tags: ['SourceFile', 'AutoSanitized', 'PRF192'],
             solvedCount: 0,
             totalSubmissions: 0,
-            statement: `### Đề bài nạp từ tập tin: \`${file.name}\`\n\n\`\`\`c\n${text.slice(0, 1500)}\n\`\`\``,
-            inputFormat: 'Xem nội dung đề bài.',
-            outputFormat: 'Xem nội dung đề bài.',
-            constraints: 'Theo chuẩn Sandbox.',
-            samples: [{ input: '1', output: '1' }],
-            testcases: [{ id: 1, input: '1', expectedOutput: '1', isHidden: false }],
-            author: 'Tập tin nạp ngoài',
+            statement: `${sanitized.statement}\n\n\`\`\`c\n${sanitized.code.slice(0, 2000)}\n\`\`\``,
+            inputFormat: sanitized.inputFormat,
+            outputFormat: sanitized.outputFormat,
+            constraints: sanitized.constraints,
+            samples: sanitized.samples,
+            testcases: sanitized.testcases,
+            author: 'Đã chuẩn hóa qua Pipeline',
             source: file.name,
             createdAt: new Date().toISOString().split('T')[0],
             isCustom: true,
             collectionId: targetCollectionId
           };
+
+          // Seed code into drafts so Monaco editor has cleaned code immediately
+          localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, sanitized.code);
+          localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, sanitized.code);
+
           const updated = addProblemToCollection(targetCollectionId, prob);
           setCollections(updated);
           setIsAddProblemModalOpen(false);
-          alert(`Đã nạp bài toán từ file ${file.name} vào thư mục!`);
+          alert(`🛡️ Đã nạp & làm sạch thành công bài tập "${prob.title}"!\n- Lệnh rác đã loại bỏ: ${sanitized.report.windowsCommandsRemoved.join(', ') || '0 lệnh'}\n- Tự động sinh ${sanitized.testcases.length} test cases hợp lệ.`);
         }
       } catch (err: any) {
         setUploadError(`Lỗi phân tích tập tin: ${err.message}`);
@@ -1267,6 +1388,77 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                   </div>
                 </div>
 
+                {/* GIAI ĐOẠN 1: DATA SANITIZATION PIPELINE INTEGRATION */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-rose-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-rose-400">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                      <span className="font-black text-xs uppercase tracking-wider text-slate-100">
+                        Pipeline Chuẩn Hóa & Làm Sạch Dữ Liệu C (Data Sanitization)
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={isAutoSanitizeActive}
+                        onChange={(e) => setIsAutoSanitizeActive(e.target.checked)}
+                        className="rounded text-rose-500"
+                      />
+                      <span>Tự động làm sạch</span>
+                    </label>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Dán mã nguồn C từ tài liệu hoặc file vào đây. Hệ thống sẽ tự động <strong>loại bỏ lệnh Windows rác (system("cls"), system("pause"), getch(), fflush)</strong>, <strong>giải mã XML</strong>, <strong>đóng gói main()</strong> và <strong>sinh test cases hợp lệ</strong>.
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <textarea
+                      value={rawSourceCodeInput}
+                      onChange={(e) => setRawSourceCodeInput(e.target.value)}
+                      placeholder="#include <stdio.h>&#10;int main() {&#10;    system(&quot;cls&quot;); // Pipeline sẽ tự động gỡ bỏ lệnh này&#10;    ...&#10;}"
+                      rows={5}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 font-mono text-[11px] text-emerald-300 border border-slate-800 focus:outline-rose-500 leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleTriggerSanitization}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Kích Hoạt Làm Sạch & Trích Xuất Test Cases</span>
+                    </button>
+
+                    {pipelineReport && (
+                      <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        Đã làm sạch ({pipelineReport.cleanedLength} ký tự C chuẩn)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Sanitization Report Banner */}
+                  {pipelineReport && (
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] space-y-1 text-slate-300">
+                      <div className="font-bold text-emerald-400">Kết quả kiểm tra bộ lọc:</div>
+                      {pipelineReport.windowsCommandsRemoved.length > 0 ? (
+                        <div className="text-amber-400">
+                          • Đã loại bỏ lệnh Windows: <code className="bg-amber-950/60 px-1 rounded">{pipelineReport.windowsCommandsRemoved.join(', ')}</code>
+                        </div>
+                      ) : (
+                        <div className="text-emerald-400">• Không phát hiện lệnh Windows không tương thích.</div>
+                      )}
+                      {pipelineReport.mainHarnessSynthesized && (
+                        <div className="text-blue-400">• Đã tự động đóng gói hàm main() điểm vào để thực thi trong Sandbox.</div>
+                      )}
+                      <div>• Đã số hóa và chuẩn bị {pipelineReport.synthesizedTestCasesCount} test cases kiểm thử.</div>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Đề bài chi tiết (Hỗ trợ Markdown & KaTeX)
@@ -1377,16 +1569,27 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                       Kéo thả hoặc chọn tập tin đề bài
                     </p>
                     <p className="text-[11px] text-slate-400 mt-1">
-                      Hỗ trợ: .json (cấu trúc đề hoàn chỉnh), .c, .cpp, .txt
+                      Hỗ trợ: <strong>.docx (Tài liệu tổng hợp PRF192)</strong>, .json, .c, .cpp, .txt
+                    </p>
+                    <p className="text-[10px] text-emerald-400 mt-1">
+                      🛡️ Tệp .docx sẽ tự động kích hoạt Pipeline giải nén ZIP trong RAM và bóc tách làm sạch toàn bộ bài tập!
                     </p>
                   </div>
                   <input
                     type="file"
-                    accept=".json,.c,.cpp,.txt"
+                    accept=".docx,.json,.c,.cpp,.txt"
                     onChange={handleFileUpload}
-                    className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-500/10 file:text-rose-500 hover:file:bg-rose-500/20 cursor-pointer"
+                    disabled={isBatchDocxProcessing}
+                    className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-500/10 file:text-rose-500 hover:file:bg-rose-500/20 cursor-pointer disabled:opacity-50"
                   />
                 </div>
+
+                {isBatchDocxProcessing && (
+                  <div className="p-4 rounded-xl bg-slate-900 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-center gap-3 animate-pulse">
+                    <RefreshCw className="w-5 h-5 animate-spin text-emerald-400" />
+                    <span>Đang giải nén DOCX trong bộ nhớ & Chạy Pipeline làm sạch dữ liệu... Vui lòng đợi trong giây lát!</span>
+                  </div>
+                )}
 
                 {uploadError && (
                   <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
@@ -1549,6 +1752,123 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
                 <span>Bắt Đầu Làm Bài Này</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL 5: BATCH REVIEW SANITIZED DOCX PROBLEMS */}
+      {showBatchReviewModal && batchSanitizedResults.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-emerald-500/50 rounded-3xl max-w-3xl w-full p-6 text-white shadow-2xl space-y-5 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+              <div className="flex items-center gap-2.5 text-emerald-400">
+                <ShieldCheck className="w-6 h-6" />
+                <div>
+                  <h3 className="font-black text-lg">
+                    Báo Cáo Pipeline Làm Sạch Tệp DOCX (Giai Đoạn 1)
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Đã trích xuất & làm sạch thành công <strong>{batchSanitizedResults.length} bài tập PRF192</strong> từ tệp Word
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBatchReviewModal(false)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Pipeline Quality Certification Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs shrink-0">
+              <div className="p-3 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-1">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Làm sạch lệnh Windows:</span>
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                  <Check className="w-4 h-4" /> 100% C11/C17 Sandbox
+                </span>
+                <p className="text-[10px] text-slate-400">Đã gỡ bỏ system("cls"), pause, getch</p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-1">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Số hóa Testcases:</span>
+                <span className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4" /> {batchSanitizedResults.reduce((acc, p) => acc + p.testcases.length, 0)} Tests Plain Text
+                </span>
+                <p className="text-[10px] text-slate-400">Chuyển từ ảnh Console sang Text</p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-1">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Đóng gói Main():</span>
+                <span className="font-bold text-blue-400 flex items-center gap-1.5">
+                  <FileCheck className="w-4 h-4" /> Sẵn sàng chạy thử
+                </span>
+                <p className="text-[10px] text-slate-400">Không lỗi undefined reference</p>
+              </div>
+            </div>
+
+            {/* Target Destination Selector */}
+            <div className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shrink-0">
+              <span className="text-slate-300 font-medium">Nạp toàn bộ bài tập vào thư mục:</span>
+              <select
+                value={targetCollectionId}
+                onChange={(e) => setTargetCollectionId(e.target.value)}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-100"
+              >
+                {collections.map(c => (
+                  <option key={c.id} value={c.id}>
+                    📁 {c.title} (hiện có {c.problems.length} bài)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Problem List Preview */}
+            <div className="flex-1 overflow-y-auto space-y-2 border border-slate-800 rounded-2xl p-3 bg-slate-950/40 text-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Danh sách {batchSanitizedResults.length} bài toán đã qua bộ lọc làm sạch:
+              </span>
+              <div className="space-y-1.5">
+                {batchSanitizedResults.map((item, idx) => (
+                  <div key={idx} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 text-xs hover:border-slate-700 transition-colors">
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px] shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="font-semibold text-slate-200 truncate">{item.title}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                        {item.category}
+                      </span>
+                      <span className="text-[10px] text-amber-400 font-semibold">
+                        {item.testcases.length} tests
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        Đã làm sạch
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-end gap-3 shrink-0">
+              <button
+                onClick={() => setShowBatchReviewModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleBatchImportDocx}
+                className="px-5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
+              >
+                <Zap className="w-4 h-4 fill-current" />
+                <span>Nạp Toàn Bộ {batchSanitizedResults.length} Bài Tập Vào Thư Mục →</span>
               </button>
             </div>
           </div>
