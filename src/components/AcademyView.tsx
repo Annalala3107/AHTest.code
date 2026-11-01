@@ -569,7 +569,9 @@ export const AcademyView: React.FC = () => {
                         setExercisePassed(false);
                       }
                     }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    className={`items-center gap-1 px-2.5 py-1 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                      c.isComingSoon ? 'hidden md:inline-flex' : 'inline-flex'
+                    } ${
                       isSelected
                         ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-2xs'
                         : c.isComingSoon
@@ -596,19 +598,29 @@ export const AcademyView: React.FC = () => {
               })}
             </div>
 
-            {/* Level 3: Active Module (Desktop only) */}
-            {activeModule && (
-              <>
-                <ChevronRight className="hidden lg:inline w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
-                <span className="hidden lg:inline text-slate-500 dark:text-slate-400 truncate max-w-[140px] xl:max-w-[180px]" title={activeModule.title}>
-                  {docLang === 'en' && activeModule.titleEn ? activeModule.titleEn : activeModule.title}
-                </span>
-              </>
-            )}
+            {/* Level 3: Active Module Tag (Compact & Non-wrapping) */}
+            {activeModule && (() => {
+              const moduleIndex = selectedCourse.modules.findIndex(m => m.id === activeModule.id);
+              const moduleNum = moduleIndex >= 0 ? moduleIndex + 1 : 1;
+              return (
+                <>
+                  <ChevronRight className="hidden md:inline w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
+                  <span 
+                    className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shrink-0 select-none cursor-default" 
+                    title={activeModule.title}
+                  >
+                    {docLang === 'en' ? `Stage ${moduleNum}` : `GĐ ${moduleNum}`}
+                  </span>
+                </>
+              );
+            })()}
 
             {/* Level 4: Active Lesson / Exercise Title */}
-            <ChevronRight className="hidden sm:inline w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0" />
-            <span className="font-bold text-slate-900 dark:text-white truncate max-w-[180px] sm:max-w-[240px] xl:max-w-[320px]">
+            <ChevronRight className="hidden sm:inline w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
+            <span 
+              className="font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-[280px] md:max-w-[340px] lg:max-w-[420px] xl:max-w-[500px]"
+              title={activeExercise ? (docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi) : (docLang === 'en' && activeLesson.titleEn ? activeLesson.titleEn : activeLesson.title)}
+            >
               {activeExercise
                 ? `[${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
                 : docLang === 'en' && activeLesson.titleEn ? activeLesson.titleEn : activeLesson.title}

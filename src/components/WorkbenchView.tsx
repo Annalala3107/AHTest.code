@@ -1062,8 +1062,8 @@ fn main() {
                         <h5 className="text-xs font-bold text-slate-200">
                           {progressiveHints[1]?.title}
                         </h5>
-                        <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/60 font-sans whitespace-pre-line">
-                          {progressiveHints[1]?.content}
+                        <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/60 font-sans">
+                          <KaTeXRenderer content={(progressiveHints[1]?.content || '').replace(/\\`/g, '`')} />
                         </div>
                       </>
                     ) : (
@@ -1107,7 +1107,7 @@ fn main() {
                             {progressiveHints[2]?.title}
                           </h5>
                           <button
-                            onClick={() => handleCopyTier3Code(progressiveHints[2]?.content || '')}
+                            onClick={() => handleCopyTier3Code((progressiveHints[2]?.content || '').replace(/\\`/g, '`'))}
                             className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/40 flex items-center gap-1 cursor-pointer transition-colors"
                           >
                             {copiedTier3Code ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -1115,7 +1115,7 @@ fn main() {
                           </button>
                         </div>
                         <pre className="text-[11px] font-mono text-blue-100 bg-slate-950 p-3 rounded-lg border border-slate-800 overflow-x-auto leading-relaxed">
-                          {progressiveHints[2]?.content}
+                          {(progressiveHints[2]?.content || '').replace(/\\`/g, '`')}
                         </pre>
                       </div>
                     ) : (

@@ -136,10 +136,17 @@ function normalizeMarkdown(raw: string): string {
   });
 
   // Ensure squashed tables with double pipes || get broken into proper newlines
-  text = text.replace(/\|\|\s*([:\-a-zA-Z0-9`\*\(\\\$])/g, '|\n| $1');
+  text = text.replace(/\|\|\s*([:\-a-zA-Z0-9`*(\\$\\])/g, '|\n| $1');
 
-  // Ensure squashed inline numbered lists (e.g. "1. Step A. 2. Step B.") split into lines
-  text = text.replace(/([^\n])\s+(\d+\.\s+[A-ZÀ-Ỹa-ỹ\*\$])/g, '$1\n\n$2');
+  // Ensure squashed inline numbered lists (e.g. "Step A. 2. Step B.") split into lines
+  // Note: Match only when not preceded by heading hash '#' or bullet '-', so "### 1." is not broken
+  text = text.replace(/([^#\-*\n])\s+(\d+\.\s+[A-ZÀ-Ỹa-ỹ*$])/g, '$1\n\n$2');
+
+  // Clean up any standalone empty markdown headings (e.g. "###", "##", "#" with no text)
+  text = text.replace(/^\s*#{1,4}\s*$/gm, '');
+
+  // Unescape backticks (e.g. \`-1\` -> `-1`) so inline code spans render properly
+  text = text.replace(/\\`/g, '`');
 
   // Ensure alerts starting with [!TAG] without > are formatted with >
   text = text.replace(/(^|\n)\s*\[!(CAUTION|WARNING|TIP|NOTE|INFO|IMPORTANT)\]/gim, '$1> [!$2]');
@@ -148,13 +155,17 @@ function normalizeMarkdown(raw: string): string {
   text = text.replace(/([^\n])\n(#{1,4}\s+[^\n]+)/g, '$1\n\n$2');
   text = text.replace(/(#{1,4}\s+[^\n]+)\n([^\n#])/g, '$1\n\n$2');
 
-  // Ensure tables have blank lines around them
-  text = text.replace(/([^\n])\n(\|[^\n]+\|)/g, '$1\n\n$2');
-  text = text.replace(/(\|[^\n]+\|)\n([^\n|])/g, '$1\n\n$2');
+  // Ensure tables have blank lines around them (ONLY between non-table lines and table lines)
+  text = text.replace(/([^|\n])\n(\|[^\n]+\|)/g, '$1\n\n$2');
+  text = text.replace(/(\|[^\n]+\|)\n([^|\n])/g, '$1\n\n$2');
 
   // Ensure blockquotes have blank lines around them
   text = text.replace(/([^\n])\n(>[^\n]+)/g, '$1\n\n$2');
   text = text.replace(/(>[^\n]+)\n([^>\n])/g, '$1\n\n$2');
+
+  // Clean unnatural punctuation spacing (e.g. "file .i ." -> "file .i.")
+  text = text.replace(/([a-zA-Z0-9`*])\s+([.,;:!?])/g, '$1$2');
+  text = text.replace(/\(\s+/g, '(');
 
   // Restore code and math blocks
   text = text.replace(/___CODE_BLOCK_(\d+)___/g, (_, idx) => codeBlocks[Number(idx)]);
@@ -198,7 +209,7 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
           return (
             <code
               key={`code-${subIdx}`}
-              className="px-1.5 py-0.5 mx-0.5 rounded-md font-mono-code text-xs sm:text-sm font-semibold bg-indigo-50/80 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 shadow-2xs"
+              className="px-1.5 py-0.5 mx-[1px] rounded-md font-mono-code text-xs sm:text-sm font-semibold bg-indigo-50/80 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80 shadow-2xs"
             >
               {sub.slice(1, -1)}
             </code>
@@ -227,19 +238,21 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
 
   // Parse markdown tables
   const renderTable = (tableBlock: string, blockKey: string | number) => {
-    const lines = tableBlock.trim().split('\n').filter(l => l.trim().startsWith('|'));
-    if (lines.length < 2) return <p key={blockKey}>{tableBlock}</p>;
+    const rawLines = tableBlock.trim().split('\n').map(l => l.trim()).filter(l => l.startsWith('|'));
+    if (rawLines.length < 2) return <p key={blockKey}>{tableBlock}</p>;
 
-    const headerCols = lines[0].split('|').slice(1, -1).map(c => c.trim());
-    const dataRows = lines.slice(2).map(line => line.split('|').slice(1, -1).map(c => c.trim()));
+    const headerCols = rawLines[0].split('|').slice(1, -1).map(c => c.trim());
+    const hasSeparator = rawLines.length > 1 && /^[|:\-\s]+$/.test(rawLines[1]);
+    const dataLines = hasSeparator ? rawLines.slice(2) : rawLines.slice(1);
+    const dataRows = dataLines.map(line => line.split('|').slice(1, -1).map(c => c.trim()));
 
     return (
       <div key={blockKey} className="overflow-x-auto my-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        <table className="w-full text-xs sm:text-sm text-left">
+        <table className="w-full text-xs sm:text-sm text-left border-collapse">
           <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-800">
             <tr>
               {headerCols.map((col, idx) => (
-                <th key={idx} className="px-4 py-3">
+                <th key={idx} className="px-4 py-3 border-r last:border-r-0 border-slate-200 dark:border-slate-800">
                   {renderInlineFormatted(col)}
                 </th>
               ))}
@@ -247,9 +260,9 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900/50">
             {dataRows.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+              <tr key={rIdx} className="hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors">
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-4 py-2.5 text-slate-700 dark:text-slate-300">
+                  <td key={cIdx} className="px-4 py-2.5 text-slate-700 dark:text-slate-300 border-r last:border-r-0 border-slate-100 dark:border-slate-800/60">
                     {renderInlineFormatted(cell)}
                   </td>
                 ))}
@@ -308,6 +321,9 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
             const trimmed = para.trim();
             if (!trimmed) return null;
 
+            // Guard against standalone empty markdown headings (e.g. "###", "##", "#")
+            if (/^#{1,4}\s*$/.test(trimmed)) return null;
+
             // Mission / Challenge Card (Thử thách)
             const isChallenge = /^(?:#{1,3}\s*)?(?:\d+\.\s*)?(?:Thử thách|Challenge)/i.test(trimmed);
             if (isChallenge) {
@@ -362,7 +378,7 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
             }
 
             // Markdown Table: lines with | ... |
-            if (trimmed.startsWith('|') || (trimmed.includes('\n|') && trimmed.includes('| :---'))) {
+            if (trimmed.startsWith('|') && (trimmed.includes('\n|') || trimmed.includes('|---') || trimmed.includes('|:--') || trimmed.includes('| :--') || trimmed.includes('| ---'))) {
               return renderTable(trimmed, `table-${paraIdx}`);
             }
 
