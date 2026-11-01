@@ -1738,6 +1738,8 @@ export const AcademyView: React.FC = () => {
                       input={diffState.input}
                       title="Bảng So Sánh Output (Diff Inspector)"
                       testId={1}
+                      verdict={exercisePassed ? 'AC' : 'WA'}
+                      isPassed={exercisePassed}
                     />
                   </div>
                 )}

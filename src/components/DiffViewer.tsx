@@ -21,6 +21,8 @@ interface DiffViewerProps {
   testId?: number | string;
   input?: string;
   className?: string;
+  verdict?: 'AC' | 'WA' | 'PE' | 'CE' | 'RTE' | 'TLE' | string;
+  isPassed?: boolean;
 }
 
 interface DiagnosisResult {
@@ -31,11 +33,12 @@ interface DiagnosisResult {
 }
 
 // Diagnose the top classical student pitfalls
-function diagnoseDiff(actual: string, expected: string): DiagnosisResult {
+function diagnoseDiff(actual: string, expected: string, verdict?: string): DiagnosisResult {
   const normActual = actual.replace(/\r\n/g, '\n');
   const normExpected = expected.replace(/\r\n/g, '\n');
 
-  if (normActual === normExpected) {
+  // Rule 0: If Grader explicitly awarded AC verdict or strings match exactly, no issue
+  if (verdict === 'AC' || normActual === normExpected) {
     return {
       hasIssue: false,
       type: 'general',
@@ -44,12 +47,22 @@ function diagnoseDiff(actual: string, expected: string): DiagnosisResult {
     };
   }
 
-  // 0. Null-Terminator & Garbage Byte Pitfall in C strings
+  // 0. Genuine Null-Terminator & Garbage Byte Pitfall in C strings
+  // Must contain unprintable control chars OR a suffix with non-whitespace characters
   // eslint-disable-next-line no-control-regex
   const hasGarbageChars = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/.test(actual);
-  const isExpectedPrefixPlusGarbage = normActual.startsWith(normExpected) && normActual.length > normExpected.length && normActual.length <= normExpected.length + 30;
+  
+  let isTrueGarbageSuffix = false;
+  if (normActual.startsWith(normExpected) && normActual.length > normExpected.length && normActual.length <= normExpected.length + 30) {
+    const extraSuffix = normActual.slice(normExpected.length);
+    // If the extra suffix contains non-whitespace characters (like @, #, letters, digits, symbols), it's true memory garbage!
+    // But if it's ONLY whitespace (spaces, tabs, newlines), it is simple trailing whitespace, NOT garbage memory!
+    if (/[^\s\r\n]/.test(extraSuffix)) {
+      isTrueGarbageSuffix = true;
+    }
+  }
 
-  if (hasGarbageChars || isExpectedPrefixPlusGarbage) {
+  if (hasGarbageChars || isTrueGarbageSuffix) {
     return {
       hasIssue: true,
       type: 'null-terminator',
@@ -152,14 +165,21 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   title = 'So sánh Chi tiết Output (Diff Inspector)',
   testId,
   input,
-  className = ''
+  className = '',
+  verdict,
+  isPassed
 }) => {
   const [showWhitespace, setShowWhitespace] = useState<boolean>(true);
   const [showNullInspector, setShowNullInspector] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'split' | 'unified'>('split');
   const [copiedType, setCopiedType] = useState<'actual' | 'expected' | null>(null);
 
-  const diagnosis = diagnoseDiff(actual, expected);
+  const isActuallyMatched = 
+    isPassed === true || 
+    verdict === 'AC' || 
+    (!verdict && actual.replace(/\r\n/g, '\n').trim() === expected.replace(/\r\n/g, '\n').trim());
+
+  const diagnosis = diagnoseDiff(actual, expected, isActuallyMatched ? 'AC' : verdict);
 
   const handleCopy = (text: string, type: 'actual' | 'expected') => {
     navigator.clipboard.writeText(text);
@@ -181,11 +201,13 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             {title} {testId !== undefined && <span className="text-rose-600 dark:text-rose-400">#{testId}</span>}
           </span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-            diagnosis.hasIssue 
+            isActuallyMatched
+              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+              : diagnosis.hasIssue 
               ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900' 
               : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
           }`}>
-            {diagnosis.hasIssue ? 'Wrong Answer (WA)' : 'Matched (AC)'}
+            {isActuallyMatched ? 'Matched (AC)' : (diagnosis.hasIssue ? 'Wrong Answer (WA)' : 'Matched (AC)')}
           </span>
         </div>
 
@@ -254,7 +276,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       )}
 
       {/* Smart Automated Diagnosis Alert */}
-      {diagnosis.hasIssue && (
+      {!isActuallyMatched && diagnosis.hasIssue && (
         <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900/60 flex items-start gap-3 text-xs">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="flex-1 space-y-1">
@@ -354,9 +376,18 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-800">
             {/* Column 1: Actual Output (Your Output) */}
             <div className="flex flex-col">
-              <div className="px-4 py-2 bg-rose-50/70 dark:bg-rose-950/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-bold text-rose-700 dark:text-rose-400">
+              <div className={`px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-bold ${
+                isActuallyMatched
+                  ? 'bg-slate-100/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300'
+                  : 'bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
+              }`}>
                 <span className="flex items-center gap-1.5">
-                  <XCircle className="w-3.5 h-3.5 text-rose-500" /> Output của bạn (Actual)
+                  {isActuallyMatched ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                  )}
+                  <span>{isActuallyMatched ? 'Output của bạn (Khớp chuẩn)' : 'Output của bạn (Actual)'}</span>
                 </span>
                 <button
                   onClick={() => handleCopy(actual, 'actual')}
@@ -390,7 +421,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                       <div 
                         key={idx} 
                         className={`flex items-start rounded px-1.5 py-0.5 ${
-                          isDiff 
+                          !isActuallyMatched && isDiff 
                             ? 'bg-rose-100/80 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200 border-l-2 border-rose-500' 
                             : 'text-slate-800 dark:text-slate-200'
                         }`}
@@ -442,7 +473,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                     <div 
                       key={idx} 
                       className={`flex items-start rounded px-1.5 py-0.5 ${
-                        isDiff 
+                        !isActuallyMatched && isDiff 
                           ? 'bg-emerald-100/70 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 border-l-2 border-emerald-500' 
                           : 'text-slate-800 dark:text-slate-200'
                       }`}
@@ -479,14 +510,22 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
               return (
                 <div key={idx} className="space-y-0.5">
                   {actLine !== undefined && (
-                    <div className="flex items-start px-2 py-0.5 bg-rose-100/80 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200 rounded">
+                    <div className={`flex items-start px-2 py-0.5 rounded ${
+                      !isActuallyMatched
+                        ? 'bg-rose-100/80 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200'
+                        : 'text-slate-700 dark:text-slate-300'
+                    }`}>
                       <span className="w-8 text-[11px] font-mono text-right pr-2 mr-2 border-r border-slate-200 dark:border-slate-800 text-rose-500 select-none shrink-0 mt-0.5">{idx + 1}</span>
                       <span className="w-5 font-bold text-rose-600 select-none">-</span>
                       <pre className="flex-1 whitespace-pre-wrap break-all">{renderVisibleWhitespace(actLine, showWhitespace)}</pre>
                     </div>
                   )}
                   {expLine !== undefined && (
-                    <div className="flex items-start px-2 py-0.5 bg-emerald-100/80 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 rounded">
+                    <div className={`flex items-start px-2 py-0.5 rounded ${
+                      !isActuallyMatched
+                        ? 'bg-emerald-100/80 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200'
+                        : 'text-slate-700 dark:text-slate-300'
+                    }`}>
                       <span className="w-8 text-[11px] font-mono text-right pr-2 mr-2 border-r border-slate-200 dark:border-slate-800 text-emerald-500 select-none shrink-0 mt-0.5">{idx + 1}</span>
                       <span className="w-5 font-bold text-emerald-600 select-none">+</span>
                       <pre className="flex-1 whitespace-pre-wrap break-all">{renderVisibleWhitespace(expLine, showWhitespace)}</pre>

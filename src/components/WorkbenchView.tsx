@@ -1813,6 +1813,8 @@ fn main() {
                             expected={customExpected}
                             title="Bảng So Sánh Custom Test vs Expected"
                             input={customInput}
+                            isPassed={customOutput.trim() === customExpected.trim()}
+                            verdict={customOutput.trim() === customExpected.trim() ? 'AC' : 'WA'}
                           />
                         ) : (
                           <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
@@ -1958,6 +1960,8 @@ fn main() {
                               title={`Chi tiết: ${selectedTestResult.testName || `Test #${selectedTestResult.testId}`}`}
                               testId={selectedTestResult.testId}
                               input={selectedTestResult.input}
+                              verdict={selectedTestResult.verdict}
+                              isPassed={selectedTestResult.verdict === 'AC'}
                             />
                           </div>
                         )}
@@ -1970,6 +1974,8 @@ fn main() {
                           title="Kết quả chạy thử mẫu (Sample Output)"
                           testId={1}
                           input={problem.samples[0]?.input}
+                          isPassed={customOutput.trim() === (problem.samples[0]?.output || '').trim()}
+                          verdict={customOutput.trim() === (problem.samples[0]?.output || '').trim() ? 'AC' : 'WA'}
                         />
                       </div>
                     ) : (
