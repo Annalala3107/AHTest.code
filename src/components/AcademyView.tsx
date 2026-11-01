@@ -141,6 +141,39 @@ export const AcademyView: React.FC = () => {
     return typeof window !== 'undefined' && localStorage.getItem(key) !== null;
   });
 
+  const runTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to immediately flush any pending draft to localStorage
+  const flushPendingDraft = (curCode?: string) => {
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+      debounceSaveRef.current = null;
+    }
+    const targetCode = curCode !== undefined ? curCode : userCode;
+    const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
+    try {
+      localStorage.setItem(key, targetCode);
+      setDraftSaved(true);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Cleanup pending timers on unmount to eliminate memory leaks and race conditions
+  useEffect(() => {
+    return () => {
+      if (runTimerRef.current) {
+        clearTimeout(runTimerRef.current);
+        runTimerRef.current = null;
+      }
+      if (debounceSaveRef.current) {
+        clearTimeout(debounceSaveRef.current);
+        debounceSaveRef.current = null;
+      }
+    };
+  }, []);
+
   // Mouse drag event listeners for resizing horizontal splitter & console vertical splitter
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -202,14 +235,31 @@ export const AcademyView: React.FC = () => {
     localStorage.setItem('ahtest_academy_lang', lang);
   };
 
+  // Debounced auto-save (400ms) for smooth 60fps typing without disk thrashing
   const handleCodeChange = (newCode: string) => {
     setUserCode(newCode);
-    const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
-    localStorage.setItem(key, newCode);
-    setDraftSaved(true);
+    setDraftSaved(false);
+
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+    }
+    debounceSaveRef.current = setTimeout(() => {
+      const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
+      try {
+        localStorage.setItem(key, newCode);
+        setDraftSaved(true);
+      } catch {
+        // ignore
+      }
+      debounceSaveRef.current = null;
+    }, 400);
   };
 
   const handleResetCode = () => {
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+      debounceSaveRef.current = null;
+    }
     const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
     localStorage.removeItem(key);
     const defaultCode = activeExercise ? activeExercise.initialCode : activeLesson.initialCode;
@@ -218,6 +268,14 @@ export const AcademyView: React.FC = () => {
   };
 
   const handleSelectLesson = (lesson: AcademyLesson) => {
+    // Flush draft of currently edited lesson/exercise before switching
+    flushPendingDraft();
+    if (runTimerRef.current) {
+      clearTimeout(runTimerRef.current);
+      runTimerRef.current = null;
+    }
+    setIsRunning(false);
+
     setActiveLesson(lesson);
     setActiveExercise(null);
     setActiveDocTab('theory');
@@ -232,6 +290,14 @@ export const AcademyView: React.FC = () => {
   };
 
   const handleSelectExercise = (exercise: AppliedExercise) => {
+    // Flush draft of current code before switching
+    flushPendingDraft();
+    if (runTimerRef.current) {
+      clearTimeout(runTimerRef.current);
+      runTimerRef.current = null;
+    }
+    setIsRunning(false);
+
     setActiveExercise(exercise);
     setActiveDocTab('theory');
     const key = getDraftKey(selectedCourse.id, activeLesson.id, exercise.id);
@@ -245,6 +311,13 @@ export const AcademyView: React.FC = () => {
   };
 
   const handleBackToLesson = () => {
+    flushPendingDraft();
+    if (runTimerRef.current) {
+      clearTimeout(runTimerRef.current);
+      runTimerRef.current = null;
+    }
+    setIsRunning(false);
+
     setActiveExercise(null);
     setActiveDocTab('theory');
     const key = getDraftKey(selectedCourse.id, activeLesson.id, null);
@@ -311,6 +384,13 @@ export const AcademyView: React.FC = () => {
   }, [exercisePassed]);
 
   const handleRunCode = () => {
+    if (isRunning) return; // Prevent spam clicks
+    flushPendingDraft();
+    if (runTimerRef.current) {
+      clearTimeout(runTimerRef.current);
+      runTimerRef.current = null;
+    }
+
     setIsRunning(true);
     setExecutionOutput(null);
     setPedagogicalDiagnosis(null);
@@ -329,7 +409,8 @@ export const AcademyView: React.FC = () => {
       return;
     }
 
-    setTimeout(() => {
+    runTimerRef.current = setTimeout(() => {
+      runTimerRef.current = null;
       setIsRunning(false);
       
       const targetTestcases = activeExercise 

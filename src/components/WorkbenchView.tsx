@@ -237,6 +237,43 @@ fn main() {
   };
 
   const [draftSaved, setDraftSaved] = useState<boolean>(false);
+  const gradingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sampleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to immediately flush any pending draft to localStorage
+  const flushPendingDraft = (curCode?: string) => {
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+      debounceSaveRef.current = null;
+    }
+    const targetCode = curCode !== undefined ? curCode : code;
+    const key = getWorkbenchDraftKey(problem.id, language);
+    try {
+      localStorage.setItem(key, targetCode);
+      setDraftSaved(true);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Cleanup timers on problem change or unmount to eliminate memory leaks and race conditions
+  useEffect(() => {
+    return () => {
+      if (gradingTimerRef.current) {
+        clearInterval(gradingTimerRef.current);
+        gradingTimerRef.current = null;
+      }
+      if (sampleTimerRef.current) {
+        clearTimeout(sampleTimerRef.current);
+        sampleTimerRef.current = null;
+      }
+      if (debounceSaveRef.current) {
+        clearTimeout(debounceSaveRef.current);
+        debounceSaveRef.current = null;
+      }
+    };
+  }, [problem.id]);
 
   // Load draft on mount / problem or lang change
   useEffect(() => {
@@ -251,14 +288,31 @@ fn main() {
     }
   }, [problem.id, language]);
 
+  // Debounced auto-save (400ms) for smooth 60fps typing without disk thrashing
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
-    const key = getWorkbenchDraftKey(problem.id, language);
-    localStorage.setItem(key, newCode);
-    setDraftSaved(true);
+    setDraftSaved(false);
+
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+    }
+    debounceSaveRef.current = setTimeout(() => {
+      const key = getWorkbenchDraftKey(problem.id, language);
+      try {
+        localStorage.setItem(key, newCode);
+        setDraftSaved(true);
+      } catch {
+        // ignore
+      }
+      debounceSaveRef.current = null;
+    }, 400);
   };
 
   const handleResetCode = () => {
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+      debounceSaveRef.current = null;
+    }
     const key = getWorkbenchDraftKey(problem.id, language);
     localStorage.removeItem(key);
     setCode(defaultCodes[language] || '');
@@ -355,6 +409,11 @@ fn main() {
   };
 
   const handleRunSample = () => {
+    if (isGrading) return; // Prevent spam clicks
+    flushPendingDraft();
+    if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
+    if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
+
     setConsoleTab('result');
     setShowConsole(true);
     setIsGrading(true);
@@ -388,7 +447,8 @@ fn main() {
       return;
     }
 
-    setTimeout(() => {
+    sampleTimerRef.current = setTimeout(() => {
+      sampleTimerRef.current = null;
       setIsGrading(false);
       const sampleInput = problem.samples[0]?.input ?? (problem.testcases?.[0]?.input || '');
       const sampleOutput = problem.samples[0]?.output ?? (problem.testcases?.[0]?.expectedOutput || '');
@@ -435,6 +495,11 @@ fn main() {
   };
 
   const handleRunSpecificSample = (index: number) => {
+    if (isGrading) return; // Prevent spam clicks
+    flushPendingDraft();
+    if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
+    if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
+
     setConsoleTab('result');
     setShowConsole(true);
     setIsGrading(true);
@@ -468,7 +533,8 @@ fn main() {
       return;
     }
 
-    setTimeout(() => {
+    sampleTimerRef.current = setTimeout(() => {
+      sampleTimerRef.current = null;
       setIsGrading(false);
       const sample = problem.samples[index] || (problem.testcases?.[index] ? { input: problem.testcases[index].input, output: problem.testcases[index].expectedOutput } : problem.samples[0]);
       const sampleInput = sample?.input ?? (problem.testcases?.[index]?.input || '');
@@ -516,6 +582,8 @@ fn main() {
   };
 
   const handleRunCustomTest = () => {
+    if (isGrading) return; // Prevent spam clicks
+    flushPendingDraft();
     setShowConsole(true);
     setConsoleTab('custom');
     setPedagogicalDiagnosis(null);
@@ -544,6 +612,11 @@ fn main() {
   };
 
   const handleSubmitSolution = () => {
+    if (isGrading) return; // Prevent spam submit clicks
+    flushPendingDraft();
+    if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
+    if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
+
     setShowConsole(true);
     setConsoleTab('result');
     setIsGrading(true);
@@ -658,7 +731,7 @@ fn main() {
     const mockTotalTests = testDefinitions.length;
     const simulatedTests: TestResult[] = [];
 
-    const interval = setInterval(() => {
+    gradingTimerRef.current = setInterval(() => {
       const currentIdx = simulatedTests.length;
       const tDef = testDefinitions[currentIdx];
       
@@ -690,7 +763,10 @@ fn main() {
       setGradingProgress((simulatedTests.length / mockTotalTests) * 100);
 
       if (simulatedTests.length === mockTotalTests) {
-        clearInterval(interval);
+        if (gradingTimerRef.current) {
+          clearInterval(gradingTimerRef.current);
+          gradingTimerRef.current = null;
+        }
         setIsGrading(false);
         const allAC = simulatedTests.every(t => t.verdict === 'AC');
         const hasCE = simulatedTests.some(t => t.verdict === 'CE');

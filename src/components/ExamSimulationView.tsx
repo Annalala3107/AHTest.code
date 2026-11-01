@@ -94,6 +94,37 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
   const [sampleRunStdout, setSampleRunStdout] = useState<string>('');
   const [sampleRunStatus, setSampleRunStatus] = useState<string>('');
 
+  const evalTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to immediately flush any pending draft to localStorage
+  const flushPendingDraft = (curCode?: string) => {
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+      debounceSaveRef.current = null;
+    }
+    const targetCode = curCode !== undefined ? curCode : codeBuffer;
+    try {
+      localStorage.setItem(`ahtest_exam_${session.collectionId}_q${currentIndex}`, targetCode);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Cleanup pending timers on unmount to eliminate memory leaks and race conditions
+  useEffect(() => {
+    return () => {
+      if (evalTimerRef.current) {
+        clearTimeout(evalTimerRef.current);
+        evalTimerRef.current = null;
+      }
+      if (debounceSaveRef.current) {
+        clearTimeout(debounceSaveRef.current);
+        debounceSaveRef.current = null;
+      }
+    };
+  }, []);
+
   // Sync buffer on question change
   useEffect(() => {
     if (questionStates[currentIndex]) {
@@ -103,7 +134,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
     }
   }, [currentIndex]);
 
-  // Persist code changes in memory and localStorage
+  // Persist code changes in memory and debounced localStorage (350ms)
   const handleCodeChange = (newCode: string) => {
     setCodeBuffer(newCode);
     setQuestionStates(prev => ({
@@ -114,11 +145,18 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
         status: prev[currentIndex].status === 'unattempted' ? 'in_progress' : prev[currentIndex].status
       }
     }));
-    try {
-      localStorage.setItem(`ahtest_exam_${session.collectionId}_q${currentIndex}`, newCode);
-    } catch {
-      // ignore
+
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
     }
+    debounceSaveRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(`ahtest_exam_${session.collectionId}_q${currentIndex}`, newCode);
+      } catch {
+        // ignore
+      }
+      debounceSaveRef.current = null;
+    }, 350);
   };
 
   // Timer Tick Interval
@@ -155,6 +193,13 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
   // Switch to another question safely
   const handleSelectQuestion = (targetIdx: number) => {
     if (targetIdx < 0 || targetIdx >= totalQuestions) return;
+    flushPendingDraft(codeBuffer);
+    if (evalTimerRef.current) {
+      clearTimeout(evalTimerRef.current);
+      evalTimerRef.current = null;
+    }
+    setIsEvaluating(false);
+
     // Save current code to state before switching
     setQuestionStates(prev => ({
       ...prev,
@@ -168,11 +213,19 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
 
   // Run code against public sample tests (Sanity check)
   const handleRunSample = () => {
+    if (isEvaluating) return; // Prevent spam clicks
+    flushPendingDraft(codeBuffer);
+    if (evalTimerRef.current) {
+      clearTimeout(evalTimerRef.current);
+      evalTimerRef.current = null;
+    }
+
     setIsEvaluating(true);
     setConsoleTab('sample');
     setSampleRunStatus('Running...');
 
-    setTimeout(() => {
+    evalTimerRef.current = setTimeout(() => {
+      evalTimerRef.current = null;
       const sample = currentProblem.samples?.[0] || { input: '', output: '' };
       const res = executeCCode(codeBuffer, sample.input);
 
@@ -207,10 +260,18 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
 
   // Grade the current question across all testcases
   const handleGradeCurrentQuestion = () => {
+    if (isEvaluating) return; // Prevent spam clicks
+    flushPendingDraft(codeBuffer);
+    if (evalTimerRef.current) {
+      clearTimeout(evalTimerRef.current);
+      evalTimerRef.current = null;
+    }
+
     setIsEvaluating(true);
     setConsoleTab('results');
 
-    setTimeout(() => {
+    evalTimerRef.current = setTimeout(() => {
+      evalTimerRef.current = null;
       const tests = currentProblem.testcases && currentProblem.testcases.length > 0
         ? currentProblem.testcases
         : currentProblem.samples.map((s, i) => ({
