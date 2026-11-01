@@ -10,6 +10,7 @@ import { AdminDashboardView } from './components/AdminDashboardView';
 import { ExamSimulationView } from './components/ExamSimulationView';
 import { AuthModal } from './components/AuthModal';
 import { Problem, AuthUser, ExamSessionConfig } from './types';
+import { getStreakState } from './services/streakService';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
@@ -22,7 +23,21 @@ export function App() {
     if (saved !== null) return saved === 'dark';
     return true; // Default to dark on initial visit
   });
-  const [streakCount] = useState<number>(7);
+  const [streakCount, setStreakCount] = useState<number>(() => getStreakState().currentStreak);
+
+  // Listen to streak updates from solving problems
+  useEffect(() => {
+    const handleStreakUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail.currentStreak === 'number') {
+        setStreakCount(customEvent.detail.currentStreak);
+      }
+    };
+    window.addEventListener('ahtest-streak-updated', handleStreakUpdate);
+    return () => {
+      window.removeEventListener('ahtest-streak-updated', handleStreakUpdate);
+    };
+  }, []);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 

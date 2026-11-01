@@ -13,7 +13,8 @@ import { Problem } from '../types';
 import { mockProblems } from '../data/mockProblems';
 import { mockContests } from '../data/mockContests';
 import { mockSubmissions } from '../data/mockSubmissions';
-import { mockUsers } from '../data/mockUsers';
+import { InlineMath } from './InlineMath';
+import { getStreakState } from '../services/streakService';
 
 interface HomeViewProps {
   onSelectProblem: (problem: Problem) => void;
@@ -116,18 +117,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 {dailyProblem.points} điểm
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
-              {dailyProblem.statement}
-            </p>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {dailyProblem.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+              <InlineMath text={dailyProblem.statement.split('\n\n')[0].replace(/\n/g, ' ')} />
             </div>
           </div>
 
@@ -154,10 +145,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <Flame className="w-6 h-6 fill-amber-500 text-amber-500 animate-pulse" />
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    Chuỗi Streak: {streakCount} ngày
+                    Chuỗi Streak: {streakCount ?? getStreakState().currentStreak} ngày
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Kỷ lục cá nhân: 42 ngày liên tục
+                    Kỷ lục cá nhân: {getStreakState().longestStreak} ngày liên tục
                   </p>
                 </div>
               </div>
@@ -260,111 +251,61 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 2 Columns: Live Submissions Stream & Top Competitors */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Live Submissions Stream */}
-        <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                Dòng Bài Nộp Thời Gian Thực (Live Submissions)
-              </h3>
-            </div>
-            <span className="text-xs font-mono text-slate-400">WebSocket: Connected</span>
+      {/* Live Submissions Stream (Full Width) */}
+      <div className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              Dòng Bài Nộp Thời Gian Thực (Live Submissions)
+            </h3>
           </div>
-
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {mockSubmissions.map((sub) => {
-              const isAC = sub.verdict === 'AC';
-              const isTLE = sub.verdict === 'TLE';
-              return (
-                <div key={sub.id} className="py-3 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`px-2 py-1 rounded text-xs font-black tracking-wider ${
-                      isAC 
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-                        : isTLE
-                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
-                    }`}>
-                      {sub.verdict}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate hover:text-rose-600 cursor-pointer">
-                        {sub.problemTitle}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          {sub.user.username}
-                        </span>
-                        <span>•</span>
-                        <span>{sub.language}</span>
-                        <span>•</span>
-                        <span>{sub.submittedAt}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">
-                      {sub.score}/{sub.maxScore}
-                    </span>
-                    <p className="text-[11px] text-slate-500 font-mono">
-                      {sub.time}s • {sub.memory}MB
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <span className="text-xs font-mono text-slate-400">WebSocket: Connected</span>
         </div>
 
-        {/* Top Coders Leaderboard */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-500" />
-              Cao Thủ Rating
-            </h3>
-            <button 
-              onClick={() => onNavigateTab('leaderboard')}
-              className="text-xs text-rose-600 dark:text-rose-400 font-semibold hover:underline cursor-pointer"
-            >
-              Tất cả
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {mockUsers.map((user, idx) => (
-              <div key={user.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className={`w-5 text-center font-bold text-xs ${
-                    idx === 0 ? 'text-amber-500 text-sm' : idx === 1 ? 'text-slate-400' : idx === 2 ? 'text-amber-700' : 'text-slate-500'
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          {mockSubmissions.map((sub) => {
+            const isAC = sub.verdict === 'AC';
+            const isTLE = sub.verdict === 'TLE';
+            return (
+              <div key={sub.id} className="py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`px-2 py-1 rounded text-xs font-black tracking-wider ${
+                    isAC 
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                      : isTLE
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                      : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
                   }`}>
-                    #{idx + 1}
+                    {sub.verdict}
                   </span>
-                  <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-200 dark:ring-slate-700" />
-                  <div>
-                    <span className={`text-sm ${user.rankColor}`}>
-                      {user.username}
-                    </span>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]">
-                      {user.organization}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate hover:text-rose-600 cursor-pointer">
+                      {sub.problemTitle}
                     </p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        {sub.user.username}
+                      </span>
+                      <span>•</span>
+                      <span>{sub.language}</span>
+                      <span>•</span>
+                      <span>{sub.submittedAt}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-bold text-sm text-slate-900 dark:text-white">
-                    {user.rating}
+
+                <div className="text-right shrink-0">
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">
+                    {sub.score}/{sub.maxScore}
                   </span>
-                  <p className="text-[10px] text-slate-400">
-                    {user.solvedCount} bài
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    {sub.time}s • {sub.memory}MB
                   </p>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

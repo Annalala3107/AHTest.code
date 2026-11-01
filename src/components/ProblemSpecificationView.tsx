@@ -171,12 +171,6 @@ export const ProblemSpecificationView: React.FC<ProblemSpecificationViewProps> =
         <span className="flex items-center gap-1.5">
           <span>Output: <strong className="font-mono text-slate-700 dark:text-slate-200">stdout</strong></span>
         </span>
-
-        {problem.slug && (
-          <span className="hidden md:inline-block ml-auto text-[11px] font-mono text-slate-400">
-            slug: {problem.slug}
-          </span>
-        )}
       </div>
 
       {/* 3. KHỐI 1: YÊU CẦU & MÔ TẢ BÀI TOÁN (PROBLEM STATEMENT) */}

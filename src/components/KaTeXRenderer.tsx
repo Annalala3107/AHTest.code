@@ -180,7 +180,7 @@ export const KaTeXRenderer: React.FC<KaTeXRendererProps> = ({ content, className
     if (!text) return null;
 
     // Inline math: $ ... $
-    const inlineParts = text.split(/(\$[^\$\n]+?\$)/g);
+    const inlineParts = text.split(/(\$[^$\n]+?\$)/g);
 
     return inlineParts.map((part, inlineIdx) => {
       if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {

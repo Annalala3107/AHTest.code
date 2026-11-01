@@ -372,8 +372,8 @@ int main() {
     return 0;
 }`,
             hints: [
-              "Duyệt mảng bằng vòng lặp: \`while (s[len] != '\\0') len++;\`",
-              "Quy tắc đổi hoa thường: \`if (s[i] >= 'a' && s[i] <= 'z') s[i] = s[i] - 32;\`"
+              "Duyệt mảng bằng vòng lặp: `while (s[len] != '\\0') len++;`",
+              "Quy tắc đổi hoa thường: `if (s[i] >= 'a' && s[i] <= 'z') s[i] = s[i] - 32;`"
             ],
             testcases: [
               { input: 'helloworld', expectedOutput: 'DO DAI: 10\nVIET HOA: HELLOWORLD' },

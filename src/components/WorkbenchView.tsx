@@ -38,6 +38,7 @@ import { resolveProgressiveHints } from '../services/progressiveHintService';
 import { ProblemSpecificationView } from './ProblemSpecificationView';
 import { getProblemTitle } from '../services/problemBilingualService';
 import { CodeEditor } from './CodeEditor';
+import { recordStreakActivity } from '../services/streakService';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -727,6 +728,7 @@ fn main() {
         }
 
         if (allAC) {
+          recordStreakActivity();
           const rating = getMasteryRating(unlockedHintTier);
           try {
             localStorage.setItem(`ahtest_star_${problem.id}`, String(rating.stars));

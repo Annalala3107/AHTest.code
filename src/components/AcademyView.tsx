@@ -37,6 +37,7 @@ import { DiffViewer } from './DiffViewer';
 import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
 import { CodeEditor } from './CodeEditor';
 import confetti from 'canvas-confetti';
+import { recordStreakActivity } from '../services/streakService';
 
 export const AcademyView: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<AcademyCourse>(mockCourses[0]);
@@ -426,6 +427,7 @@ export const AcademyView: React.FC = () => {
           setExecutionOutput(output);
           setPedagogicalDiagnosis(lastExecResult?.pedagogicalDiagnosis || null);
           setExercisePassed(true);
+          recordStreakActivity();
           setCompletedLessons((prev) => {
             if (!prev.includes(activeLesson.id)) {
               const updated = [...prev, activeLesson.id];
@@ -496,6 +498,7 @@ export const AcademyView: React.FC = () => {
           setExecutionOutput(output);
           setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
           setExercisePassed(true);
+          recordStreakActivity();
           setCompletedLessons((prev) => {
             if (!prev.includes(activeLesson.id)) {
               const updated = [...prev, activeLesson.id];

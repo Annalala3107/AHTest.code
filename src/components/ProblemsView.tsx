@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, CheckCircle2, ChevronRight, Tag } from 'lucide-react';
+import { Search, Filter, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Problem, Difficulty } from '../types';
 import { mockProblems } from '../data/mockProblems';
 
@@ -10,14 +10,6 @@ interface ProblemsViewProps {
 export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'ALL'>('ALL');
-  const [selectedTag, setSelectedTag] = useState<string>('ALL');
-
-  // Collect all unique tags
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    mockProblems.forEach(p => p.tags.forEach(t => set.add(t)));
-    return Array.from(set);
-  }, []);
 
   // Filtered problems list
   const filteredProblems = useMemo(() => {
@@ -28,11 +20,10 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
         p.category.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchDiff = selectedDifficulty === 'ALL' || p.difficulty === selectedDifficulty;
-      const matchTag = selectedTag === 'ALL' || p.tags.includes(selectedTag);
 
-      return matchSearch && matchDiff && matchTag;
+      return matchSearch && matchDiff;
     });
-  }, [searchQuery, selectedDifficulty, selectedTag]);
+  }, [searchQuery, selectedDifficulty]);
 
   const difficultyColors: Record<Difficulty, { badge: string; text: string }> = {
     Easy: {
@@ -74,7 +65,7 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên bài, mã bài, tag..."
+              placeholder="Tìm theo tên bài hoặc dạng thuật toán..."
               className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
             />
           </div>
@@ -103,36 +94,6 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
           })}
         </div>
 
-        {/* Tag Filters */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-2">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-2 flex items-center gap-1">
-            <Tag className="w-3.5 h-3.5" /> Tags:
-          </span>
-          <button
-            onClick={() => setSelectedTag('ALL')}
-            className={`px-2.5 py-0.5 rounded text-xs transition-colors cursor-pointer ${
-              selectedTag === 'ALL'
-                ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-bold'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Tất cả tags
-          </button>
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setSelectedTag(tag === selectedTag ? 'ALL' : tag)}
-              className={`px-2.5 py-0.5 rounded text-xs transition-colors cursor-pointer ${
-                selectedTag === tag
-                  ? 'bg-rose-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
         {/* Quick Topic Shortcut Banner: String Mastery */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 bg-rose-50/50 dark:bg-rose-950/20 -mx-6 -mb-6 p-4 rounded-b-2xl">
           <div className="flex items-center gap-2">
@@ -141,18 +102,18 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
               CHUYÊN ĐỀ MỚI: Chuỗi & Ký Tự (String Mastery)
             </span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
-              9 bài tập chuẩn hóa từ cơ bản đến nâng cao
+              Tuyển tập bài tập chuẩn hóa từ cơ bản đến nâng cao
             </span>
           </div>
           <button
-            onClick={() => setSelectedTag(selectedTag === 'Strings' ? 'ALL' : 'Strings')}
+            onClick={() => setSearchQuery(searchQuery === 'Chuỗi' ? '' : 'Chuỗi')}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedTag === 'Strings'
+              searchQuery === 'Chuỗi'
                 ? 'bg-rose-600 text-white shadow-xs'
                 : 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40'
             }`}
           >
-            {selectedTag === 'Strings' ? '✓ Đang xem bài tập Chuỗi' : 'Lọc bài tập Chuỗi →'}
+            {searchQuery === 'Chuỗi' ? '✓ Đang xem bài tập Chuỗi' : 'Lọc bài tập Chuỗi →'}
           </button>
         </div>
       </div>
@@ -195,33 +156,11 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
                         <CheckCircle2 className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors mx-auto" />
                       </td>
 
-                      {/* Title & Tags */}
+                      {/* Title */}
                       <td className="py-4 px-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
-                              {problem.title}
-                            </span>
-                            <span className="text-[11px] font-mono text-slate-400">
-                              [{problem.slug}]
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {problem.tags.slice(0, 3).map((tag, tIdx) => (
-                              <span
-                                key={tIdx}
-                                className="px-2 py-0.2 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                            {problem.tags.length > 3 && (
-                              <span className="text-[10px] text-slate-400">
-                                +{problem.tags.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        <span className="font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                          {problem.title}
+                        </span>
                       </td>
 
                       {/* Difficulty */}
