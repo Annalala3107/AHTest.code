@@ -712,6 +712,12 @@ fn main() {
         }
 
         if (allAC) {
+          const rating = getMasteryRating(unlockedHintTier);
+          try {
+            localStorage.setItem(`ahtest_star_${problem.id}`, String(rating.stars));
+          } catch {
+            // ignore
+          }
           confetti({
             particleCount: 80,
             spread: 70,

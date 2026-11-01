@@ -267,7 +267,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       let state = finalStates[idx];
       // If code buffer was edited on current index, ensure it's saved
       const codeToGrade = idx === currentIndex ? codeBuffer : state.code;
-      const isTouched = codeToGrade.trim() !== DEFAULT_C_TEMPLATE(p.title).trim();
+      const isTouched = codeToGrade.trim().length > 25 && codeToGrade.includes('main') && codeToGrade.trim() !== DEFAULT_C_TEMPLATE(p.title).trim();
 
       const tests = p.testcases && p.testcases.length > 0
         ? p.testcases

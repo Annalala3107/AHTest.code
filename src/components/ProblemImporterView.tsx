@@ -27,7 +27,8 @@ import {
   ShieldCheck,
   Zap,
   FileCheck,
-  Check
+  Check,
+  Star
 } from 'lucide-react';
 import { Problem, Difficulty, TestCaseItem, ProblemCollection, ExamSessionConfig } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
@@ -35,6 +36,7 @@ import {
   loadCollections,
   saveCollections,
   resetCollectionsToDefault,
+  restoreFull115MasterBank,
   createCollection,
   deleteCollection,
   addProblemToCollection,
@@ -44,6 +46,7 @@ import {
 import {
   sanitizeSingleProblem,
   processDocxFile,
+  classifyProblemCategory,
   SanitizedProblemResult,
   SanitizationReport
 } from '../services/dataSanitizationPipeline';
@@ -106,6 +109,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
   const [isBatchDocxProcessing, setIsBatchDocxProcessing] = useState<boolean>(false);
   const [batchSanitizedResults, setBatchSanitizedResults] = useState<SanitizedProblemResult[]>([]);
   const [showBatchReviewModal, setShowBatchReviewModal] = useState<boolean>(false);
+  const [autoRouteTo4Categories, setAutoRouteTo4Categories] = useState<boolean>(true);
 
   // Sync collections with localStorage when state changes
   useEffect(() => {
@@ -331,6 +335,10 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     let currentCollections = collections;
 
     batchSanitizedResults.forEach((item, idx) => {
+      const destinationColId = autoRouteTo4Categories
+        ? (item.collectionId || classifyProblemCategory(item.title, item.code).collectionId)
+        : targetCollectionId;
+
       const probId = `docx_${Date.now()}_${idx}`;
       const prob: Problem = {
         id: probId,
@@ -341,7 +349,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
         points: 100,
         timeLimit: 1.0,
         memoryLimit: 128,
-        tags: ['PRF192_Docx', 'Sanitized', item.category.split(' ')[0]],
+        tags: ['PRF192', 'Sanitized', destinationColId.replace('prf192_', '').toUpperCase()],
         solvedCount: 0,
         totalSubmissions: 0,
         statement: `${item.statement}\n\n\`\`\`c\n${item.code.slice(0, 2000)}\n\`\`\``,
@@ -354,20 +362,20 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
         source: '1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx',
         createdAt: new Date().toISOString().split('T')[0],
         isCustom: true,
-        collectionId: targetCollectionId
+        collectionId: destinationColId
       };
 
       // Seed draft
       localStorage.setItem(`ahtest_draft_workbench_${probId}_c17`, item.code);
       localStorage.setItem(`ahtest_draft_workbench_${probId}_cpp20`, item.code);
 
-      currentCollections = addProblemToCollection(targetCollectionId, prob);
+      currentCollections = addProblemToCollection(destinationColId, prob);
     });
 
     setCollections(currentCollections);
     setShowBatchReviewModal(false);
     setBatchSanitizedResults([]);
-    alert(`🎉 Thành công! Đã nạp toàn bộ ${batchSanitizedResults.length} bài tập chuẩn hóa vào thư mục!`);
+    alert(`🎉 Thành công! Đã nạp và phân bổ ${batchSanitizedResults.length} bài tập chuẩn hóa ${autoRouteTo4Categories ? 'vào đúng 4 Bộ Đề Lớn!' : 'vào thư mục đích!'}`);
   };
 
   // Handle File Upload into Target Collection with Data Sanitization Pipeline
@@ -487,6 +495,27 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
         const updated = deleteProblemFromCollection(activeCollectionId, probId);
         setCollections(updated);
       }
+    }
+  };
+
+  // Launch Grand Exam Simulation across all 4 collections
+  const handleTriggerGrandExam = () => {
+    const systemCols = collections.filter(c => c.isSystem);
+    if (systemCols.length === 0 || systemCols.every(c => c.problems.length === 0)) {
+      alert('Chưa có bài tập nào trong các Bộ đề lớn để tạo kỳ thi!');
+      return;
+    }
+    const session = createExamSession(systemCols, examQuestionCount, examDurationMinutes, 'Kỳ Thi Thử Phòng Lab Toàn Diện PRF192');
+    setPendingExamSession(session);
+    setIsExamModalOpen(true);
+  };
+
+  // Restore/Sync Full 115 Master Problems
+  const handleRestore115MasterProblems = () => {
+    if (window.confirm('Bạn có muốn đồng bộ lại toàn bộ 115+ bài tập chuẩn hóa PRF192 vào 4 Bộ Đề Lớn không? (Các bài tập tự tạo cá nhân vẫn được bảo lưu an toàn).')) {
+      const fresh = restoreFull115MasterBank();
+      setCollections(fresh);
+      alert('🎉 Đã đồng bộ thành công 115+ bài tập chuẩn hóa vào 4 Bộ Đề Lớn!');
     }
   };
 
@@ -623,12 +652,12 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={handleResetCollections}
-                title="Khôi phục các thư mục PRF192 chuẩn hóa ban đầu"
-                className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                onClick={handleRestore115MasterProblems}
+                title="Đồng bộ lại toàn bộ 115+ bài tập chuẩn hóa PRF192 vào 4 Bộ Đề Lớn"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Chuẩn Hóa PRF192</span>
+                <span className="hidden sm:inline">Đồng Bộ 115 Đề Chuẩn Hóa</span>
               </button>
 
               <button
@@ -648,6 +677,40 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
               >
                 <Plus className="w-4 h-4" />
                 <span>+ Nhập Đề Mới</span>
+              </button>
+            </div>
+          </div>
+
+          {/* GRAND EXAM HERO ARENA BANNER (KỲ THI THỬ PHÒNG LAB TOÀN DIỆN PRF192) */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-indigo-950/80 border border-rose-500/40 p-6 text-white shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
+            <div className="space-y-2.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                <Flame className="w-3.5 h-3.5 text-rose-400 fill-current" />
+                <span>Mô Phỏng 100% Đề Thi PE Phòng Lab Đại Học</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>🏆 Kỳ Thi Thử Phòng Lab Toàn Diện (All-in-One Grand Exam)</span>
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Hệ thống tự động bốc ngẫu nhiên từ <strong>10 đến 20 câu</strong> phân bổ cân bằng qua <strong>cả 4 Bộ Đề Lớn</strong> (Vẽ Hình, Mảng, Chuỗi, Số Học). Đồng hồ đếm ngược nghiêm ngặt, khóa toàn bộ gợi ý, chấm điểm tự động và xuất <strong>Bảng Điểm Scorecard</strong> ngay khi nộp bài.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-300">
+                <span className="flex items-center gap-1.5 font-semibold text-rose-300"><Timer className="w-3.5 h-3.5 text-rose-400" /> 45 / 60 / 90 phút</span>
+                <span>•</span>
+                <span className="flex items-center gap-1.5 font-semibold text-amber-300"><ShieldAlert className="w-3.5 h-3.5 text-amber-400" /> Khóa Gợi Ý Thi Thật</span>
+                <span>•</span>
+                <span className="flex items-center gap-1.5 font-semibold text-emerald-300"><Award className="w-3.5 h-3.5 text-emerald-400" /> Thang Điểm 10 Chuẩn Lab</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row md:flex-col justify-center gap-2.5 shrink-0 min-w-[240px]">
+              <button
+                onClick={handleTriggerGrandExam}
+                className="px-5 py-3 rounded-2xl text-xs font-black bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white shadow-lg shadow-rose-600/40 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105"
+              >
+                <Flame className="w-4 h-4 fill-current" />
+                <span>Vào Thi Thử Toàn Diện (10-20 câu) →</span>
               </button>
             </div>
           </div>
@@ -758,9 +821,23 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                       <span>{testsCount} tests</span>
                     </div>
 
-                    <div className={`flex items-center gap-1 font-bold ${styles.text} text-xs group-hover:translate-x-1 transition-transform`}>
-                      <span>Mở Thư Mục</span>
-                      <ChevronRight className="w-4 h-4" />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTriggerExamSetup(col);
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 transition-all flex items-center gap-1 cursor-pointer"
+                        title="Thi thử 10-20 câu trong bộ đề này"
+                      >
+                        <Flame className="w-3 h-3" />
+                        <span>Thi Thử</span>
+                      </button>
+
+                      <div className={`flex items-center gap-1 font-bold ${styles.text} text-xs group-hover:translate-x-1 transition-transform`}>
+                        <span>Luyện Tập</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -882,7 +959,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-400 font-medium">Số lượng câu thi:</span>
                     <div className="flex items-center gap-1.5">
-                      {[10, 15, 20].map((num) => (
+                      {[10, 12, 15, 18, 20].map((num) => (
                         <button
                           key={num}
                           onClick={() => setExamQuestionCount(num)}
@@ -1072,13 +1149,35 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
                           {prob.statement.replace(/[#*`$]/g, '')}
                         </p>
 
-                        {/* Progressive hints availability badge */}
-                        {prob.progressiveHints && prob.progressiveHints.length > 0 && (
-                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
-                            <Lightbulb className="w-3 h-3" />
-                            <span>Có sẵn 3 Tầng Gợi Ý Thông Minh</span>
-                          </div>
-                        )}
+                        {/* Progressive hints & Mastery Stars */}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          {prob.progressiveHints && prob.progressiveHints.length > 0 && (
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
+                              <Lightbulb className="w-3 h-3" />
+                              <span>Gợi Ý 3 Tầng</span>
+                            </div>
+                          )}
+
+                          {(() => {
+                            const savedStar = Number(localStorage.getItem(`ahtest_star_${prob.id}`) || 0);
+                            if (savedStar > 0) {
+                              return (
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20">
+                                  <div className="flex items-center">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3 h-3 ${i < savedStar ? 'fill-amber-400 text-amber-400' : 'text-slate-600'}`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span>{savedStar === 3 ? '3★ Tự lực' : savedStar === 2 ? '2★ Gợi ý' : '1★ Khung code'}</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
                       </div>
 
                       {/* Problem Actions */}
@@ -1808,20 +1907,69 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
               </div>
             </div>
 
-            {/* Target Destination Selector */}
-            <div className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shrink-0">
-              <span className="text-slate-300 font-medium">Nạp toàn bộ bài tập vào thư mục:</span>
-              <select
-                value={targetCollectionId}
-                onChange={(e) => setTargetCollectionId(e.target.value)}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-100"
-              >
-                {collections.map(c => (
-                  <option key={c.id} value={c.id}>
-                    📁 {c.title} (hiện có {c.problems.length} bài)
-                  </option>
-                ))}
-              </select>
+            {/* Target Destination & Giai Đoạn 2 Auto-Classification */}
+            <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2.5 text-xs shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-200 font-bold">
+                  <input
+                    type="checkbox"
+                    checked={autoRouteTo4Categories}
+                    onChange={(e) => setAutoRouteTo4Categories(e.target.checked)}
+                    className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-slate-900 border-slate-700 cursor-pointer"
+                  />
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <Sparkles className="w-4 h-4" />
+                    Tự động phân loại vào 4 Bộ Đề Lớn (Shape / Array / String / Math)
+                  </span>
+                </label>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Giai Đoạn 2 Khuyến Nghị
+                </span>
+              </div>
+
+              {autoRouteTo4Categories ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                  <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-semibold flex items-center justify-between">
+                    <span>1. Vẽ Hình</span>
+                    <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-200">
+                      {batchSanitizedResults.filter(p => (p.collectionId || classifyProblemCategory(p.title, p.code).collectionId) === 'prf192_shape_matrix').length} bài
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 font-semibold flex items-center justify-between">
+                    <span>2. Mảng 1 Chiều</span>
+                    <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-200">
+                      {batchSanitizedResults.filter(p => (p.collectionId || classifyProblemCategory(p.title, p.code).collectionId) === 'prf192_array_sorting').length} bài
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-semibold flex items-center justify-between">
+                    <span>3. Chuỗi Ký Tự</span>
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-200">
+                      {batchSanitizedResults.filter(p => (p.collectionId || classifyProblemCategory(p.title, p.code).collectionId) === 'prf192_string_mastery').length} bài
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 font-semibold flex items-center justify-between">
+                    <span>4. Số Học</span>
+                    <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-200">
+                      {batchSanitizedResults.filter(p => (p.collectionId || classifyProblemCategory(p.title, p.code).collectionId) === 'prf192_math_algorithms').length} bài
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-800">
+                  <span className="text-slate-300 font-medium">Nạp toàn bộ vào một thư mục được chọn:</span>
+                  <select
+                    value={targetCollectionId}
+                    onChange={(e) => setTargetCollectionId(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-100"
+                  >
+                    {collections.map(c => (
+                      <option key={c.id} value={c.id}>
+                        📁 {c.title} (hiện có {c.problems.length} bài)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Problem List Preview */}

@@ -18,6 +18,7 @@ export interface SanitizedProblemResult {
   id?: string;
   title: string;
   category: string;
+  collectionId?: 'prf192_shape_matrix' | 'prf192_array_sorting' | 'prf192_string_mastery' | 'prf192_math_algorithms';
   difficulty: Difficulty;
   code: string;
   statement: string;
@@ -27,6 +28,96 @@ export interface SanitizedProblemResult {
   samples: SampleCase[];
   testcases: TestCaseItem[];
   report: SanitizationReport;
+}
+
+/**
+ * Intelligent Problem Classifier
+ * Maps problem title and logic to one of the 4 major PRF192 collections:
+ * 1. prf192_shape_matrix: Vẽ Hình & Ma Trận Ký Tự
+ * 2. prf192_array_sorting: Mảng 1 Chiều & Sắp Xếp
+ * 3. prf192_string_mastery: Chuỗi & Ký Tự Nâng Cao
+ * 4. prf192_math_algorithms: Số Học, Đệ Quy & Số Đặc Biệt
+ */
+export function classifyProblemCategory(title: string, _code?: string): {
+  collectionId: 'prf192_shape_matrix' | 'prf192_array_sorting' | 'prf192_string_mastery' | 'prf192_math_algorithms';
+  category: string;
+  difficulty: Difficulty;
+} {
+  const t = title.toLowerCase();
+
+  // 1. Shape Matrix & Patterns
+  if (
+    t.includes('hình') ||
+    t.includes('tam giác') ||
+    t.includes('vuông') ||
+    t.includes('thoi') ||
+    t.includes('ngôi nhà') ||
+    t.includes('bình hành') ||
+    t.includes('kim cương') ||
+    (t.includes('ma trận') && !t.includes('chuỗi'))
+  ) {
+    return {
+      collectionId: 'prf192_shape_matrix',
+      category: 'Vẽ Hình & Ma Trận Ký Tự',
+      difficulty: t.includes('rỗng') || t.includes('cân') || t.includes('thoi') ? 'Medium' : 'Easy'
+    };
+  }
+
+  // 2. String & Character Algorithms
+  if (
+    t.includes('chuỗi') ||
+    t.includes('xâu') ||
+    t.includes('string') ||
+    t.includes('ký tự') ||
+    t.includes('kí tự') ||
+    t.includes('chữ cái') ||
+    t.includes('chữ in') ||
+    t.includes('in hoa') ||
+    t.includes('in thường') ||
+    t.includes('ascii') ||
+    t.includes('độ dài của chuỗi') ||
+    t.includes('tìm tên') ||
+    t.includes('valid name') ||
+    t.includes('từ dài nhất') ||
+    t.includes('đảo từ') ||
+    t.includes('characters')
+  ) {
+    return {
+      collectionId: 'prf192_string_mastery',
+      category: 'Chuỗi & Ký Tự Nâng Cao',
+      difficulty: 'Medium'
+    };
+  }
+
+  // 3. Array Manipulation & Sorting
+  if (
+    t.includes('mảng') ||
+    t.includes('sắp xếp') ||
+    t.includes('sort') ||
+    t.includes('array') ||
+    t.includes('phần tử') ||
+    t.includes('vị trí') ||
+    t.includes('đổi vị trí') ||
+    t.includes('hoán đổi') ||
+    t.includes('trùng nhau') ||
+    t.includes('chèn 1 số') ||
+    t.includes('xóa 1 phần tử') ||
+    t.includes('thứ 2 trong mảng') ||
+    t.includes('đường chéo')
+  ) {
+    return {
+      collectionId: 'prf192_array_sorting',
+      category: 'Mảng 1 Chiều & Sắp Xếp',
+      difficulty: t.includes('trùng') || t.includes('sort') || t.includes('thứ 2') ? 'Medium' : 'Easy'
+    };
+  }
+
+  // 4. Math, Primes & Number Theory
+  return {
+    collectionId: 'prf192_math_algorithms',
+    category: 'Số Học & Thuật Toán Cơ Bản',
+    difficulty: t.includes('fibonacci') || t.includes('armstrong') || t.includes('lcm') || t.includes('gcd') ? 'Medium' : 'Easy'
+  };
 }
 
 /**
@@ -340,21 +431,11 @@ export function sanitizeSingleProblem(
   // Step 3: Ensure main entrypoint
   const { code: finalCode, harnessAdded } = ensureMainEntrypoint(cleanedCode, rawTitle);
 
-  // Step 4: Determine Category & Difficulty
-  let category = 'Mảng & Thuật Toán Sắp Xếp';
-  let difficulty: Difficulty = 'Easy';
-  const tLower = rawTitle.toLowerCase();
-
-  if (tLower.includes('hình') || tLower.includes('tam giác') || tLower.includes('vuông') || tLower.includes('thoi')) {
-    category = 'Vẽ Hình & Ma Trận Ký Tự';
-    difficulty = tLower.includes('rỗng') || tLower.includes('cân') ? 'Medium' : 'Easy';
-  } else if (tLower.includes('chuỗi') || tLower.includes('xâu') || tLower.includes('ký tự') || tLower.includes('string')) {
-    category = 'Chuỗi & Ký Tự (String Mastery)';
-    difficulty = 'Medium';
-  } else if (tLower.includes('nhuận') || tLower.includes('amstrong') || tLower.includes('nguyên tố') || tLower.includes('fibonacci')) {
-    category = 'Số Học & Lý Thuyết Số';
-    difficulty = 'Easy';
-  }
+  // Step 4: Determine Category, Difficulty & Collection Routing
+  const classification = classifyProblemCategory(rawTitle, finalCode);
+  const category = classification.category;
+  const difficulty = classification.difficulty;
+  const collectionId = classification.collectionId;
 
   // Step 5: Synthesize clean test cases
   const { samples, testcases } = synthesizeDomainTestCases(rawTitle, finalCode);
@@ -397,6 +478,7 @@ Viết chương trình C giải quyết bài toán theo chuẩn khảo thí PRF1
   return {
     title: cleanTitle,
     category,
+    collectionId,
     difficulty,
     code: finalCode.trim(),
     statement,

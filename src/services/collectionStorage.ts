@@ -1,28 +1,56 @@
 import { ProblemCollection, Problem, ExamSessionConfig } from '../types';
 import { DEFAULT_PROBLEM_COLLECTIONS } from '../data/prf192Collections';
+import { PRF192_MASTER_PROBLEMS } from '../data/prf192MasterDataset';
 
 export const COLLECTIONS_STORAGE_KEY = 'ahtest_problem_collections';
 export const LEGACY_PROBLEMS_STORAGE_KEY = 'ahtest_imported_problems';
 
 /**
+ * Seed code drafts directly into localStorage for Monaco editor.
+ */
+export function seedDraftsForProblems(problems: (Problem & { code?: string })[]): void {
+  try {
+    problems.forEach(p => {
+      if (p.code) {
+        localStorage.setItem(`ahtest_draft_workbench_${p.id}_c17`, p.code);
+        localStorage.setItem(`ahtest_draft_workbench_${p.id}_cpp20`, p.code);
+      }
+    });
+  } catch (e) {
+    console.warn('Draft seeding error:', e);
+  }
+}
+
+/**
  * Load all problem collections from persistent localStorage.
- * Automatically migrates legacy imported problems if they exist.
+ * Automatically migrates to 115+ master problems bank and legacy problems.
  */
 export function loadCollections(): ProblemCollection[] {
   try {
     const raw = localStorage.getItem(COLLECTIONS_STORAGE_KEY);
+    const v2Flag = localStorage.getItem('ahtest_prf192_master_v2');
     let collections: ProblemCollection[] = [];
 
-    if (raw) {
+    // If master bank v2 not initialized yet or raw empty, initialize with 115+ master problems
+    if (!v2Flag || !raw) {
+      collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
+      localStorage.setItem('ahtest_prf192_master_v2', 'true');
+      seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+    } else {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        collections = parsed;
+        // Check if existing stored collections only have few problems (< 20 total)
+        const totalProbs = parsed.reduce((sum: number, c: ProblemCollection) => sum + (c.problems?.length || 0), 0);
+        if (totalProbs < 20) {
+          // Auto upgrade
+          collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
+          seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+        } else {
+          collections = parsed;
+        }
+      } else {
+        collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
       }
-    }
-
-    // Fallback to default PRF192 collections if none saved
-    if (collections.length === 0) {
-      collections = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
     }
 
     // Check for legacy imported problems to migrate
@@ -31,7 +59,6 @@ export function loadCollections(): ProblemCollection[] {
       try {
         const legacyProblems: Problem[] = JSON.parse(legacyRaw);
         if (Array.isArray(legacyProblems) && legacyProblems.length > 0) {
-          // Find or create the user_custom_library collection
           let userCol = collections.find(c => c.id === 'user_custom_library');
           if (!userCol) {
             userCol = {
@@ -94,12 +121,36 @@ export function saveCollections(collections: ProblemCollection[]): void {
 }
 
 /**
- * Reset collections back to factory defaults.
+ * Reset collections back to factory defaults with 115+ problems.
  */
 export function resetCollectionsToDefault(): ProblemCollection[] {
-  const defaults = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
+  const defaults: ProblemCollection[] = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
   saveCollections(defaults);
+  localStorage.setItem('ahtest_prf192_master_v2', 'true');
+  seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
   return defaults;
+}
+
+/**
+ * 1-Click Restore / Synchronize Full 115+ Master PRF192 Bank.
+ * Preserves user custom collections and re-seeds all drafts.
+ */
+export function restoreFull115MasterBank(): ProblemCollection[] {
+  const freshDefaults: ProblemCollection[] = JSON.parse(JSON.stringify(DEFAULT_PROBLEM_COLLECTIONS));
+  const current = loadCollections();
+  const userCol = current.find(c => !c.isSystem && c.id === 'user_custom_library');
+  if (userCol && userCol.problems.length > 0) {
+    const existing = freshDefaults.find(c => c.id === 'user_custom_library');
+    if (existing) {
+      existing.problems = userCol.problems;
+    } else {
+      freshDefaults.push(userCol);
+    }
+  }
+  saveCollections(freshDefaults);
+  localStorage.setItem('ahtest_prf192_master_v2', 'true');
+  seedDraftsForProblems(PRF192_MASTER_PROBLEMS);
+  return freshDefaults;
 }
 
 /**
@@ -177,29 +228,64 @@ export function deleteCollection(collectionId: string): ProblemCollection[] {
 
 /**
  * Generate a smart exam session with balanced shuffling and configured duration.
+ * Supports:
+ * - Target as a single collection: Shuffles questions within the collection.
+ * - Target as an array of collections: Performs balanced cross-category quota sampling
+ *   (e.g., equal distribution from Shape, Array, String, and Math).
  */
 export function createExamSession(
-  collection: ProblemCollection,
+  target: ProblemCollection | ProblemCollection[],
   questionCount: number,
-  timeLimitMinutes: number
+  timeLimitMinutes: number,
+  titleOverride?: string
 ): ExamSessionConfig {
-  // Clamp question count between 10 and 20 (or max available)
-  const available = collection.problems.length;
-  const count = Math.min(Math.max(10, questionCount), Math.max(available, 10));
+  const isMultiCollection = Array.isArray(target);
+  const collections = isMultiCollection ? target : [target];
+  
+  // Target question count clamped between 10 and 20
+  const clampedCount = Math.min(20, Math.max(10, questionCount));
+  
+  let selectedProblems: Problem[] = [];
 
-  // Fisher-Yates smart shuffle
-  const pool = [...collection.problems];
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+  if (isMultiCollection && collections.length > 1) {
+    // Cross-Category Balanced Quota Sampling
+    const activeCols = collections.filter(c => c.problems.length > 0);
+    const perColQuota = Math.floor(clampedCount / activeCols.length);
+    let remainder = clampedCount % activeCols.length;
+
+    activeCols.forEach(col => {
+      const quota = perColQuota + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) remainder--;
+
+      const pool = [...col.problems];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      selectedProblems.push(...pool.slice(0, quota));
+    });
+
+    // Shuffle the final assembled exam so questions from different categories are interweaved
+    for (let i = selectedProblems.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [selectedProblems[i], selectedProblems[j]] = [selectedProblems[j], selectedProblems[i]];
+    }
+  } else {
+    // Single Collection Exam
+    const pool = [...collections[0].problems];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    selectedProblems = pool.slice(0, Math.min(clampedCount, pool.length));
   }
 
-  // Selected questions
-  const selectedProblems = pool.slice(0, count);
+  const sessionTitle = titleOverride || (isMultiCollection ? 'Kỳ Thi Thử Toàn Diện PRF192' : collections[0].title);
+  const collectionId = isMultiCollection ? 'prf192_grand_exam' : collections[0].id;
 
   return {
-    collectionId: collection.id,
-    collectionTitle: collection.title,
+    collectionId,
+    collectionTitle: sessionTitle,
     totalQuestions: selectedProblems.length,
     timeLimitMinutes,
     problems: selectedProblems

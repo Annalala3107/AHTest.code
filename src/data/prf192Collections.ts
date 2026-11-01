@@ -1,12 +1,13 @@
 import { ProblemCollection } from '../types';
+import { PRF192_MASTER_PROBLEMS } from './prf192MasterDataset';
 
 export const DEFAULT_PROBLEM_COLLECTIONS: ProblemCollection[] = [
   // 1. SHAPE & STAR PATTERNS
   {
     id: 'prf192_shape_matrix',
-    title: 'Vẽ Hình & Vòng Lặp Sao (Shape Patterns)',
+    title: 'BỘ ĐỀ 1: Vẽ Hình & Tư Duy Vòng Lặp Lồng Nhau (Shape Matrix & Patterns)',
     titleEn: 'Shape & Star Pattern Mastery',
-    description: 'Tuyển tập các dạng bài vẽ hình kinh điển thường gặp nhất trong đề thi C: Tam giác sao vuông, tam giác cân, hình vuông rỗng viền, tam giác số Floyd, hình thoi đối xứng.',
+    description: 'Tuyển tập 27+ bài vẽ hình kinh điển thường gặp nhất trong đề thi C: Tam giác sao vuông, tam giác cân, hình vuông rỗng viền, tam giác số Floyd, hình thoi đối xứng, ngôi nhà.',
     category: 'Vòng lặp & Hình học',
     icon: 'shapes',
     color: 'rose',
@@ -254,19 +255,20 @@ for (int i = 1; i <= n; i++) {
           { id: 2, input: '3', expectedOutput: ' *\n***\n *', isHidden: false },
           { id: 3, input: '7', expectedOutput: '   *\n  ***\n *****\n*******\n *****\n  ***\n   *', isHidden: true }
         ]
-      }
+      },
+      ...PRF192_MASTER_PROBLEMS.filter(p => p.collectionId === 'prf192_shape_matrix')
     ]
   },
 
   // 2. ARRAY MANIPULATION & SORTING
   {
     id: 'prf192_array_sorting',
-    title: 'Kỹ Thuật Mảng & Thuật Toán Sắp Xếp (Array & Sorting)',
-    titleEn: 'Array Manipulation & Sorting',
-    description: 'Nắm vững các thuật toán xử lý mảng then chốt: Hoán vị phần tử chẵn lẻ, đếm số âm/dương, tìm Min/Max, Bubble Sort, Selection Sort, loại bỏ phần tử trùng lặp.',
-    category: 'Mảng & Con trỏ',
+    title: 'BỘ ĐỀ 2: Mảng 1 Chiều & Thuật Toán Sắp Xếp (Array Manipulation & Sorting)',
+    titleEn: 'Array Manipulation & Sorting Algorithms',
+    description: 'Tuyển tập 24+ bài toán mảng then chốt: Đổi chỗ số lẻ min-max, xóa phần tử trùng, sắp xếp Bubble/Insertion/Selection sort, mảng chẵn lẻ, max/min.',
+    category: 'Mảng & Bộ nhớ',
     icon: 'layers',
-    color: 'blue',
+    color: 'amber',
     difficultySummary: 'Intermediate',
     isSystem: true,
     createdAt: '2026-11-01',
@@ -451,16 +453,17 @@ In ra mảng sau khi sắp xếp trên một dòng.`,
           { id: 2, input: '3\n3 2 1', expectedOutput: '1 2 3', isHidden: false },
           { id: 3, input: '6\n-5 10 -2 0 8 3', expectedOutput: '-5 -2 0 3 8 10', isHidden: true }
         ]
-      }
+      },
+      ...PRF192_MASTER_PROBLEMS.filter(p => p.collectionId === 'prf192_array_sorting')
     ]
   },
 
   // 3. STRING & CHARACTER MASTERY
   {
     id: 'prf192_string_mastery',
-    title: 'Chuỗi & Xử Lý Ký Tự Nâng Cao (String Mastery)',
-    titleEn: 'String & Null-Terminator Mastery',
-    description: 'Bao quát chuyên sâu mảng ký tự và ký tự kết thúc \\0: Đảo ngược từ trong câu, chuẩn hóa khoảng trắng thừa, đếm chữ số, kiểm tra đối xứng Palindrome, tìm từ dài nhất.',
+    title: 'BỘ ĐỀ 3: Xử Lý Chuỗi & Ký Tự Nâng Cao (String & Character Algorithms)',
+    titleEn: 'String & Character Mastery',
+    description: 'Tuyển tập 18+ bài toán chuỗi chuyên sâu: Đảo ngược từ trong câu, chuẩn hóa khoảng trắng thừa, đếm chữ số, kiểm tra xâu đối xứng Palindrome, tìm từ dài nhất.',
     category: 'Xử lý Chuỗi (Strings)',
     icon: 'type',
     color: 'emerald',
@@ -649,19 +652,20 @@ printf("\\n");`
           { id: 2, input: 'Hello World', expectedOutput: 'Hello World', isHidden: false },
           { id: 3, input: '   Test   ', expectedOutput: 'Test', isHidden: true }
         ]
-      }
+      },
+      ...PRF192_MASTER_PROBLEMS.filter(p => p.collectionId === 'prf192_string_mastery')
     ]
   },
 
   // 4. MATH, PRIMES & NUMBER THEORY
   {
     id: 'prf192_math_algorithms',
-    title: 'Số Học & Thuật Toán Căn Bản (Math & Number Theory)',
-    titleEn: 'Math, Primes & Number Theory',
-    description: 'Nền tảng số học thiết yếu cho bài thi PE: Kiểm tra số nguyên tố, số chính phương, số Armstrong, dãy Fibonacci, Ước chung lớn nhất (GCD), Bội chung nhỏ nhất (LCM).',
+    title: 'BỘ ĐỀ 4: Số Học, Đệ Quy & Số Đặc Biệt (Math & Prime/Fibonacci/Armstrong)',
+    titleEn: 'Math, Primes, Armstrong & Recursion',
+    description: 'Tuyển tập 46+ bài toán số học bám sát 100% đề thi: Số nguyên tố, số chính phương, số Armstrong, dãy Fibonacci, Ước chung lớn nhất (GCD), Bội chung nhỏ nhất (LCM).',
     category: 'Toán học & Thuật toán',
     icon: 'calculator',
-    color: 'amber',
+    color: 'blue',
     difficultySummary: 'Beginner',
     isSystem: true,
     createdAt: '2026-11-01',
@@ -863,7 +867,8 @@ printf("%s\\n", sum == original ? "YES" : "NO");`
           { id: 3, input: '9', expectedOutput: 'YES', isHidden: true, explanation: 'Số có 1 chữ số luôn là số Armstrong.' },
           { id: 4, input: '370', expectedOutput: 'YES', isHidden: true }
         ]
-      }
+      },
+      ...PRF192_MASTER_PROBLEMS.filter(p => p.collectionId === 'prf192_math_algorithms')
     ]
   },
 
