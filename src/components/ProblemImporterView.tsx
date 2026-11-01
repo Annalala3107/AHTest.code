@@ -41,9 +41,10 @@ import {
 
 interface ProblemImporterViewProps {
   onSelectProblem?: (problem: Problem) => void;
+  onStartExam?: (session: ExamSessionConfig) => void;
 }
 
-export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSelectProblem }) => {
+export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSelectProblem, onStartExam }) => {
   // Collection Hub State
   const [collections, setCollections] = useState<ProblemCollection[]>(() => loadCollections());
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
@@ -382,13 +383,15 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
 
   const handleStartExamSession = () => {
     if (!pendingExamSession || pendingExamSession.problems.length === 0) return;
-    const firstProblem = pendingExamSession.problems[0];
+    const sessionToStart = pendingExamSession;
     setIsExamModalOpen(false);
-    if (onSelectProblem) {
+    if (onStartExam) {
+      onStartExam(sessionToStart);
+    } else if (onSelectProblem) {
       // Open problem in exam mode
       onSelectProblem({
-        ...firstProblem,
-        source: `Kỳ thi thử: ${pendingExamSession.collectionTitle} (${pendingExamSession.timeLimitMinutes}p)`
+        ...sessionToStart.problems[0],
+        source: `Kỳ thi thử: ${sessionToStart.collectionTitle} (${sessionToStart.timeLimitMinutes}p)`
       });
     }
   };

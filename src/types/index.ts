@@ -78,6 +78,39 @@ export interface ExamSessionConfig {
   problems: Problem[];
 }
 
+export interface ExamQuestionState {
+  problemId: string;
+  code: string;
+  status: 'unattempted' | 'in_progress' | 'passed' | 'failed';
+  score: number; // 0 to 100
+  testResults: TestResult[];
+  lastRunStdout?: string;
+  lastRunStderr?: string;
+}
+
+export interface ExamScorecard {
+  examId: string;
+  collectionTitle: string;
+  totalQuestions: number;
+  passedQuestions: number;
+  totalScore: number; // 0 to 10.0 scale
+  timeSpentSeconds: number;
+  timeLimitSeconds: number;
+  submittedAt: string;
+  questionDetails: {
+    questionIndex: number;
+    title: string;
+    difficulty: Difficulty;
+    status: 'passed' | 'failed' | 'unattempted';
+    score: number;
+    passedTests: number;
+    totalTests: number;
+  }[];
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+}
+
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RTE' | 'CE' | 'PENDING' | 'GRADING';
 
 export interface TestResult {

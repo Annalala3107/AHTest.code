@@ -7,12 +7,14 @@ import { WorkbenchView } from './components/WorkbenchView';
 import { AcademyView } from './components/AcademyView';
 import { ProblemImporterView } from './components/ProblemImporterView';
 import { AdminDashboardView } from './components/AdminDashboardView';
+import { ExamSimulationView } from './components/ExamSimulationView';
 import { AuthModal } from './components/AuthModal';
-import { Problem, AuthUser } from './types';
+import { Problem, AuthUser, ExamSessionConfig } from './types';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+  const [activeExamSession, setActiveExamSession] = useState<ExamSessionConfig | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('ahtest_theme');
     if (saved !== null) return saved === 'dark';
@@ -129,7 +131,10 @@ export function App() {
             )}
             {currentTab === 'academy' && <AcademyView />}
             {currentTab === 'importer' && (
-              <ProblemImporterView onSelectProblem={handleSelectProblem} />
+              <ProblemImporterView 
+                onSelectProblem={handleSelectProblem} 
+                onStartExam={(session) => setActiveExamSession(session)}
+              />
             )}
             {currentTab === 'admin' && (
               <AdminDashboardView
@@ -149,6 +154,14 @@ export function App() {
         onLoginSuccess={handleLoginSuccess}
         initialMode={authModalMode}
       />
+
+      {/* Live Exam Simulation Workspace Modal / Overlay */}
+      {activeExamSession && (
+        <ExamSimulationView
+          session={activeExamSession}
+          onExit={() => setActiveExamSession(null)}
+        />
+      )}
 
       {/* Footer (hidden on Workbench, Academy and Admin split mode to maximize vertical space) */}
       {!selectedProblem && currentTab !== 'academy' && currentTab !== 'admin' && <Footer />}
