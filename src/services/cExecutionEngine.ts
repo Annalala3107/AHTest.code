@@ -240,6 +240,33 @@ export class VirtualCRuntime {
     return token;
   }
 
+  // Simulated getchar()
+  public getchar(): number {
+    this.tick();
+    if (this.stdinTokens.length === 0) return -1; // EOF
+    const token = this.stdinTokens[0];
+    if (token.length > 0) {
+      const charCode = token.charCodeAt(0);
+      this.stdinTokens[0] = token.slice(1);
+      if (this.stdinTokens[0].length === 0) this.stdinTokens.shift();
+      return charCode;
+    }
+    return 10; // '\n'
+  }
+
+  // String helpers
+  public strlen(str: any): number {
+    return String(str !== undefined && str !== null ? str : '').length;
+  }
+
+  public strcmp(s1: any, s2: any): number {
+    const str1 = String(s1 || '');
+    const str2 = String(s2 || '');
+    if (str1 < str2) return -1;
+    if (str1 > str2) return 1;
+    return 0;
+  }
+
   // Simulated printf
   public printf(format: string, ...args: any[]) {
     this.tick();
@@ -400,20 +427,34 @@ function transpileCToJS(cCode: string): string {
   // Step 8: Replace type declarations
   // Strip pointer symbols in variable declarations: int *arr -> let arr
   code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double|char|void)\s*\*+\s*([a-zA-Z_]\w*)/g, 'let $1');
+  // Fixed size arrays: int arr[100]; -> let arr = new Array(100).fill(0)
+  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]/g, 'let $1 = new Array($2).fill(0)');
   // Normal declarations: int a = 5;
   code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)/g, 'let $1');
   // Char arrays
   code = code.replace(/\bchar\s+([a-zA-Z_]\w*)\s*\[\s*\d*\s*\]/g, 'let $1 = []');
   code = code.replace(/\bchar\s+([a-zA-Z_]\w*)/g, 'let $1');
+  code = code.replace(/\bbool\s+([a-zA-Z_]\w*)/g, 'let $1');
 
-  // Step 9: Replace printf
+  // Array literals: = { 1, 2, 3 } -> = [ 1, 2, 3 ]
+  code = code.replace(/=\s*\{\s*([^{};]+?)\s*\}/g, '= [$1]');
+
+  // Step 9: Replace printf, getchar, strlen, strcmp
   code = code.replace(/\bprintf\s*\(/g, '__rt.printf(');
+  code = code.replace(/\bgetchar\s*\(\s*\)/g, '__rt.getchar()');
+  code = code.replace(/\bstrlen\s*\(/g, '__rt.strlen(');
+  code = code.replace(/\bstrcmp\s*\(/g, '__rt.strcmp(');
 
   // Step 10: Constants & Math
   code = code.replace(/\bNULL\b/g, 'null');
   code = code.replace(/\bsqrt\s*\(/g, 'Math.sqrt(');
   code = code.replace(/\babs\s*\(/g, 'Math.abs(');
+  code = code.replace(/\bfabs\s*\(/g, 'Math.abs(');
   code = code.replace(/\bpow\s*\(/g, 'Math.pow(');
+  code = code.replace(/\bfloor\s*\(/g, 'Math.floor(');
+  code = code.replace(/\bceil\s*\(/g, 'Math.ceil(');
+  code = code.replace(/\bmin\s*\(/g, 'Math.min(');
+  code = code.replace(/\bmax\s*\(/g, 'Math.max(');
 
   // Step 11: Restore string and char literals
   code = code.replace(/__STR_LITERAL_(\d+)__/g, (_, idx) => stringLiterals[Number(idx)]);

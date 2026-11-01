@@ -349,12 +349,7 @@ export const AcademyView: React.FC = () => {
           if (exec.status === 'RTE') {
             setExecutionOutput(`[Lỗi thực thi: RUNTIME ERROR]\n${exec.stderr}`);
             setExercisePassed(false);
-            setDiffState({
-              actual: `RUNTIME ERROR:\n${exec.stderr}`,
-              expected: tc.expectedOutput,
-              input: tc.input,
-              isFailed: true,
-            });
+            setDiffState(null);
             return;
           }
 
