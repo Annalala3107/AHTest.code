@@ -5,22 +5,12 @@ import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
 import { ProblemsView } from './components/ProblemsView';
 import { ViewLoadingFallback } from './components/ViewLoadingFallback';
+import { VnoiAuthModal } from './components/VnoiAuthModal';
 import { Problem, AuthUser, ExamSessionConfig } from './types';
 import { getStreakState } from './services/streakService';
 import { findProblemById } from './services/problemResolver';
-
-// Default system administrator account for open access
-const SYSTEM_ADMIN: AuthUser = {
-  id: 'usr_admin',
-  name: 'Quản trị viên',
-  email: 'admin@ahtest.code',
-  avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin',
-  role: 'super_admin',
-  provider: 'email',
-  streakDays: 30,
-  rating: 2400,
-  rankClass: 'Grandmaster'
-};
+import { GUEST_USER } from './services/authService';
+import { setupSupabaseAuthListener, signOutSupabase } from './services/supabaseAuth';
 
 // Lazy-loaded heavy views for on-demand code-splitting
 const WorkbenchView = lazy(() =>
@@ -37,6 +27,12 @@ const AdminDashboardView = lazy(() =>
 );
 const ExamSimulationView = lazy(() =>
   import('./components/ExamSimulationView').then((m) => ({ default: m.ExamSimulationView }))
+);
+const ContestsView = lazy(() =>
+  import('./components/ContestsView').then((m) => ({ default: m.ContestsView }))
+);
+const LeaderboardView = lazy(() =>
+  import('./components/LeaderboardView').then((m) => ({ default: m.LeaderboardView }))
 );
 
 function WorkbenchRouteWrapper() {
@@ -86,6 +82,8 @@ function AppContent() {
   // Derive active NavTab from current URL pathname
   const currentTab: NavTab = useMemo(() => {
     if (location.pathname.startsWith('/problems')) return 'problems';
+    if (location.pathname.startsWith('/contests')) return 'contests';
+    if (location.pathname.startsWith('/leaderboard')) return 'leaderboard';
     if (location.pathname.startsWith('/academy')) return 'academy';
     if (location.pathname.startsWith('/importer')) return 'importer';
     if (location.pathname.startsWith('/admin')) return 'admin';
@@ -99,6 +97,45 @@ function AppContent() {
     return true; // Default to dark on initial visit
   });
   const [streakCount, setStreakCount] = useState<number>(() => getStreakState().currentStreak);
+
+  // VNOI Authenticated User State (Restored from localStorage or Guest)
+  const [currentUser, setCurrentUser] = useState<AuthUser>(() => {
+    try {
+      const saved = localStorage.getItem('ahtest_active_user');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return GUEST_USER;
+  });
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
+  // Supabase Real-time Auth Listener
+  useEffect(() => {
+    const unsubscribe = setupSupabaseAuthListener(
+      (user) => {
+        setCurrentUser(user);
+        try {
+          localStorage.setItem('ahtest_active_user', JSON.stringify(user));
+        } catch {
+          // ignore
+        }
+      },
+      () => {
+        const saved = localStorage.getItem('ahtest_active_user');
+        if (saved && (saved.includes('vnoi_') || saved.includes('usr_vnoi'))) {
+          // preserve demo handle
+        } else {
+          setCurrentUser(GUEST_USER);
+        }
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Listen to streak updates from solving problems
   useEffect(() => {
@@ -133,25 +170,52 @@ function AppContent() {
     const tabRoutes: Record<NavTab, string> = {
       home: '/',
       problems: '/problems',
+      contests: '/contests',
+      leaderboard: '/leaderboard',
       academy: '/academy',
       importer: '/importer',
       admin: '/admin',
-      contests: '/problems',
-      leaderboard: '/problems',
     };
     navigate(tabRoutes[tab] || '/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleOpenAuthModal = (mode: 'login' | 'register' = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleLoginSuccess = (user: AuthUser) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('ahtest_active_user', JSON.stringify(user));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleLogout = () => {
+    signOutSupabase();
+    setCurrentUser(GUEST_USER);
+    try {
+      localStorage.removeItem('ahtest_active_user');
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors font-sans antialiased">
-      {/* Top Navbar */}
+      {/* Top Navbar with VNOI Identity */}
       <Navbar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         streakCount={streakCount}
+        currentUser={currentUser}
+        onOpenAuthModal={handleOpenAuthModal}
+        onLogout={handleLogout}
       />
 
       {/* Main View Container */}
@@ -179,6 +243,22 @@ function AppContent() {
           />
           <Route path="/problems/:problemId" element={<WorkbenchRouteWrapper />} />
           <Route
+            path="/contests"
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <ContestsView />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <LeaderboardView />
+              </Suspense>
+            }
+          />
+          <Route
             path="/academy"
             element={
               <Suspense fallback={<ViewLoadingFallback />}>
@@ -202,7 +282,7 @@ function AppContent() {
             element={
               <Suspense fallback={<ViewLoadingFallback />}>
                 <AdminDashboardView
-                  currentUser={SYSTEM_ADMIN}
+                  currentUser={currentUser}
                   onNavigateTab={handleSelectTab}
                 />
               </Suspense>
@@ -211,6 +291,14 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      {/* VNOI Online Judge Authentication Modal */}
+      <VnoiAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        initialMode={authModalMode}
+      />
 
       {/* Live Exam Simulation Workspace Modal / Overlay */}
       {activeExamSession && (

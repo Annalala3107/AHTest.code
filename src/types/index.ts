@@ -278,6 +278,7 @@ export type UserRole = 'super_admin' | 'educator' | 'student';
 
 export interface AuthUser {
   id: string;
+  username?: string;
   email: string;
   name: string;
   avatarUrl: string;
@@ -286,6 +287,7 @@ export interface AuthUser {
   streakDays: number;
   rating?: number;
   rankClass?: string;
+  organization?: string;
   lastLoginAt?: string;
 }
 
