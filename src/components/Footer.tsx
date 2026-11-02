@@ -33,8 +33,8 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
               <li>
-                <a href="https://wiki.vnoi.info/" target="_blank" rel="noreferrer" className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5" /> VNOI Wiki Thuật toán
+                <a href="#wiki" onClick={(e) => { e.preventDefault(); alert('Cổng tài liệu thuật toán AHtest đang được cập nhật!'); }} className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1.5 cursor-pointer">
+                  <BookOpen className="w-3.5 h-3.5" /> AH Wiki Thuật Toán
                 </a>
               </li>
               <li>

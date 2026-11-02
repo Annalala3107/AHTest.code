@@ -3,15 +3,15 @@ import { Contest } from '../types';
 export const mockContests: Contest[] = [
   {
     id: 'c-1',
-    slug: 'vnoicup26_final',
-    title: '[Official] VNOI CUP 2026 - Chung Kết Toàn Quốc 🔥',
+    slug: 'ahcup26_final',
+    title: '[Official] AH CUP 2026 - Chung Kết Toàn Quốc 🔥',
     description: 'Vòng chung kết trực tiếp quy tụ 12 cao thủ thuật toán xuất sắc nhất Việt Nam và bảng đấu mở rộng.',
     startTime: '2026-11-15T09:00:00Z',
     endTime: '2026-11-15T14:00:00Z',
     durationMinutes: 300,
     isRated: true,
     status: 'UPCOMING',
-    tags: ['VNOI Cup', 'Rated', 'IOI Style', 'Grand Final'],
+    tags: ['AH Cup', 'Rated', 'IOI Style', 'Grand Final'],
     participantsCount: 1450,
     problems: [
       { code: 'A', slug: 'icpc26_mn_c', title: 'Sodium Sort', points: 100, solvedCount: 45 },

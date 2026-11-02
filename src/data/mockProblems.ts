@@ -51,7 +51,7 @@ Hãy tính số lần đổi chỗ ít nhất để đưa dãy về trạng thá
 2. Dựng đồ thị vô hướng trong đó cạnh nối giữa $i$ và $j$ nếu $|A_i - A_j| \\le K$.
 3. Các phần tử cùng thành phần liên thông có thể sắp xếp tùy ý bên trong tập hợp vị trí của chúng.
 4. Dùng thuật toán nén tọa độ và Fenwick Tree (Binary Indexed Tree) để tính số nghịch thế trong từng thành phần liên thông với độ phức tạp $O(N \\log N)$.`,
-    author: 'VNOI ICPC Setter Team',
+    author: 'AH ICPC Setter Team',
     source: 'ICPC 2026 Southern Vietnam Regional Contest',
     createdAt: '2026-10-18'
   },
@@ -129,7 +129,7 @@ Hãy tìm cây con thỏa mãn điều kiện có tổng giá trị thẩm mỹ 
       }
     ],
     editorial: `Bài toán phân rã cây bằng Centroid Decomposition kết hợp cấu trúc dữ liệu Persistent Segment Tree để đếm màu.`,
-    author: 'VNOI VOI Prep',
+    author: 'AH VOI Prep',
     source: 'Kỳ thi Học sinh giỏi Quốc gia (VOI 2026)',
     createdAt: '2026-01-12'
   },

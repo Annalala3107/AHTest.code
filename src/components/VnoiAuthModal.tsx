@@ -11,22 +11,15 @@ import {
   CheckCircle2, 
   ArrowRight,
   Shield,
-  Zap,
-  Award,
-  Key,
-  Settings
+  Award
 } from 'lucide-react';
 import { AuthUser } from '../types';
 import { 
   signInWithEmailPassword, 
   signUpWithEmailPassword, 
   signInWithGoogleOAuth, 
-  isSupabaseConfigured,
-  saveSupabaseConfig,
-  getSupabaseConfig,
-  DEFAULT_SUPABASE_URL
+  isSupabaseConfigured 
 } from '../services/supabaseAuth';
-import { getVnoiRankInfo } from '../services/vnoiRank';
 
 interface VnoiAuthModalProps {
   isOpen: boolean;
@@ -46,49 +39,6 @@ const POPULAR_ORGANIZATIONS = [
   'Trường Đại học Bách Khoa - ĐHQG TP.HCM (HCMUT)',
   'Trường Đại học FPT (FPT University)',
   'Tự do / Khác'
-];
-
-// Preset Demo Handles for instant competitive preview
-const DEMO_VNOI_ACCOUNTS: AuthUser[] = [
-  {
-    id: 'vnoi_gm_01',
-    username: 'tourist_vn',
-    name: 'Vũ Minh Quân',
-    email: 'quan.vm@vnoi.info',
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=tourist_vn',
-    role: 'super_admin',
-    provider: 'email',
-    streakDays: 45,
-    rating: 2450,
-    rankClass: 'Grandmaster',
-    organization: 'Trường THPT Chuyên KHTN - ĐHQG HN'
-  },
-  {
-    id: 'vnoi_m_02',
-    username: 'quang_anh_ptnk',
-    name: 'Lê Quang Anh',
-    email: 'quanganh@ptnk.edu.vn',
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=quang_anh_ptnk',
-    role: 'student',
-    provider: 'email',
-    streakDays: 28,
-    rating: 2210,
-    rankClass: 'Master',
-    organization: 'Trường Phổ thông Năng khiếu - ĐHQG TP.HCM'
-  },
-  {
-    id: 'vnoi_exp_03',
-    username: 'anngoc_coder',
-    name: 'Nguyễn Ngọc An',
-    email: 'anngoc@ahtest.code',
-    avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=anngoc_coder',
-    role: 'student',
-    provider: 'email',
-    streakDays: 14,
-    rating: 1680,
-    rankClass: 'Expert',
-    organization: 'Trường Đại học FPT'
-  }
 ];
 
 export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
@@ -120,11 +70,6 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Inline Supabase Key Configuration
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
-  const [inputUrl, setInputUrl] = useState(() => getSupabaseConfig().url || DEFAULT_SUPABASE_URL);
-  const [inputAnonKey, setInputAnonKey] = useState(() => getSupabaseConfig().anonKey || '');
-
   if (!isOpen) return null;
 
   const resetForm = () => {
@@ -136,17 +81,6 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
   const handleSwitchTab = (tab: 'login' | 'register') => {
     setActiveTab(tab);
     resetForm();
-  };
-
-  // Quick Demo Login
-  const handleSelectDemo = (account: AuthUser) => {
-    onLoginSuccess(account);
-    try {
-      localStorage.setItem('ahtest_active_user', JSON.stringify(account));
-    } catch {
-      // ignore
-    }
-    onClose();
   };
 
   // Submit Login
@@ -168,7 +102,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
 
     try {
       if (isSupabaseConfigured()) {
-        const emailToUse = identifier.includes('@') ? identifier : `${identifier}@vnoi.user`;
+        const emailToUse = identifier.includes('@') ? identifier : `${identifier}@ahtest.user`;
         const { user, error } = await signInWithEmailPassword(emailToUse, loginPassword);
         if (error || !user) {
           setErrorMsg(error || 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
@@ -181,11 +115,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
         }
         onClose();
       } else {
-        // Fallback local handle matching or synthetic profile
-        const matchedDemo = DEMO_VNOI_ACCOUNTS.find(
-          (d) => (d.username || '').toLowerCase() === identifier.toLowerCase() || d.email.toLowerCase() === identifier.toLowerCase()
-        );
-        const resolvedUser: AuthUser = matchedDemo || {
+        const resolvedUser: AuthUser = {
           id: `usr_${Date.now()}`,
           username: identifier.replace(/[^a-zA-Z0-9_]/g, '') || 'coder',
           name: identifier.split('@')[0],
@@ -196,7 +126,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
           streakDays: 1,
           rating: 1200,
           rankClass: 'Pupil',
-          organization: 'VNOI Online Judge'
+          organization: 'AHtest.code Arena'
         };
 
         onLoginSuccess(resolvedUser);
@@ -273,7 +203,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
         onClose();
       } else {
         const newUser: AuthUser = {
-          id: `usr_vnoi_${Date.now()}`,
+          id: `usr_ah_${Date.now()}`,
           username: handle,
           name: fullName,
           email: email,
@@ -283,7 +213,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
           streakDays: 1,
           rating: 1200,
           rankClass: 'Pupil',
-          organization: finalOrg || 'Cộng đồng VNOI'
+          organization: finalOrg || 'Cộng đồng AHtest.code'
         };
         onLoginSuccess(newUser);
         localStorage.setItem('ahtest_active_user', JSON.stringify(newUser));
@@ -321,16 +251,16 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
         {/* Top Header */}
         <div className="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-blue-500/20">
-              V
+            <div className="w-10 h-10 rounded-2xl bg-linear-to-tr from-rose-600 via-rose-500 to-red-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-rose-500/20">
+              AH
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  VNOI Online Judge
+                  AHtest Online Judge
                 </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  AHTest ID
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                  AHtest ID
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -338,21 +268,12 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setShowKeyConfig(!showKeyConfig)}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Cấu hình Supabase API Key"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Tab Switcher */}
@@ -381,98 +302,14 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
           </div>
         </div>
 
-        {/* Alerts & Inline Key Configuration Form */}
+        {/* Alerts */}
         <div className="px-6 pt-3 space-y-2">
           {errorMsg && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-xs flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span className="font-semibold">{errorMsg}</span>
-              </div>
-              {errorMsg.includes('Supabase Anon Key') && !showKeyConfig && (
-                <button
-                  type="button"
-                  onClick={() => setShowKeyConfig(true)}
-                  className="self-start text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  <span>Dán Supabase Anon Key vào đây để kích hoạt ngay</span>
-                </button>
-              )}
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span className="font-semibold">{errorMsg}</span>
             </div>
           )}
-
-          {/* Inline Supabase Config Form Drawer */}
-          {showKeyConfig && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Key className="w-4 h-4 text-amber-500" />
-                  Cấu hình Supabase API Key (Lưu cục bộ trên trình duyệt)
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowKeyConfig(false)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  Project URL:
-                </label>
-                <input
-                  type="text"
-                  value={inputUrl}
-                  onChange={(e) => setInputUrl(e.target.value)}
-                  placeholder="https://dcfehiahdpbfvyzekchr.supabase.co"
-                  className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  Public Anon Key:
-                </label>
-                <input
-                  type="password"
-                  value={inputAnonKey}
-                  onChange={(e) => setInputAnonKey(e.target.value)}
-                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                  className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!inputAnonKey.trim()) {
-                      setErrorMsg('Vui lòng nhập Supabase Anon Key hợp lệ.');
-                      return;
-                    }
-                    saveSupabaseConfig(inputUrl.trim(), inputAnonKey.trim());
-                    setShowKeyConfig(false);
-                    setErrorMsg(null);
-                    setSuccessMsg('Đã lưu Supabase Key vào trình duyệt! Bạn có thể bấm Google SSO hoặc Đăng nhập.');
-                  }}
-                  className="px-3 py-1.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-500 text-white cursor-pointer shadow-xs"
-                >
-                  Lưu & Kích hoạt ngay
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowKeyConfig(false)}
-                  className="px-3 py-1.5 rounded-xl font-medium text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          )}
-
           {successMsg && (
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -496,8 +333,8 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     type="text"
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="ví dụ: tourist_vn hoặc user@vnoi.info"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    placeholder="ví dụ: user@ahtest.code hoặc username"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     required
                   />
                 </div>
@@ -513,9 +350,9 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     href="#forgot"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert('Tính năng khôi phục mật khẩu sẽ gửi link xác thực về email của bạn.');
+                      alert('Tính năng khôi phục mật khẩu sẽ gửi liên kết xác thực về email của bạn.');
                     }}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-rose-600 dark:text-rose-400 hover:underline"
                   >
                     Quên mật khẩu?
                   </a>
@@ -527,13 +364,13 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Nhập mật khẩu tài khoản"
-                    className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -547,7 +384,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                   id="rememberMe"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded-sm border-slate-300 focus:ring-blue-500 cursor-pointer"
+                  className="w-4 h-4 text-rose-600 rounded-sm border-slate-300 focus:ring-rose-500 cursor-pointer"
                 />
                 <label htmlFor="rememberMe" className="text-xs text-slate-600 dark:text-slate-400 cursor-pointer select-none">
                   Ghi nhớ đăng nhập trên thiết bị này
@@ -558,9 +395,9 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                {loading ? 'Đang xác thực...' : 'Đăng nhập VNOI'}
+                {loading ? 'Đang xác thực...' : 'Đăng nhập AHtest'}
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -578,39 +415,6 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                 </svg>
                 Tiếp tục với Google SSO
               </button>
-
-              {/* Quick Demo Switcher */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-1.5 mb-2.5 text-slate-500 dark:text-slate-400">
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-xs font-semibold">Tài khoản thí sinh mẫu (1-Click Test):</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {DEMO_VNOI_ACCOUNTS.map((acc) => {
-                    const rank = getVnoiRankInfo(acc.rating);
-                    return (
-                      <button
-                        key={acc.id}
-                        type="button"
-                        onClick={() => handleSelectDemo(acc)}
-                        className="p-2 text-left rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-bold ${rank.textColor}`}>
-                            {acc.username}
-                          </span>
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded-sm font-mono ${rank.badgeBg}`}>
-                            {acc.rating}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                          {acc.rankClass}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </form>
           ) : (
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
@@ -625,8 +429,8 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     type="text"
                     value={regHandle}
                     onChange={(e) => setRegHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    placeholder="ví dụ: quang_anh_2007"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-mono"
+                    placeholder="ví dụ: coder_2026"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 font-mono"
                     required
                   />
                 </div>
@@ -644,8 +448,8 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     type="text"
                     value={regFullName}
                     onChange={(e) => setRegFullName(e.target.value)}
-                    placeholder="ví dụ: Vũ Minh Quân"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    placeholder="ví dụ: Nguyễn Văn A"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     required
                   />
                 </div>
@@ -663,7 +467,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     placeholder="user@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     required
                   />
                 </div>
@@ -679,7 +483,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                   <select
                     value={regOrg}
                     onChange={(e) => setRegOrg(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 cursor-pointer"
                   >
                     {POPULAR_ORGANIZATIONS.map((org) => (
                       <option key={org} value={org}>
@@ -694,7 +498,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     value={regCustomOrg}
                     onChange={(e) => setRegCustomOrg(e.target.value)}
                     placeholder="Nhập tên trường học hoặc CLB của bạn..."
-                    className="w-full mt-2 px-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    className="w-full mt-2 px-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                   />
                 )}
               </div>
@@ -710,7 +514,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="Tối thiểu 6 ký tự"
-                    className="w-full px-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     required
                   />
                 </div>
@@ -723,7 +527,7 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                     value={regConfirmPassword}
                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                     placeholder="Khớp với mật khẩu"
-                    className="w-full px-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
                     required
                   />
                 </div>
@@ -736,10 +540,10 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                   id="agreeRules"
                   checked={agreeRules}
                   onChange={(e) => setAgreeRules(e.target.checked)}
-                  className="w-4 h-4 mt-0.5 text-blue-600 rounded-sm border-slate-300 focus:ring-blue-500 cursor-pointer"
+                  className="w-4 h-4 mt-0.5 text-rose-600 rounded-sm border-slate-300 focus:ring-rose-500 cursor-pointer"
                 />
                 <label htmlFor="agreeRules" className="text-xs text-slate-600 dark:text-slate-400 cursor-pointer select-none">
-                  Tôi đồng ý với <span className="text-blue-600 dark:text-blue-400 font-medium">Quy chế Lập trình Thi đấu VNOI</span> và cam kết không sao chép lời giải hoặc vi phạm liêm chính học thuật.
+                  Tôi đồng ý với <span className="text-rose-600 dark:text-rose-400 font-medium">Quy chế Lập trình Thi đấu AHtest</span> và cam kết không sao chép lời giải hoặc vi phạm liêm chính học thuật.
                 </label>
               </div>
 
@@ -747,9 +551,9 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                {loading ? 'Đang khởi tạo tài khoản...' : 'Tạo tài khoản thí sinh VNOI'}
+                {loading ? 'Đang khởi tạo tài khoản...' : 'Tạo tài khoản thí sinh AHtest'}
                 <Shield className="w-4 h-4" />
               </button>
             </form>

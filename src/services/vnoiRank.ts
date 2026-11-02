@@ -1,6 +1,6 @@
 /**
- * VNOI / Codeforces Rating & Rank Designation System
- * Translates competitive programming Elo ratings into official VNOI rank titles and color classes.
+ * AHtest / Codeforces Rating & Rank Designation System
+ * Translates competitive programming Elo ratings into official rank titles and color classes.
  */
 
 export interface VnoiRankInfo {

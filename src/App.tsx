@@ -98,7 +98,7 @@ function AppContent() {
   });
   const [streakCount, setStreakCount] = useState<number>(() => getStreakState().currentStreak);
 
-  // VNOI Authenticated User State (Restored from localStorage or Guest)
+  // Authenticated User State (Restored from localStorage or Guest)
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => {
     try {
       const saved = localStorage.getItem('ahtest_active_user');
@@ -125,8 +125,8 @@ function AppContent() {
       },
       () => {
         const saved = localStorage.getItem('ahtest_active_user');
-        if (saved && (saved.includes('vnoi_') || saved.includes('usr_vnoi'))) {
-          // preserve demo handle
+        if (saved && (saved.includes('ah_') || saved.includes('usr_ah'))) {
+          // preserve custom handle
         } else {
           setCurrentUser(GUEST_USER);
         }
@@ -206,7 +206,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors font-sans antialiased">
-      {/* Top Navbar with VNOI Identity */}
+      {/* Top Navbar */}
       <Navbar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
@@ -292,7 +292,7 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* VNOI Online Judge Authentication Modal */}
+      {/* AHtest Online Judge Authentication Modal */}
       <VnoiAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

@@ -27,7 +27,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   streakCount: _streakCount
 }) => {
   const dailyProblem = mockProblems[0]; // Sodium Sort
-  const featuredContest = mockContests[0]; // VNOI Cup Final
+  const featuredContest = mockContests[0]; // AH Cup Final
 
   // 52-week activity heatmap generator (dummy active days)
   const heatmapWeeks = Array.from({ length: 36 }, (_, w) => 
