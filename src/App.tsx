@@ -31,10 +31,6 @@ const ExamSimulationView = lazy(() =>
 const ContestsView = lazy(() =>
   import('./components/ContestsView').then((m) => ({ default: m.ContestsView }))
 );
-const LeaderboardView = lazy(() =>
-  import('./components/LeaderboardView').then((m) => ({ default: m.LeaderboardView }))
-);
-
 function WorkbenchRouteWrapper() {
   const { problemId } = useParams<{ problemId: string }>();
   const navigate = useNavigate();
@@ -50,11 +46,19 @@ function WorkbenchRouteWrapper() {
   const { problem, collectionTitle, contextList } = resolved;
   const currentIdx = contextList.findIndex((p) => p.id === problem.id);
   const hasNext = currentIdx >= 0 && currentIdx < contextList.length - 1;
+  const hasPrev = currentIdx > 0;
 
   const handleNext = () => {
     if (hasNext) {
       const nextProblem = contextList[currentIdx + 1];
       navigate(`/problems/${nextProblem.id}`);
+    }
+  };
+
+  const handlePrev = () => {
+    if (hasPrev) {
+      const prevProblem = contextList[currentIdx - 1];
+      navigate(`/problems/${prevProblem.id}`);
     }
   };
 
@@ -65,6 +69,8 @@ function WorkbenchRouteWrapper() {
         onBack={() => navigate('/problems')}
         onNextProblem={handleNext}
         hasNextProblem={hasNext}
+        onPrevProblem={handlePrev}
+        hasPrevProblem={hasPrev}
         collectionTitle={collectionTitle}
       />
     </Suspense>
@@ -83,7 +89,6 @@ function AppContent() {
   const currentTab: NavTab = useMemo(() => {
     if (location.pathname.startsWith('/problems')) return 'problems';
     if (location.pathname.startsWith('/contests')) return 'contests';
-    if (location.pathname.startsWith('/leaderboard')) return 'leaderboard';
     if (location.pathname.startsWith('/academy')) return 'academy';
     if (location.pathname.startsWith('/importer')) return 'importer';
     if (location.pathname.startsWith('/admin')) return 'admin';
@@ -171,7 +176,6 @@ function AppContent() {
       home: '/',
       problems: '/problems',
       contests: '/contests',
-      leaderboard: '/leaderboard',
       academy: '/academy',
       importer: '/importer',
       admin: '/admin',
@@ -247,14 +251,6 @@ function AppContent() {
             element={
               <Suspense fallback={<ViewLoadingFallback />}>
                 <ContestsView />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/leaderboard"
-            element={
-              <Suspense fallback={<ViewLoadingFallback />}>
-                <LeaderboardView />
               </Suspense>
             }
           />

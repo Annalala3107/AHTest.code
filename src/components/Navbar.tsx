@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Shield,
   Trophy,
-  Award,
   LogIn,
   UserPlus,
   LogOut,
@@ -21,7 +20,7 @@ import { AuthUser } from '../types';
 import { isGuestUser } from '../services/authService';
 import { getVnoiRankInfo } from '../services/vnoiRank';
 
-export type NavTab = 'home' | 'problems' | 'academy' | 'importer' | 'admin' | 'contests' | 'leaderboard';
+export type NavTab = 'home' | 'problems' | 'academy' | 'importer' | 'admin' | 'contests';
 
 interface NavbarProps {
   currentTab: NavTab;
@@ -68,7 +67,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'home', label: 'Trang chủ', icon: LayoutDashboard },
     { id: 'problems', label: 'Bài tập', icon: Code2 },
     { id: 'contests', label: 'Kỳ thi', icon: Trophy },
-    { id: 'leaderboard', label: 'Xếp hạng', icon: Award },
     { id: 'academy', label: 'Khóa học', icon: BookOpen },
     { id: 'importer', label: 'Kho Đề', icon: FolderGit2 },
     { id: 'admin', label: 'Quản trị', icon: Shield },
@@ -238,16 +236,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       >
                         <Trophy className="w-4 h-4 text-amber-500" />
                         <span>Đấu trường kỳ thi (Contests)</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          onSelectTab('leaderboard');
-                          setProfileDropdownOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <Award className="w-4 h-4 text-rose-500" />
-                        <span>Bảng xếp hạng Elo quốc gia</span>
                       </button>
                       {currentUser?.role === 'super_admin' && (
                         <button

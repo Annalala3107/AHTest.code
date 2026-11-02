@@ -2924,12 +2924,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "5 3 4",
-        "output": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "output": "Chu vi của Hình Tròn: 31.415900\nDiện tích của Hình Tròn: 78.539750\nChu vi của Hình Chữ Nhật: 14.000000\nDiện tích của Hình Chữ Nhật: 12.000000\nChu vi của Tam Giác: 12.000000\nDiện tích của Tam Giác: 6.000000",
         "explanation": "Công thức diện tích chu vi"
       },
       {
         "input": "5 3 4",
-        "output": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "output": "Chu vi của Hình Tròn: 31.415900\nDiện tích của Hình Tròn: 78.539750\nChu vi của Hình Chữ Nhật: 14.000000\nDiện tích của Hình Chữ Nhật: 12.000000\nChu vi của Tam Giác: 12.000000\nDiện tích của Tam Giác: 6.000000",
         "explanation": "Test case mẫu 2"
       }
     ],
@@ -2937,28 +2937,28 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "id": 1,
         "input": "5 3 4",
-        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "expectedOutput": "Chu vi của Hình Tròn: 31.415900\nDiện tích của Hình Tròn: 78.539750\nChu vi của Hình Chữ Nhật: 14.000000\nDiện tích của Hình Chữ Nhật: 12.000000\nChu vi của Tam Giác: 12.000000\nDiện tích của Tam Giác: 6.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
         "input": "5 3 4",
-        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "expectedOutput": "Chu vi của Hình Tròn: 31.415900\nDiện tích của Hình Tròn: 78.539750\nChu vi của Hình Chữ Nhật: 14.000000\nDiện tích của Hình Chữ Nhật: 12.000000\nChu vi của Tam Giác: 12.000000\nDiện tích của Tam Giác: 6.000000",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
         "input": "5 3 4",
-        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "expectedOutput": "Chu vi của Hình Tròn: 31.415900\nDiện tích của Hình Tròn: 78.539750\nChu vi của Hình Chữ Nhật: 14.000000\nDiện tích của Hình Chữ Nhật: 12.000000\nChu vi của Tam Giác: 12.000000\nDiện tích của Tam Giác: 6.000000",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
         "input": "5 3 4",
-        "expectedOutput": "Chu vi c?a Hình Tròn: 31.415900\nDi?n tích c?a Hình Tròn: 78.539750\nChu vi c?a Hình Ch? Nh?t: 14.000000\nDi?n tích c?a Hình Ch? Nh?t: 12.000000\nChu vi c?a Tam Giác: 12.000000\nDi?n tích c?a Tam Giác: 6.000000",
+        "expectedOutput": "Chu vi của Hình Tròn: 31.415900\nDiện tích của Hình Tròn: 78.539750\nChu vi của Hình Chữ Nhật: 14.000000\nDiện tích của Hình Chữ Nhật: 12.000000\nChu vi của Tam Giác: 12.000000\nDiện tích của Tam Giác: 6.000000",
         "isHidden": true,
         "weight": 25
       }
@@ -2985,7 +2985,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <math.h>\ndouble getPerimCircle(double r) {\nif (r > 0)\nreturn 2 * r * 3.14159; // S? d?ng giá tr? pi chính xác hon\nelse\nreturn 0;\n}\ndouble getAreaCircle(double r) {\nif (r > 0)\nreturn r * r * 3.14159;\nelse\nreturn 0;\n}\ndouble getPerimRectangle(double A, double B) {\nif (A > 0 && B > 0)\nreturn 2 * (A + B);\nelse\nreturn 0;\n}\ndouble getAreaRectangle(double A, double B) {\nif (A > 0 && B > 0)\nreturn A * B;\nelse\nreturn 0;\n}\ndouble getPerimTriangle(double A, double B, double C) {\nif (A > 0 && B > 0 && C > 0 && A + B > C && B + C > A && A + C > B)\nreturn A + B + C;\nelse\nreturn 0;\n}\ndouble getAreaTriangle(double A, double B, double C) {\nif (A > 0 && B > 0 && C > 0 && A + B > C && B + C > A && A + C > B) {\ndouble P = getPerimTriangle(A, B, C) / 2;\nreturn sqrt(P * (P - A) * (P - B) * (P - C));\n} else {\nprintf(\"\\nÐây không ph?i là tam giác, vui lòng ki?m tra d? dài các c?nh A, B, C\\n\");\nreturn 0;\n}\n}\nint main() {\ndouble r = 5.0; // Bán kính c?a hình tròn\ndouble A = 3.0, B = 4.0, C = 5.0; // Các c?nh c?a tam giác\nprintf(\"Chu vi c?a Hình Tròn: %lf\\n\", getPerimCircle(r));\nprintf(\"Di?n tích c?a Hình Tròn: %lf\\n\", getAreaCircle(r));\nprintf(\"Chu vi c?a Hình Ch? Nh?t: %lf\\n\", getPerimRectangle(A, B));\nprintf(\"Di?n tích c?a Hình Ch? Nh?t: %lf\\n\", getAreaRectangle(A, B));\nprintf(\"Chu vi c?a Tam Giác: %lf\\n\", getPerimTriangle(A, B, C));\nprintf(\"Di?n tích c?a Tam Giác: %lf\\n\", getAreaTriangle(A, B, C));\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n#include <math.h>\ndouble getPerimCircle(double r) {\nif (r > 0)\nreturn 2 * r * 3.14159; // Sử dụng giá trị pi chính xác hơn\nelse\nreturn 0;\n}\ndouble getAreaCircle(double r) {\nif (r > 0)\nreturn r * r * 3.14159;\nelse\nreturn 0;\n}\ndouble getPerimRectangle(double A, double B) {\nif (A > 0 && B > 0)\nreturn 2 * (A + B);\nelse\nreturn 0;\n}\ndouble getAreaRectangle(double A, double B) {\nif (A > 0 && B > 0)\nreturn A * B;\nelse\nreturn 0;\n}\ndouble getPerimTriangle(double A, double B, double C) {\nif (A > 0 && B > 0 && C > 0 && A + B > C && B + C > A && A + C > B)\nreturn A + B + C;\nelse\nreturn 0;\n}\ndouble getAreaTriangle(double A, double B, double C) {\nif (A > 0 && B > 0 && C > 0 && A + B > C && B + C > A && A + C > B) {\ndouble P = getPerimTriangle(A, B, C) / 2;\nreturn sqrt(P * (P - A) * (P - B) * (P - C));\n} else {\nprintf(\"\\nĐây không phải là tam giác, vui lòng kiểm tra độ dài các cạnh A, B, C\\n\");\nreturn 0;\n}\n}\nint main() {\ndouble r = 5.0; // Bán kính của hình tròn\ndouble A = 3.0, B = 4.0, C = 5.0; // Các cạnh của tam giác\nprintf(\"Chu vi của Hình Tròn: %lf\\n\", getPerimCircle(r));\nprintf(\"Diện tích của Hình Tròn: %lf\\n\", getAreaCircle(r));\nprintf(\"Chu vi của Hình Chữ Nhật: %lf\\n\", getPerimRectangle(A, B));\nprintf(\"Diện tích của Hình Chữ Nhật: %lf\\n\", getAreaRectangle(A, B));\nprintf(\"Chu vi của Tam Giác: %lf\\n\", getPerimTriangle(A, B, C));\nprintf(\"Diện tích của Tam Giác: %lf\\n\", getAreaTriangle(A, B, C));\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_36",
@@ -5389,12 +5389,12 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "samples": [
       {
         "input": "8 2",
-        "output": "8 là l?y th?a c?a 2^3",
+        "output": "8 là lũy thừa của 2^3",
         "explanation": "Kiểm tra lũy thừa"
       },
       {
         "input": "7 7",
-        "output": "7 là l?y th?a c?a 7^1",
+        "output": "7 là lũy thừa của 7^1",
         "explanation": "Test case mẫu 2"
       }
     ],
@@ -5402,28 +5402,28 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
       {
         "id": 1,
         "input": "8 2",
-        "expectedOutput": "8 là l?y th?a c?a 2^3",
+        "expectedOutput": "8 là lũy thừa của 2^3",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 2,
         "input": "7 7",
-        "expectedOutput": "7 là l?y th?a c?a 7^1",
+        "expectedOutput": "7 là lũy thừa của 7^1",
         "isHidden": false,
         "weight": 25
       },
       {
         "id": 3,
         "input": "27 3",
-        "expectedOutput": "27 là l?y th?a c?a 3^3",
+        "expectedOutput": "27 là lũy thừa của 3^3",
         "isHidden": true,
         "weight": 25
       },
       {
         "id": 4,
         "input": "16 2",
-        "expectedOutput": "16 là l?y th?a c?a 2^4",
+        "expectedOutput": "16 là lũy thừa của 2^4",
         "isHidden": true,
         "weight": 25
       }
@@ -5450,7 +5450,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint main() {\nint num, base;\ndouble exponent;\nprintf(\"Nh?p s? nguyên: \");\nscanf(\"%d\", &num);\nfor (base = 2; base <= num; base++) {\nexponent = log(num) / log(base);\nif (exponent == (int) exponent) {\nprintf(\"%d là l?y th?a c?a %d^%d\\n\", num, base, (int) exponent);\nreturn 0;\n}\n}\nprintf(\"%d không ph?i là l?y th?a c?a b?t k? s? nào\\n\", num);\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n#include <math.h>\nint main() {\nint num, base;\ndouble exponent;\nprintf(\"Nhập số nguyên: \");\nscanf(\"%d\", &num);\nfor (base = 2; base <= num; base++) {\nexponent = log(num) / log(base);\nif (exponent == (int) exponent) {\nprintf(\"%d là lũy thừa của %d^%d\\n\", num, base, (int) exponent);\nreturn 0;\n}\n}\nprintf(\"%d không phải là lũy thừa của bất kỳ số nào\\n\", num);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_65",
@@ -6730,7 +6730,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
   {
     "id": "prf192_src_80",
     "slug": "prf192_src_80_in_ra_cac_so_chan_o_vi_tri_le_t",
-    "title": "Source 78: In ra cac so chan o vi tri le theo thu tu giam dan coi v? tri tri dau la vi tri 1",
+    "title": "Source 78: In ra cac so chan o vi tri le theo thu tu giam dan coi vị trí đầu là vị trí 1",
     "category": "Số Học & Thuật Toán Cơ Bản",
     "difficulty": "Easy",
     "points": 100,
@@ -6742,7 +6742,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     ],
     "solvedCount": 268,
     "totalSubmissions": 358,
-    "statement": "### Bài toán: Source 78: In ra cac so chan o vi tri le theo thu tu giam dan coi v? tri tri dau la vi tri 1\n\nViết chương trình C giải quyết bài toán theo chuẩn khảo thí PRF192.\n\n**Yêu cầu kỹ thuật:**\n- Mã nguồn tuân thủ tiêu chuẩn C11/C17.\n- Không dùng các lệnh điều khiển màn hình như `system(\"cls\")` hay `system(\"pause\")`.\n- Đảm bảo in đúng định dạng kết quả ra `stdout` để hệ thống tự động chấm điểm.",
+    "statement": "### Bài toán: Source 78: In ra cac so chan o vi tri le theo thu tu giam dan coi vị trí đầu là vị trí 1\n\nViết chương trình C giải quyết bài toán theo chuẩn khảo thí PRF192.\n\n**Yêu cầu kỹ thuật:**\n- Mã nguồn tuân thủ tiêu chuẩn C11/C17.\n- Không dùng các lệnh điều khiển màn hình như `system(\"cls\")` hay `system(\"pause\")`.\n- Đảm bảo in đúng định dạng kết quả ra `stdout` để hệ thống tự động chấm điểm.",
     "inputFormat": "Dữ liệu đầu vào chuẩn từ stdin theo từng dòng.",
     "outputFormat": "Kết quả in ra stdout theo đúng định dạng kiểm thử.",
     "constraints": "Thời gian thực thi tối đa: 1.0s. Bộ nhớ: 128MB.",
@@ -7235,7 +7235,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n// Hàm tính t?ng các ch? s? c?a m?t s? nguyên duong\nint sumOfDigits(int num) {\nint sum = 0;\nwhile (num > 0) {\nsum += num % 10; // L?y ch? s? cu?i cùng và c?ng vào t?ng\nnum /= 10;       // Lo?i b? ch? s? cu?i cùng\n}\nreturn sum;\n}\n// Hàm tích các ch? s? c?a m?t s? nguyên duong\nint productOfDigits(int num) {\nint product = 1;\nwhile (num > 0) {\nproduct *= num % 10; // L?y ch? s? cu?i cùng và nhân vào tích\nnum /= 10;           // Lo?i b? ch? s? cu?i cùng\n}\nreturn product;\n}\nint main() {\nint number;\nprintf(\"Nh?p m?t s? nguyên duong: \");\nscanf(\"%d\", &number);\nint sum = sumOfDigits(number);\nint product = productOfDigits(number);\nif (sum == product) {\nprintf(\"yes\");\n} else {\nprintf(\"no\");\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n// Hàm tính tổng các chữ số của một số nguyên dương\nint sumOfDigits(int num) {\nint sum = 0;\nwhile (num > 0) {\nsum += num % 10; // Lấy chữ số cuối cùng và cộng vào tổng\nnum /= 10;       // Loại bỏ chữ số cuối cùng\n}\nreturn sum;\n}\n// Hàm tích các chữ số của một số nguyên dương\nint productOfDigits(int num) {\nint product = 1;\nwhile (num > 0) {\nproduct *= num % 10; // Lấy chữ số cuối cùng và nhân vào tích\nnum /= 10;           // Loại bỏ chữ số cuối cùng\n}\nreturn product;\n}\nint main() {\nint number;\nprintf(\"Nhập một số nguyên dương: \");\nscanf(\"%d\", &number);\nint sum = sumOfDigits(number);\nint product = productOfDigits(number);\nif (sum == product) {\nprintf(\"yes\");\n} else {\nprintf(\"no\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_86",
@@ -8000,7 +8000,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint main() {\nint n;\nprintf(\"Nh?p m?t s? nguyên duong: \");\nscanf(\"%d\", &n);\nint evenCount = 0; // S? lu?ng ch? s? ch?n\nint oddCount = 0;  // S? lu?ng ch? s? l?\n// Ð?m ch? s? ch?n và l?\nint digit;\nwhile (n > 0) {\ndigit = n % 10; // L?y ch? s? cu?i cùng\nif (digit % 2 == 0) {\nevenCount++;\n} else {\noddCount++;\n}\nn /= 10; // Lo?i b? ch? s? cu?i cùng\n}\nprintf(\"S? lu?ng ch? s? ch?n: %d\\n\", evenCount);\nprintf(\"S? lu?ng ch? s? l?: %d\\n\", oddCount);\nreturn 0;\n}"
+    "code": "#include <stdio.h>\nint main() {\nint n;\nprintf(\"Nhập một số nguyên dương: \");\nscanf(\"%d\", &n);\nint evenCount = 0; // Số lượng chữ số chẵn\nint oddCount = 0;  // Số lượng chữ số lẻ\n// Đếm chữ số chẵn và lẻ\nint digit;\nwhile (n > 0) {\ndigit = n % 10; // Lấy chữ số cuối cùng\nif (digit % 2 == 0) {\nevenCount++;\n} else {\noddCount++;\n}\nn /= 10; // Loại bỏ chữ số cuối cùng\n}\nprintf(\"Số lượng chữ số chẵn: %d\\n\", evenCount);\nprintf(\"Số lượng chữ số lẻ: %d\\n\", oddCount);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_95",
@@ -8085,7 +8085,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h> // Ð? s? d?ng hàm islower\nint main() {\nint i;\nchar inputString[100]; // Khai báo m?ng kí t? d? luu chu?i\nprintf(\"Nh?p m?t chu?i kí t?: \");\nfgets(inputString, sizeof(inputString), stdin); // Nh?n chu?i t? ngu?i dùng\nprintf(\"Các kí t? vi?t thu?ng trong chu?i:\\n\");\nfor (i = 0; inputString[i] != '\\0'; i++) {\nif (islower(inputString[i])) {\nprintf(\"%c \", inputString[i]);\n}\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n#include <ctype.h> // Để sử dụng hàm islower\nint main() {\nint i;\nchar inputString[100]; // Khai báo mảng kí tự để lưu chuỗi\nprintf(\"Nhập một chuỗi kí tự: \");\nfgets(inputString, sizeof(inputString), stdin); // Nhận chuỗi từ người dùng\nprintf(\"Các kí tự viết thường trong chuỗi:\\n\");\nfor (i = 0; inputString[i] != '\\0'; i++) {\nif (islower(inputString[i])) {\nprintf(\"%c \", inputString[i]);\n}\n}\nprintf(\"\\n\");\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_96",
@@ -8340,7 +8340,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n// Hàm tìm s? ch?n l?n nh?t trong m?ng\nint findMaxEven(int arr[], int n) {\nint i;\nint maxEven = -1; // Gi? s? không có s? ch?n trong m?ng\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0 && (maxEven == -1 || arr[i] > maxEven)) {\nmaxEven = arr[i];\n}\n}\nreturn maxEven;\n}\n// Hàm tìm s? ch?n nh? nh?t trong m?ng\nint findMinEven(int arr[], int n) {\nint i;\nint minEven = -1; // Gi? s? không có s? ch?n trong m?ng\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0 && (minEven == -1 || arr[i] < minEven)) {\nminEven = arr[i];\n}\n}\nreturn minEven;\n}\nint main() {\nint n, i;\nprintf(\"Nh?p s? lu?ng ph?n t? trong m?ng: \");\nscanf(\"%d\", &n);\nint arr[100];\nprintf(\"Nh?p các ph?n t? c?a m?ng:\\n\");\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint maxEven = findMaxEven(arr, n);\nint minEven = findMinEven(arr, n);\nif (maxEven != -1 && minEven != -1) {\nfor (i = 0; i < n; i++) {\nif (arr[i] == maxEven) {\narr[i] = minEven;\n} else if (arr[i] == minEven) {\narr[i] = maxEven;\n}\n}\nprintf(\"M?ng sau khi hoán d?i s? ch?n l?n nh?t và nh? nh?t:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\n} else {\nprintf(\"Không tìm th?y s? ch?n trong m?ng.\\n\");\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n// Hàm tìm số chẵn lớn nhất trong mảng\nint findMaxEven(int arr[], int n) {\nint i;\nint maxEven = -1; // Giả sử không có số chẵn trong mảng\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0 && (maxEven == -1 || arr[i] > maxEven)) {\nmaxEven = arr[i];\n}\n}\nreturn maxEven;\n}\n// Hàm tìm số chẵn nhỏ nhất trong mảng\nint findMinEven(int arr[], int n) {\nint i;\nint minEven = -1; // Giả sử không có số chẵn trong mảng\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0 && (minEven == -1 || arr[i] < minEven)) {\nminEven = arr[i];\n}\n}\nreturn minEven;\n}\nint main() {\nint n, i;\nprintf(\"Nhập số lượng phần tử trong mảng: \");\nscanf(\"%d\", &n);\nint arr[100];\nprintf(\"Nhập các phần tử của mảng:\\n\");\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint maxEven = findMaxEven(arr, n);\nint minEven = findMinEven(arr, n);\nif (maxEven != -1 && minEven != -1) {\nfor (i = 0; i < n; i++) {\nif (arr[i] == maxEven) {\narr[i] = minEven;\n} else if (arr[i] == minEven) {\narr[i] = maxEven;\n}\n}\nprintf(\"Mảng sau khi hoán đổi số chẵn lớn nhất và nhỏ nhất:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\n} else {\nprintf(\"Không tìm thấy số chẵn trong mảng.\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_99",
@@ -8425,7 +8425,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h> // Ð? s? d?ng hàm toupper\nvoid capitalizeFirstTwo(char str[]) {\nint i = 0;\nwhile (str[i] != '\\0') {\n// B?t d?u m?t t? m?i\nwhile (str[i] != '\\0' && !isalpha(str[i])) {\nputchar(str[i]);\ni++;\n}\n// Vi?t hoa kí t? d?u tiên n?u là ch?\nif (isalpha(str[i])) {\nputchar(toupper(str[i]));\ni++;\n// Vi?t hoa kí t? th? hai n?u có\nif (isalpha(str[i])) {\nputchar(toupper(str[i]));\ni++;\n}\n}\n// Copy ph?n còn l?i c?a t?\nwhile (str[i] != '\\0' && !isspace(str[i])) {\nputchar(str[i]);\ni++;\n}\n}\n}\nint main() {\nchar inputString[100]; // Khai báo m?ng kí t? d? luu chu?i\nprintf(\"Nh?p m?t chu?i: \");\nfgets(inputString, sizeof(inputString), stdin); // Nh?n chu?i t? ngu?i dùng\nprintf(\"Chu?i sau khi vi?t hoa hai ký t? d?u c?a m?i t?: \");\ncapitalizeFirstTwo(inputString);\nreturn 0;\n}\nSource 96 : in ra các phần tử bị lặp lại trong mảng.\n#include <stdio.h>\nvoid findDuplicates(int arr[], int n) {\nprintf(\"Các phần tử bị lặp lại trong mảng: \");\nfor (int i = 0; i < n; i++) {\nfor (int j = i + 1; j < n; j++) {\nif (arr[i] == arr[j]) {\nprintf(\"%d \", arr[i]);\nbreak; // Để tránh in phần tử bị lặp lại nhiều lần\n}\n}\n}\nprintf(\"\\n\");\n}\nint main() {\nint n;\nprintf(\"Nhập số lượng phần tử trong mảng: \");\nscanf(\"%d\", &n);\nint arr[100];\nprintf(\"Nhập các phần tử của mảng:\\n\");\nfor (int i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nfindDuplicates(arr, n); // In ra các phần tử bị lặp lại trong mảng\nreturn 0;\n}\nSource 97 : Đếm có bao nhiêu ký tự nhập vào trong srting\n#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint countSubstring(char str[], char sub[]) {\nint count = 0;\nint i;\nint len1 = strlen(str);\nint len2 = strlen(sub);\nfor (i = 0; i <= len1 - len2; i++) {\nint j;\nfor (j = 0; j < len2; j++) {\nif (tolower(str[i+j]) != tolower(sub[j]))\nbreak;\n}\nif (j == len2) {\ncount++;\nj = 0;\n}\n}\nreturn count;\n}\nint main() {\nchar input[100];\nprintf(\"Please enter strings: \");\nfgets(input, sizeof(input), stdin);\ninput[strcspn(input, \"\\n\")] = '\\0'; // remove trailing newline\nchar k[100];\nprintf(\"Please enter string k: \");\nfgets(k, sizeof(k), stdin);\nk[strcspn(k, \"\\n\")] = '\\0'; // remove trailing newline\nint count = countSubstring(input, k);\nprintf(\"%d\", count);\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n#include <ctype.h> // Để sử dụng hàm toupper\nvoid capitalizeFirstTwo(char str[]) {\nint i = 0;\nwhile (str[i] != '\\0') {\n// Bắt đầu một từ mới\nwhile (str[i] != '\\0' && !isalpha(str[i])) {\nputchar(str[i]);\ni++;\n}\n// Viết hoa kí tự đầu tiên nếu là chữ\nif (isalpha(str[i])) {\nputchar(toupper(str[i]));\ni++;\n// Viết hoa kí tự thứ hai nếu có\nif (isalpha(str[i])) {\nputchar(toupper(str[i]));\ni++;\n}\n}\n// Copy phần còn lại của từ\nwhile (str[i] != '\\0' && !isspace(str[i])) {\nputchar(str[i]);\ni++;\n}\n}\n}\nint main() {\nchar inputString[100]; // Khai báo mảng kí tự để lưu chuỗi\nprintf(\"Nhập một chuỗi: \");\nfgets(inputString, sizeof(inputString), stdin); // Nhận chuỗi từ người dùng\nprintf(\"Chuỗi sau khi viết hoa hai ký tự đầu của mỗi từ: \");\ncapitalizeFirstTwo(inputString);\nreturn 0;\n}\nSource 96 : in ra các phần tử bị lặp lại trong mảng.\n#include <stdio.h>\nvoid findDuplicates(int arr[], int n) {\nprintf(\"Các phần tử bị lặp lại trong mảng: \");\nfor (int i = 0; i < n; i++) {\nfor (int j = i + 1; j < n; j++) {\nif (arr[i] == arr[j]) {\nprintf(\"%d \", arr[i]);\nbreak; // Để tránh in phần tử bị lặp lại nhiều lần\n}\n}\n}\nprintf(\"\\n\");\n}\nint main() {\nint n;\nprintf(\"Nhập số lượng phần tử trong mảng: \");\nscanf(\"%d\", &n);\nint arr[100];\nprintf(\"Nhập các phần tử của mảng:\\n\");\nfor (int i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nfindDuplicates(arr, n); // In ra các phần tử bị lặp lại trong mảng\nreturn 0;\n}\nSource 97 : Đếm có bao nhiêu ký tự nhập vào trong srting\n#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint countSubstring(char str[], char sub[]) {\nint count = 0;\nint i;\nint len1 = strlen(str);\nint len2 = strlen(sub);\nfor (i = 0; i <= len1 - len2; i++) {\nint j;\nfor (j = 0; j < len2; j++) {\nif (tolower(str[i+j]) != tolower(sub[j]))\nbreak;\n}\nif (j == len2) {\ncount++;\nj = 0;\n}\n}\nreturn count;\n}\nint main() {\nchar input[100];\nprintf(\"Please enter strings: \");\nfgets(input, sizeof(input), stdin);\ninput[strcspn(input, \"\\n\")] = '\\0'; // remove trailing newline\nchar k[100];\nprintf(\"Please enter string k: \");\nfgets(k, sizeof(k), stdin);\nk[strcspn(k, \"\\n\")] = '\\0'; // remove trailing newline\nint count = countSubstring(input, k);\nprintf(\"%d\", count);\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_100",
@@ -9190,7 +9190,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar input[100]; // Gi? s? d? dài t?i da c?a chu?i là 100 ký t?\nchar output[7]; // Ð? dài t?i da c?a chu?i k?t qu? là 5 ký t? + 1 ký t? k?t thúc chu?i (\\0)\nint length;\nprintf(\"Nh?p chu?i (d? dài t? 5 d?n 20 ký t?): \");\nfgets(input, sizeof(input), stdin);\nlength = strlen(input);\n// Xóa ký t? newline n?u t?n t?i\nif (input[length - 1] == '\\n') {\ninput[length - 1] = '\\0';\nlength--;\n}\nif (length >= 5 && length <= 20) {\nint start = (length - 5) / 2;\nstrncpy(output, input + start, 5);\noutput[5] = '\\0'; // Ð?m b?o k?t thúc chu?i\nprintf(\"Chu?i sau khi ch? gi? l?i 5 ký t? ? gi?a: %s\\n\", output);\n} else {\nprintf(\"Ð? dài c?a chu?i không th?a mãn yêu c?u.\\n\");\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar input[100]; // Giả sử độ dài tối đa của chuỗi là 100 ký tự\nchar output[7]; // Độ dài tối đa của chuỗi kết quả là 5 ký tự + 1 ký tự kết thúc chuỗi (\\0)\nint length;\nprintf(\"Nhập chuỗi (độ dài từ 5 đến 20 ký tự): \");\nfgets(input, sizeof(input), stdin);\nlength = strlen(input);\n// Xóa ký tự newline nếu tồn tại\nif (input[length - 1] == '\\n') {\ninput[length - 1] = '\\0';\nlength--;\n}\nif (length >= 5 && length <= 20) {\nint start = (length - 5) / 2;\nstrncpy(output, input + start, 5);\noutput[5] = '\\0'; // Đảm bảo kết thúc chuỗi\nprintf(\"Chuỗi sau khi chỉ giữ lại 5 ký tự ở giữa: %s\\n\", output);\n} else {\nprintf(\"Độ dài của chuỗi không thỏa mãn yêu cầu.\\n\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_109",
@@ -9275,7 +9275,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar str[100];\nint len, i, is_symmetric = 1;\nint n;\nscanf(\"%d\\n\",&n); // Chú ý \\n ? dây d? tiêu tr? ký t? newline sau khi nh?p n.\nfor(i = 0; i < n; i++) {\nscanf(\" %c\", &str[i]); // Ð?c t?ng ký t? và luu vào m?ng str.\n}\nstr[n] = '\\0'; // K?t thúc chu?i b?ng ký t? null.\nlen = strlen(str);\nfor (i = 0; i < len/2; i++) {\nif (str[i] != str[len-i-1]) {\nis_symmetric = 0;\nbreak;\n}\n}\nif (is_symmetric) {\nprintf(\"The string is symmetric\");\n}\nelse {\nprintf(\"The string is not symmetric\");\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar str[100];\nint len, i, is_symmetric = 1;\nint n;\nscanf(\"%d\\n\",&n); // Chú ý \\n ở đây để tiêu trừ ký tự newline sau khi nhập n.\nfor(i = 0; i < n; i++) {\nscanf(\" %c\", &str[i]); // Đọc từng ký tự và lưu vào mảng str.\n}\nstr[n] = '\\0'; // Kết thúc chuỗi bằng ký tự null.\nlen = strlen(str);\nfor (i = 0; i < len/2; i++) {\nif (str[i] != str[len-i-1]) {\nis_symmetric = 0;\nbreak;\n}\n}\nif (is_symmetric) {\nprintf(\"The string is symmetric\");\n}\nelse {\nprintf(\"The string is not symmetric\");\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_110",
@@ -9360,7 +9360,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] < a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2; // V? trí s? l? ch? d?i cho s? l?\nright -= 2; // V? trí s? ch?n ch? d?i cho s? ch?n\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] < a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2; // Vị trí số lẻ chỉ đổi cho số lẻ\nright -= 2; // Vị trí số chẵn chỉ đổi cho số chẵn\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_111",
@@ -9445,7 +9445,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "createdAt": "2026-11-01",
     "isCustom": false,
     "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] > a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2;  // V? trí s? l? ch? d?i cho s? l?\nright -= 2; // V? trí s? ch?n ch? d?i cho s? ch?n\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[c - 1 - idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
+    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] > a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2;  // Vị trí số lẻ chỉ đổi cho số lẻ\nright -= 2; // Vị trí số chẵn chỉ đổi cho số chẵn\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[c - 1 - idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
   },
   {
     "id": "prf192_src_112",
