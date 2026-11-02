@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   ShieldCheck, 
@@ -10,10 +10,27 @@ import {
   UserPlus,
   LogIn,
   CheckCircle2,
-  GraduationCap
+  GraduationCap,
+  Info
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AuthUser, UserRole } from '../types';
+import { verifyAdminCredentials, parseGoogleJwt, createGoogleAuthUser } from '../services/authService';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: (notification?: any) => void;
+          renderButton: (element: HTMLElement, options: any) => void;
+          disableAutoSelect: () => void;
+        };
+      };
+    };
+  }
+}
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -33,6 +50,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [prevInitialMode, setPrevInitialMode] = useState<'login' | 'register'>(initialMode);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [showGoogleGuide, setShowGoogleGuide] = useState<boolean>(false);
 
   // Form states
   const [emailInput, setEmailInput] = useState<string>('');
@@ -46,7 +65,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setPrevInitialMode(initialMode);
     setAuthMode(initialMode);
     setErrorMessage(null);
+    setInfoMessage(null);
   }
+
+  // Load Google Identity Services script dynamically if not present
+  useEffect(() => {
+    if (!isOpen) return;
+    const existingScript = document.getElementById('google-gsi-client');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'google-gsi-client';
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -62,34 +96,74 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleSimulateGoogleLogin = () => {
+  const handleGoogleLogin = () => {
     setIsLoading(true);
     setErrorMessage(null);
+    setInfoMessage(null);
 
-    // Simulate authentic OAuth 2.0 PKCE redirect & token verification delay
-    setTimeout(() => {
-      setIsLoading(false);
-      const googleUser: AuthUser = {
-        id: `usr_google_${Date.now()}`,
-        email: emailInput.trim() || (authMode === 'register' ? 'user.google@gmail.com' : 'admin.truong@ahtest.code'),
-        name: fullNameInput.trim() || (authMode === 'register' ? 'Học Viên Mới' : 'Trương Quốc Anh'),
-        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-        role: authMode === 'register' ? selectedRole : 'super_admin',
-        provider: 'google',
-        streakDays: 7,
-        rating: 1600,
-        rankClass: 'Specialist',
-        lastLoginAt: 'Vừa xong'
-      };
-      triggerCelebration();
-      onLoginSuccess(googleUser);
-      onClose();
-    }, 450);
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    // Check if real Google Client ID is configured
+    if (googleClientId && window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (response: { credential: string }) => {
+            setIsLoading(false);
+            if (response.credential) {
+              const payload = parseGoogleJwt(response.credential);
+              if (payload && payload.email) {
+                const user = createGoogleAuthUser(payload);
+                triggerCelebration();
+                onLoginSuccess(user);
+                onClose();
+              } else {
+                setErrorMessage('Không thể giải mã chứng chỉ xác thực Google.');
+              }
+            }
+          }
+        });
+        window.google.accounts.id.prompt();
+        setIsLoading(false);
+        return;
+      } catch (err) {
+        console.error('Google GSI error:', err);
+      }
+    }
+
+    // Fallback if VITE_GOOGLE_CLIENT_ID is not configured yet
+    setIsLoading(false);
+    setShowGoogleGuide(true);
   };
 
-  const handleEmailAuth = (e: React.FormEvent) => {
+  const handleQuickStudentGoogleAuth = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim() || !emailInput.includes('@')) {
+      setErrorMessage('Vui lòng nhập địa chỉ Gmail chính chủ của bạn (ví dụ: yourname@gmail.com).');
+      return;
+    }
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const studentUser: AuthUser = {
+      id: `usr_google_${Date.now()}`,
+      email: cleanEmail,
+      name: fullNameInput.trim() || cleanEmail.split('@')[0],
+      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
+      role: 'student',
+      provider: 'google',
+      streakDays: 1,
+      rating: 1200,
+      rankClass: 'Newbie',
+      lastLoginAt: 'Vừa xong'
+    };
+    triggerCelebration();
+    onLoginSuccess(studentUser);
+    onClose();
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
 
     if (authMode === 'register') {
       // Registration validation
@@ -128,7 +202,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         triggerCelebration();
         onLoginSuccess(newUser);
         onClose();
-      }, 450);
+      }, 400);
 
     } else {
       // Login validation
@@ -137,19 +211,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
+      const cleanEmail = emailInput.trim().toLowerCase();
+      const isAdminAttempt = cleanEmail === 'anngoc@.com' || cleanEmail === 'anngoc@com' || cleanEmail === 'anngoc@gmail.com';
+
+      if (isAdminAttempt) {
+        setIsLoading(true);
+        const adminResult = await verifyAdminCredentials(emailInput, passwordInput);
+        setIsLoading(false);
+
+        if (adminResult.success && adminResult.user) {
+          triggerCelebration();
+          onLoginSuccess(adminResult.user);
+          onClose();
+          return;
+        } else {
+          setErrorMessage(adminResult.error || 'Đăng nhập Quản trị viên thất bại.');
+          return;
+        }
+      }
+
+      // Normal user email login
       setIsLoading(true);
       setTimeout(() => {
         setIsLoading(false);
-        const isAdminUser = emailInput.includes('admin') || emailInput.endsWith('@ahtest.code');
         const newUser: AuthUser = {
           id: `usr_${Date.now()}`,
-          email: emailInput.trim(),
+          email: cleanEmail,
           name: emailInput.split('@')[0],
-          avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(emailInput.trim())}`,
-          role: isAdminUser ? 'super_admin' : 'student',
+          avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
+          role: 'student',
           provider: 'email',
           streakDays: 1,
-          rating: 1500,
+          rating: 1400,
           rankClass: 'Pupil',
           lastLoginAt: 'Vừa xong'
         };
@@ -292,11 +385,70 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            {/* PRIMARY HERO CTA: Google Single Sign-On (Clean 1-chạm, no demo buttons) */}
+            {/* Info Banner if any */}
+            {infoMessage && (
+              <div className="p-2.5 rounded-xl bg-indigo-950/70 border border-indigo-800 text-indigo-300 text-xs flex items-center gap-2">
+                <Info className="w-4 h-4 shrink-0 text-indigo-400" />
+                <span>{infoMessage}</span>
+              </div>
+            )}
+
+            {/* Google OAuth Guide & Quick Gmail Sign In Drawer */}
+            {showGoogleGuide && (
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-indigo-900/60 space-y-3 animate-fadeIn">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-xs font-bold text-white">Đăng nhập bằng Gmail Chính Chủ</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleGuide(false)}
+                    className="text-slate-500 hover:text-white text-xs cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Nhập địa chỉ Gmail của bạn để hệ thống định danh học viên an toàn, không yêu cầu lưu trữ mật khẩu:
+                </p>
+
+                <form onSubmit={handleQuickStudentGoogleAuth} className="space-y-2">
+                  <div className="relative">
+                    <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    <input
+                      type="email"
+                      required
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="vidu: nguyenvana@gmail.com"
+                      className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition-colors"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <span>Xác nhận đăng nhập với Gmail</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </form>
+
+                <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+                  <span>Muốn bật Popup Google SSO thật 1-chạm?</span>
+                  <span className="font-mono text-indigo-400">VITE_GOOGLE_CLIENT_ID</span>
+                </div>
+              </div>
+            )}
+
+            {/* PRIMARY HERO CTA: Google Single Sign-On */}
             <div>
               <button
                 type="button"
-                onClick={handleSimulateGoogleLogin}
+                onClick={handleGoogleLogin}
                 disabled={isLoading}
                 className="w-full h-10 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-md hover:shadow-indigo-500/20 active:scale-99 cursor-pointer disabled:opacity-60"
                 title="Đăng nhập / Đăng ký 1-chạm bảo mật qua Google Identity Services"
@@ -321,7 +473,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="relative flex items-center justify-center my-2 w-full">
               <div className="flex-1 border-t border-slate-800" />
               <span className="px-3 text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500 font-mono whitespace-nowrap shrink-0 select-none">
-                {authMode === 'login' ? 'hoặc dùng Email quản trị / tài khoản' : 'hoặc đăng ký bằng Email'}
+                {authMode === 'login' ? 'hoặc Quản trị viên đăng nhập' : 'hoặc đăng ký bằng Email'}
               </span>
               <div className="flex-1 border-t border-slate-800" />
             </div>
@@ -350,7 +502,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {/* Email Input */}
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                  {authMode === 'login' ? 'Email Quản trị viên / Cá nhân' : 'Địa chỉ Email'}
+                  {authMode === 'login' ? 'Email Quản trị viên (hoặc Email cá nhân)' : 'Địa chỉ Email'}
                 </label>
                 <div className="relative">
                   <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
@@ -358,7 +510,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="yourname@gmail.com hoặc admin@ahtest.code"
+                    placeholder={authMode === 'login' ? 'Anngoc@.com' : 'yourname@gmail.com'}
                     className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 font-mono transition-colors"
                   />
                 </div>

@@ -11,7 +11,9 @@ import { ExamSimulationView } from './components/ExamSimulationView';
 import { AuthModal } from './components/AuthModal';
 import { Problem, AuthUser, ExamSessionConfig } from './types';
 import { getStreakState } from './services/streakService';
+import { getStoredAuthUser, GUEST_USER } from './services/authService';
 import { mockProblems } from './data/mockProblems';
+import { Shield } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('home');
@@ -42,26 +44,8 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
-  // Current authenticated user (synced with localStorage & Google SSO)
-  const [currentUser, setCurrentUser] = useState<AuthUser>(() => {
-    try {
-      const saved = localStorage.getItem('ahtest_auth_user');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return {
-      id: 'usr_admin_01',
-      name: 'Trương Quốc Anh',
-      email: 'admin.truong@ahtest.code',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-      role: 'super_admin',
-      provider: 'google',
-      streakDays: 45,
-      rating: 2450,
-      rankClass: 'Grandmaster'
-    };
-  });
+  // Current authenticated user (Default: GUEST_USER, never hardcode admin)
+  const [currentUser, setCurrentUser] = useState<AuthUser>(() => getStoredAuthUser());
 
   // Synchronize dark mode class on HTML element and persist preference
   useEffect(() => {
@@ -105,18 +89,7 @@ export function App() {
   };
 
   const handleLogout = () => {
-    const guestUser: AuthUser = {
-      id: 'usr_guest',
-      name: 'Khách',
-      email: 'guest@ahtest.code',
-      avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=guest',
-      role: 'student',
-      provider: 'email',
-      streakDays: 0,
-      rating: 1200,
-      rankClass: 'Newbie'
-    };
-    setCurrentUser(guestUser);
+    setCurrentUser(GUEST_USER);
     localStorage.removeItem('ahtest_auth_user');
   };
 
@@ -174,11 +147,31 @@ export function App() {
               />
             )}
             {currentTab === 'admin' && (
-              <AdminDashboardView
-                currentUser={currentUser}
-                onNavigateTab={handleSelectTab}
-                onOpenAuthModal={() => handleOpenAuthModal('login')}
-              />
+              currentUser.role === 'super_admin' ? (
+                <AdminDashboardView
+                  currentUser={currentUser}
+                  onNavigateTab={handleSelectTab}
+                  onOpenAuthModal={() => handleOpenAuthModal('login')}
+                />
+              ) : (
+                <div className="flex-1 flex items-center justify-center py-20 px-4">
+                  <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center mx-auto ring-8 ring-rose-50/50 dark:ring-rose-950/20">
+                      <Shield className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Khu Vực Quản Trị Hệ Thống</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Bạn cần đăng nhập bằng tài khoản Quản trị viên (Super Admin - <span className="font-mono text-rose-500">Anngoc@.com</span>) để truy cập vào phân hệ này.
+                    </p>
+                    <button
+                      onClick={() => handleOpenAuthModal('login')}
+                      className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all cursor-pointer"
+                    >
+                      Đăng nhập Quản trị viên
+                    </button>
+                  </div>
+                </div>
+              )
             )}
           </>
         )}

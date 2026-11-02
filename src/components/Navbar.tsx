@@ -58,13 +58,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Streamlined Navbar 2.0: 5 focused, high-value destinations
+  // Streamlined Navbar 2.0: 4 core public destinations + Admin only for Super Admin
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: LayoutDashboard },
     { id: 'problems', label: 'Luyện tập', icon: Code2 },
     { id: 'academy', label: 'Khóa học', icon: BookOpen },
     { id: 'importer', label: 'Kho Đề Ngoại Nhập', icon: FolderGit2 },
-    { id: 'admin', label: 'Quản trị', icon: Shield },
+    ...(currentUser.role === 'super_admin' ? [{ id: 'admin', label: 'Quản trị', icon: Shield }] : []),
   ];
 
   return (
@@ -338,19 +338,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </button>
                       </div>
 
-                      {/* Navigation Link */}
-                      <div className="space-y-1 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                          onClick={() => {
-                            onSelectTab('admin');
-                            setIsProfileMenuOpen(false);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        >
-                          <Shield className="w-4 h-4 text-rose-500" />
-                          <span>Hệ thống Quản trị (Backend)</span>
-                        </button>
-                      </div>
+                      {/* Admin Navigation Link (Strict RBAC: Only visible to Super Admin) */}
+                      {currentUser.role === 'super_admin' && (
+                        <div className="space-y-1 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            onClick={() => {
+                              onSelectTab('admin');
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          >
+                            <Shield className="w-4 h-4 text-rose-500" />
+                            <span>Hệ thống Quản trị (Backend)</span>
+                          </button>
+                        </div>
+                      )}
 
                       {/* Logout Action */}
                       <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
