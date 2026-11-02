@@ -19,7 +19,7 @@ import confetti from 'canvas-confetti';
 import { ExamSessionConfig, ExamQuestionState, ExamScorecard, TestResult } from '../types';
 import { CodeEditor } from './CodeEditor';
 import { ProblemSpecificationView } from './ProblemSpecificationView';
-import { executeCCode } from '../services/cExecutionEngine';
+import { executeCCodeAsync } from '../services/executionManager';
 
 interface ExamSimulationViewProps {
   session: ExamSessionConfig;
@@ -133,6 +133,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
 
   const evalTimerRef = useRef<NodeJS.Timeout | null>(null);
   const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const activeEvalIdRef = useRef<number>(0);
 
   // Helper to immediately flush any pending draft to localStorage
   const flushPendingDraft = (curCode?: string) => {
@@ -151,6 +152,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
   // Cleanup pending timers on unmount to eliminate memory leaks and race conditions
   useEffect(() => {
     return () => {
+      activeEvalIdRef.current = 0;
       if (evalTimerRef.current) {
         clearTimeout(evalTimerRef.current);
         evalTimerRef.current = null;
@@ -281,14 +283,16 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       evalTimerRef.current = null;
     }
 
+    const runId = ++activeEvalIdRef.current;
     setIsEvaluating(true);
     setConsoleTab('sample');
     setSampleRunStatus('Running...');
 
-    evalTimerRef.current = setTimeout(() => {
+    evalTimerRef.current = setTimeout(async () => {
       evalTimerRef.current = null;
       const sample = currentProblem.samples?.[0] || { input: '', output: '' };
-      const res = executeCCode(codeBuffer, sample.input);
+      const res = await executeCCodeAsync(codeBuffer, sample.input);
+      if (activeEvalIdRef.current !== runId) return;
 
       if (res.status === 'CE') {
         setSampleRunStatus('Compile Error (CE)');
@@ -316,7 +320,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       }));
 
       setIsEvaluating(false);
-    }, 200);
+    }, 150);
   };
 
   // Grade the current question across all testcases
@@ -328,10 +332,11 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       evalTimerRef.current = null;
     }
 
+    const runId = ++activeEvalIdRef.current;
     setIsEvaluating(true);
     setConsoleTab('results');
 
-    evalTimerRef.current = setTimeout(() => {
+    evalTimerRef.current = setTimeout(async () => {
       evalTimerRef.current = null;
       const tests = currentProblem.testcases && currentProblem.testcases.length > 0
         ? currentProblem.testcases
@@ -346,8 +351,11 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       const testResults: TestResult[] = [];
 
       for (let i = 0; i < tests.length; i++) {
+        if (activeEvalIdRef.current !== runId) return;
         const t = tests[i];
-        const res = executeCCode(codeBuffer, t.input);
+        const res = await executeCCodeAsync(codeBuffer, t.input);
+        if (activeEvalIdRef.current !== runId) return;
+
         const cleanActual = res.stdout.replace(/\r\n/g, '\n').trim();
         const cleanExpected = t.expectedOutput.replace(/\r\n/g, '\n').trim();
         const isAc = res.status === 'SUCCESS' && cleanActual === cleanExpected;
@@ -364,6 +372,8 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
         });
       }
 
+      if (activeEvalIdRef.current !== runId) return;
+
       const scorePercent = Math.round((passedCount / tests.length) * 100);
       const isFullAc = passedCount === tests.length;
 
@@ -379,11 +389,11 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
       }));
 
       setIsEvaluating(false);
-    }, 300);
+    }, 150);
   };
 
   // Final Exam Submission & Scorecard generation
-  const handleFinalSubmit = (_isAutoTimeout: boolean = false) => {
+  const handleFinalSubmit = async (_isAutoTimeout: boolean = false) => {
     setIsSubmitConfirmOpen(false);
     setIsExamFinished(true);
 
@@ -405,8 +415,9 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
     const weakTopics: Set<string> = new Set();
     const strongTopics: Set<string> = new Set();
 
-    session.problems.forEach((p, idx) => {
-      let state = finalStates[idx];
+    for (let idx = 0; idx < session.problems.length; idx++) {
+      const p = session.problems[idx];
+      const state = finalStates[idx];
       // If code buffer was edited on current index, ensure it's saved
       const codeToGrade = idx === currentIndex ? codeBuffer : state.code;
       const isTouched = codeToGrade.trim().length > 25 && codeToGrade.includes('main') && codeToGrade.trim() !== DEFAULT_C_TEMPLATE.trim();
@@ -417,12 +428,13 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
 
       let passedCount = 0;
       if (isTouched) {
-        tests.forEach(t => {
-          const res = executeCCode(codeToGrade, t.input);
+        for (let i = 0; i < tests.length; i++) {
+          const t = tests[i];
+          const res = await executeCCodeAsync(codeToGrade, t.input);
           const cleanActual = res.stdout.replace(/\r\n/g, '\n').trim();
           const cleanExpected = t.expectedOutput.replace(/\r\n/g, '\n').trim();
           if (res.status === 'SUCCESS' && cleanActual === cleanExpected) passedCount++;
-        });
+        }
       }
 
       const questionScore = isTouched ? Math.round((passedCount / tests.length) * 100) : 0;
@@ -446,7 +458,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
         passedTests: passedCount,
         totalTests: tests.length
       });
-    });
+    }
 
     // 10.0 scale calculation
     const finalScore = Number(((totalScoreSum / totalQuestions) * 10).toFixed(1));

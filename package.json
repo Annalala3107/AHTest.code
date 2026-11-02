@@ -18,7 +18,8 @@
     "lucide-react": "^1.65.0",
     "picoc-js": "^1.0.12",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -202,6 +202,20 @@ export function checkCSyntax(code: string): { isValid: boolean; error?: string }
   const cleanCode = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ''); // strip comments
   const lines = code.split('\n');
 
+  // Security guard: detect forbidden browser/DOM APIs or JS sandbox escapes
+  const strippedCode = cleanCode
+    .replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, '')
+    .replace(/'([^'\\]*(\\.[^'\\]*)*)'/g, '');
+  const forbiddenMatch = strippedCode.match(
+    /\b(document|localStorage|sessionStorage|indexedDB|cookie|fetch|XMLHttpRequest|WebSocket|__proto__|constructor|prototype|eval)\b/
+  );
+  if (forbiddenMatch) {
+    return {
+      isValid: false,
+      error: `solution.c: error: security violation - access to host API '${forbiddenMatch[1]}' is forbidden in execution sandbox.\n[Compiler Security Trap] Phát hiện lệnh hoặc API không an toàn ('${forbiddenMatch[1]}'). Môi trường máy chấm chỉ hỗ trợ các cú pháp C chuẩn (stdio, stdlib, string, math).`
+    };
+  }
+
   // Check for main entry point
   if (!/\bint\s+main\s*\(/i.test(cleanCode) && !/\bvoid\s+main\s*\(/i.test(cleanCode)) {
     return {
@@ -998,9 +1012,28 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
 
   try {
     const transpiledJS = transpileCToJS(code);
-    // Execute inside isolated Function scope
-    const runner = new Function('__rt', transpiledJS);
-    runner(runtime);
+    // Execute inside strictly isolated Function scope with shadowed global host APIs
+    const SHADOW_GLOBALS = [
+      'window',
+      'document',
+      'localStorage',
+      'sessionStorage',
+      'fetch',
+      'XMLHttpRequest',
+      'WebSocket',
+      'navigator',
+      'location',
+      'globalThis',
+      'top',
+      'parent',
+      'frames'
+    ];
+    const runner = new Function(
+      '__rt',
+      ...SHADOW_GLOBALS,
+      `"use strict";\n${transpiledJS}`
+    );
+    runner(runtime, ...SHADOW_GLOBALS.map(() => undefined));
 
     const elapsed = Math.round(performance.now() - startTime);
     const heapSummary = runtime.getHeapSummary();

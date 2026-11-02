@@ -34,12 +34,18 @@ import {
 import { Problem, Verdict, TestResult } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
-import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
+import { 
+  executeCCodeAsync, 
+  ExecutionResult, 
+  PedagogicalDiagnosis, 
+  generatePedagogicalDiagnosis 
+} from '../services/executionManager';
 import { resolveProgressiveHints } from '../services/progressiveHintService';
 import { ProblemSpecificationView } from './ProblemSpecificationView';
 import { getProblemTitle } from '../services/problemBilingualService';
 import { CodeEditor } from './CodeEditor';
 import { recordStreakActivity } from '../services/streakService';
+import { PedagogicalDiagnosisCard } from './workbench/PedagogicalDiagnosisCard';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -247,6 +253,7 @@ fn main() {
   const gradingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sampleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const activeGradingIdRef = useRef<number>(0);
 
   // Helper to immediately flush any pending draft to localStorage
   const flushPendingDraft = (curCode?: string) => {
@@ -268,6 +275,7 @@ fn main() {
   useEffect(() => {
     setMobileActiveTab('statement');
     return () => {
+      activeGradingIdRef.current = 0;
       if (gradingTimerRef.current) {
         clearInterval(gradingTimerRef.current);
         gradingTimerRef.current = null;
@@ -447,6 +455,8 @@ fn main() {
     if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
     if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
 
+    const runId = ++activeGradingIdRef.current;
+
     setConsoleTab('result');
     setShowConsole(true);
     setIsGrading(true);
@@ -480,12 +490,14 @@ fn main() {
       return;
     }
 
-    sampleTimerRef.current = setTimeout(() => {
+    sampleTimerRef.current = setTimeout(async () => {
       sampleTimerRef.current = null;
-      setIsGrading(false);
       const sampleInput = problem.samples[0]?.input ?? (problem.testcases?.[0]?.input || '');
       const sampleOutput = problem.samples[0]?.output ?? (problem.testcases?.[0]?.expectedOutput || '');
-      const exec = executeCCode(code, sampleInput);
+      const exec = await executeCCodeAsync(code, sampleInput);
+      if (activeGradingIdRef.current !== runId) return;
+
+      setIsGrading(false);
       setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
@@ -534,6 +546,8 @@ fn main() {
     if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
     if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
 
+    const runId = ++activeGradingIdRef.current;
+
     setConsoleTab('result');
     setShowConsole(true);
     setIsGrading(true);
@@ -567,13 +581,15 @@ fn main() {
       return;
     }
 
-    sampleTimerRef.current = setTimeout(() => {
+    sampleTimerRef.current = setTimeout(async () => {
       sampleTimerRef.current = null;
-      setIsGrading(false);
       const sample = problem.samples[index] || (problem.testcases?.[index] ? { input: problem.testcases[index].input, output: problem.testcases[index].expectedOutput } : problem.samples[0]);
       const sampleInput = sample?.input ?? (problem.testcases?.[index]?.input || '');
       const sampleOutput = sample?.output ?? (problem.testcases?.[index]?.expectedOutput || '');
-      const exec = executeCCode(code, sampleInput);
+      const exec = await executeCCodeAsync(code, sampleInput);
+      if (activeGradingIdRef.current !== runId) return;
+
+      setIsGrading(false);
       setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
@@ -615,7 +631,7 @@ fn main() {
     }, 350);
   };
 
-  const handleRunCustomTest = () => {
+  const handleRunCustomTest = async () => {
     if (isGrading) return; // Prevent spam clicks
     flushPendingDraft();
     if (!isLgScreen) setMobileActiveTab('editor');
@@ -631,7 +647,14 @@ fn main() {
       return;
     }
 
-    const exec = executeCCode(code, customInput);
+    const runId = ++activeGradingIdRef.current;
+    setIsGrading(true);
+    setCustomOutput('Đang biên dịch và thực thi trong Web Worker sandbox an toàn...');
+
+    const exec = await executeCCodeAsync(code, customInput);
+    if (activeGradingIdRef.current !== runId) return;
+
+    setIsGrading(false);
     setCustomExecResult(exec);
     setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
 
@@ -646,12 +669,20 @@ fn main() {
     }
   };
 
-  const handleSubmitSolution = () => {
+  const handleSubmitSolution = async () => {
     if (isGrading) return; // Prevent spam submit clicks
     flushPendingDraft();
     if (!isLgScreen) setMobileActiveTab('editor');
-    if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
-    if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
+    if (gradingTimerRef.current) {
+      clearInterval(gradingTimerRef.current);
+      gradingTimerRef.current = null;
+    }
+    if (sampleTimerRef.current) {
+      clearTimeout(sampleTimerRef.current);
+      sampleTimerRef.current = null;
+    }
+
+    const runId = ++activeGradingIdRef.current;
 
     setShowConsole(true);
     setConsoleTab('result');
@@ -688,7 +719,9 @@ fn main() {
     }
 
     // Check for Compile Error once first
-    const syntaxCheck = executeCCode(code, '');
+    const syntaxCheck = await executeCCodeAsync(code, '');
+    if (activeGradingIdRef.current !== runId) return;
+
     if (syntaxCheck.status === 'CE') {
       setIsGrading(false);
       setPedagogicalDiagnosis(syntaxCheck.pedagogicalDiagnosis || null);
@@ -766,18 +799,25 @@ fn main() {
 
     const mockTotalTests = testDefinitions.length;
     const simulatedTests: TestResult[] = [];
+    let firstFailDiagnosis: PedagogicalDiagnosis | null = null;
 
-    gradingTimerRef.current = setInterval(() => {
-      const currentIdx = simulatedTests.length;
-      const tDef = testDefinitions[currentIdx];
-      
-      const exec = executeCCode(code, tDef.input);
+    for (let i = 0; i < mockTotalTests; i++) {
+      if (activeGradingIdRef.current !== runId) return;
+
+      const tDef = testDefinitions[i];
+      const exec = await executeCCodeAsync(code, tDef.input, { timeoutMs: 2000 });
+      if (activeGradingIdRef.current !== runId) return;
+
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
       if (exec.status === 'CE') verdict = 'CE';
       else if (exec.status === 'RTE') verdict = 'RTE';
       else if (exec.status === 'TLE') verdict = 'TLE';
       else if (exec.stdout.replace(/\r\n/g, '\n').trim() === tDef.expectedOutput.replace(/\r\n/g, '\n').trim()) {
         verdict = 'AC';
+      }
+
+      if (verdict !== 'AC' && !firstFailDiagnosis && exec.pedagogicalDiagnosis) {
+        firstFailDiagnosis = exec.pedagogicalDiagnosis;
       }
 
       const mockResult: TestResult = {
@@ -791,70 +831,68 @@ fn main() {
         isHidden: tDef.isHidden,
         input: tDef.isHidden ? '[Test ẩn được bảo vệ]' : tDef.input,
         actualOutput: exec.stdout || exec.stderr,
-        expectedOutput: tDef.expectedOutput
+        // SECURITY: Do not leak hidden testcase expectedOutput to client diff viewer if hidden
+        expectedOutput: tDef.isHidden ? (verdict === 'AC' ? tDef.expectedOutput : '[Đáp án được bảo vệ - Test ẩn]') : tDef.expectedOutput
       };
 
       simulatedTests.push(mockResult);
       setTestResults([...simulatedTests]);
-      setGradingProgress((simulatedTests.length / mockTotalTests) * 100);
+      setGradingProgress(((i + 1) / mockTotalTests) * 100);
 
-      if (simulatedTests.length === mockTotalTests) {
-        if (gradingTimerRef.current) {
-          clearInterval(gradingTimerRef.current);
-          gradingTimerRef.current = null;
-        }
-        setIsGrading(false);
-        const allAC = simulatedTests.every(t => t.verdict === 'AC');
-        const hasCE = simulatedTests.some(t => t.verdict === 'CE');
-        const hasRTE = simulatedTests.some(t => t.verdict === 'RTE');
-        const hasTLE = simulatedTests.some(t => t.verdict === 'TLE');
-        
-        let finalV: Verdict = 'WA';
-        if (allAC) finalV = 'AC';
-        else if (hasCE) finalV = 'CE';
-        else if (hasTLE) finalV = 'TLE';
-        else if (hasRTE) finalV = 'RTE';
+      // Brief yield so the UI renders smoothly between testcases
+      await new Promise(res => setTimeout(res, 60));
+    }
 
-        setFinalVerdict(finalV);
-        
-        // Auto-select first failing test, or test 1
-        const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
-        setSelectedTestResult(firstFail || simulatedTests[0]);
+    if (activeGradingIdRef.current !== runId) return;
+    setIsGrading(false);
 
-        if (firstFail) {
-          const failDef = testDefinitions.find(t => t.id === firstFail.testId);
-          const failExec = executeCCode(code, failDef?.input || '');
-          if (failExec.pedagogicalDiagnosis) {
-            setPedagogicalDiagnosis(failExec.pedagogicalDiagnosis);
-          } else {
-            setPedagogicalDiagnosis({
-              category: 'LOGIC',
-              badge: 'Chưa đạt (Wrong Answer)',
-              title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
-              explanation: 'Chương trình biên dịch và chạy thành công mà không bị crash, nhưng dữ liệu in ra màn hình khác với kết quả mong đợi của bộ test.',
-              suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc trường hợp biên.'
-            });
-          }
-        } else {
-          setPedagogicalDiagnosis(null);
-        }
+    const allAC = simulatedTests.every(t => t.verdict === 'AC');
+    const hasCE = simulatedTests.some(t => t.verdict === 'CE');
+    const hasRTE = simulatedTests.some(t => t.verdict === 'RTE');
+    const hasTLE = simulatedTests.some(t => t.verdict === 'TLE');
+    
+    let finalV: Verdict = 'WA';
+    if (allAC) finalV = 'AC';
+    else if (hasCE) finalV = 'CE';
+    else if (hasTLE) finalV = 'TLE';
+    else if (hasRTE) finalV = 'RTE';
 
-        if (allAC) {
-          recordStreakActivity();
-          const rating = getMasteryRating(unlockedHintTier);
-          try {
-            localStorage.setItem(`ahtest_star_${problem.id}`, String(rating.stars));
-          } catch {
-            // ignore
-          }
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }
+    setFinalVerdict(finalV);
+    
+    // Auto-select first failing test, or test 1
+    const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
+    setSelectedTestResult(firstFail || simulatedTests[0]);
+
+    if (firstFail) {
+      if (firstFailDiagnosis) {
+        setPedagogicalDiagnosis(firstFailDiagnosis);
+      } else {
+        setPedagogicalDiagnosis({
+          category: 'LOGIC',
+          badge: 'Chưa đạt (Wrong Answer)',
+          title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
+          explanation: 'Chương trình biên dịch và chạy thành công mà không bị crash, nhưng dữ liệu in ra màn hình khác với kết quả mong đợi của bộ test.',
+          suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc trường hợp biên.'
+        });
       }
-    }, 120);
+    } else {
+      setPedagogicalDiagnosis(null);
+    }
+
+    if (allAC) {
+      recordStreakActivity();
+      const rating = getMasteryRating(unlockedHintTier);
+      try {
+        localStorage.setItem(`ahtest_star_${problem.id}`, String(rating.stars));
+      } catch {
+        // ignore
+      }
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
   };
 
   return (
@@ -1825,34 +1863,7 @@ fn main() {
                       <div className="pt-2 space-y-2">
                         {/* Pedagogical Diagnosis Explainer Card in Custom tab */}
                         {pedagogicalDiagnosis && (
-                          <div className="p-3.5 rounded-xl border border-amber-500/40 bg-linear-to-r from-amber-950/40 via-slate-900 to-slate-950 shadow-md font-sans space-y-2.5">
-                            <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
-                                  <Lightbulb className="w-4 h-4" />
-                                </span>
-                                <span className="font-bold text-amber-300 text-xs sm:text-sm">
-                                  {pedagogicalDiagnosis.title}
-                                </span>
-                              </div>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
-                                {pedagogicalDiagnosis.badge}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {pedagogicalDiagnosis.explanation}
-                            </p>
-
-                            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1">
-                              <span className="font-bold text-emerald-400 text-[11px] block">
-                                💡 Hướng dẫn sửa nhanh:
-                              </span>
-                              <p className="text-slate-300 whitespace-pre-line font-mono text-[11px] leading-relaxed">
-                                {pedagogicalDiagnosis.suggestion}
-                              </p>
-                            </div>
-                          </div>
+                          <PedagogicalDiagnosisCard diagnosis={pedagogicalDiagnosis} />
                         )}
 
                         {/* Status bar */}
@@ -1950,34 +1961,7 @@ fn main() {
                       <div className="space-y-4 font-sans">
                         {/* Pedagogical Diagnosis Explainer Card in Result tab */}
                         {pedagogicalDiagnosis && (
-                          <div className="p-3.5 rounded-xl border border-amber-500/40 bg-linear-to-r from-amber-950/40 via-slate-900 to-slate-950 shadow-md font-sans space-y-2.5">
-                            <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
-                                  <Lightbulb className="w-4 h-4" />
-                                </span>
-                                <span className="font-bold text-amber-300 text-xs sm:text-sm">
-                                  {pedagogicalDiagnosis.title}
-                                </span>
-                              </div>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
-                                {pedagogicalDiagnosis.badge}
-                              </span>
-                            </div>
-
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {pedagogicalDiagnosis.explanation}
-                            </p>
-
-                            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1">
-                              <span className="font-bold text-emerald-400 text-[11px] block">
-                                💡 Hướng dẫn sửa nhanh:
-                              </span>
-                              <p className="text-slate-300 whitespace-pre-line font-mono text-[11px] leading-relaxed">
-                                {pedagogicalDiagnosis.suggestion}
-                              </p>
-                            </div>
-                          </div>
+                          <PedagogicalDiagnosisCard diagnosis={pedagogicalDiagnosis} />
                         )}
 
                         {/* Overall Verdict Banner */}

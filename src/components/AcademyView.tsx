@@ -34,8 +34,9 @@ import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
-import { executeCCode, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/cExecutionEngine';
+import { executeCCodeAsync, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/executionManager';
 import { CodeEditor } from './CodeEditor';
+import { PedagogicalDiagnosisCard } from './workbench/PedagogicalDiagnosisCard';
 import confetti from 'canvas-confetti';
 import { recordStreakActivity } from '../services/streakService';
 
@@ -155,6 +156,7 @@ export const AcademyView: React.FC = () => {
 
   const runTimerRef = useRef<NodeJS.Timeout | null>(null);
   const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const activeRunIdRef = useRef<number>(0);
 
   // Helper to immediately flush any pending draft to localStorage
   const flushPendingDraft = (curCode?: string) => {
@@ -175,6 +177,7 @@ export const AcademyView: React.FC = () => {
   // Cleanup pending timers on unmount to eliminate memory leaks and race conditions
   useEffect(() => {
     return () => {
+      activeRunIdRef.current = 0;
       if (runTimerRef.current) {
         clearTimeout(runTimerRef.current);
         runTimerRef.current = null;
@@ -407,8 +410,10 @@ export const AcademyView: React.FC = () => {
       runTimerRef.current = null;
     }
 
+    const runId = ++activeRunIdRef.current;
+
     setIsRunning(true);
-    setExecutionOutput(null);
+    setExecutionOutput('Đang khởi chạy sandbox và thực thi mã C...');
     setPedagogicalDiagnosis(null);
     setExercisePassed(false);
     setDiffState(null);
@@ -425,9 +430,8 @@ export const AcademyView: React.FC = () => {
       return;
     }
 
-    runTimerRef.current = setTimeout(() => {
+    runTimerRef.current = setTimeout(async () => {
       runTimerRef.current = null;
-      setIsRunning(false);
       
       const targetTestcases = activeExercise 
         ? activeExercise.testcases 
@@ -442,8 +446,10 @@ export const AcademyView: React.FC = () => {
         let lastExecResult: ExecutionResult | null = null;
 
         for (let i = 0; i < targetTestcases.length; i++) {
+          if (activeRunIdRef.current !== runId) return;
           const tc = targetTestcases[i];
-          const exec = executeCCode(userCode, tc.input);
+          const exec = await executeCCodeAsync(userCode, tc.input);
+          if (activeRunIdRef.current !== runId) return;
           lastExecResult = exec;
 
           totalTime += exec.executionTimeMs;
@@ -451,6 +457,7 @@ export const AcademyView: React.FC = () => {
 
           // If Compile Error
           if (exec.status === 'CE') {
+            setIsRunning(false);
             setExecutionOutput(`[Biên dịch thất bại: COMPILE ERROR]\n${exec.stderr}`);
             setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
             setExercisePassed(false);
@@ -461,6 +468,7 @@ export const AcademyView: React.FC = () => {
 
           // If Runtime Error
           if (exec.status === 'RTE') {
+            setIsRunning(false);
             setExecutionOutput(`[Lỗi thực thi: RUNTIME ERROR]\n${exec.stderr}`);
             setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
             setExercisePassed(false);
@@ -471,6 +479,7 @@ export const AcademyView: React.FC = () => {
 
           // If Time Limit Exceeded
           if (exec.status === 'TLE') {
+            setIsRunning(false);
             setExecutionOutput(
               `[Vượt quá thời gian: TIME LIMIT EXCEEDED]\n${exec.stderr}\n[Gợi ý]: Vòng lặp while/for không có điều kiện dừng thích hợp.`
             );
@@ -495,6 +504,9 @@ export const AcademyView: React.FC = () => {
             }
           }
         }
+
+        if (activeRunIdRef.current !== runId) return;
+        setIsRunning(false);
 
         // Didactic verification for special lessons (e.g. pointer swap must use pointers)
         if (activeLesson.id === 'c-2-memory-swap' && (!userCode.includes('*') || !userCode.includes('&'))) {
@@ -542,7 +554,7 @@ export const AcademyView: React.FC = () => {
         } else {
           setActiveDocTab('testcases');
           const failedTc = firstFailed ? firstFailed.tc : targetTestcases[0];
-          const failedExec = firstFailed ? firstFailed.exec : (lastExecResult || executeCCode(userCode, failedTc.input));
+          const failedExec = firstFailed?.exec || lastExecResult;
           let output = `[Auto-Grading Verdict: WRONG ANSWER]\n` + resultsSummary.join('\n');
           output += `\n\n❌ Test case thất bại đầu tiên: Input "${failedTc.input}"`;
           setExecutionOutput(output);
@@ -556,7 +568,7 @@ export const AcademyView: React.FC = () => {
           };
           setPedagogicalDiagnosis(failedExec?.pedagogicalDiagnosis || waDiag);
           setDiffState({
-            actual: failedExec.stdout,
+            actual: failedExec?.stdout || '',
             expected: failedTc.expectedOutput,
             input: failedTc.input,
             isFailed: true,
@@ -564,7 +576,10 @@ export const AcademyView: React.FC = () => {
         }
       } else {
         // Freeform lesson without strict testcases
-        const exec = executeCCode(userCode, '');
+        const exec = await executeCCodeAsync(userCode, '');
+        if (activeRunIdRef.current !== runId) return;
+        setIsRunning(false);
+
         if (exec.status === 'CE') {
           setExecutionOutput(`[Biên dịch thất bại: COMPILE ERROR]\n${exec.stderr}`);
           setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
@@ -606,7 +621,7 @@ export const AcademyView: React.FC = () => {
           });
         }
       }
-    }, 350);
+    }, 250);
   };
 
   const currentHints = activeExercise 
@@ -1819,34 +1834,7 @@ export const AcademyView: React.FC = () => {
 
                 {/* Pedagogical Diagnosis Explainer Card */}
                 {pedagogicalDiagnosis && (
-                  <div className="p-3.5 rounded-xl border border-amber-500/40 bg-linear-to-r from-amber-950/40 via-slate-900 to-slate-950 shadow-md font-sans space-y-2.5">
-                    <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
-                          <Lightbulb className="w-4 h-4" />
-                        </span>
-                        <span className="font-bold text-amber-300 text-xs sm:text-sm">
-                          {pedagogicalDiagnosis.title}
-                        </span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
-                        {pedagogicalDiagnosis.badge}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      {pedagogicalDiagnosis.explanation}
-                    </p>
-
-                    <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs space-y-1">
-                      <span className="font-bold text-emerald-400 text-[11px] block">
-                        💡 Hướng dẫn sửa nhanh:
-                      </span>
-                      <p className="text-slate-300 whitespace-pre-line font-mono text-[11px] leading-relaxed">
-                        {pedagogicalDiagnosis.suggestion}
-                      </p>
-                    </div>
-                  </div>
+                  <PedagogicalDiagnosisCard diagnosis={pedagogicalDiagnosis} />
                 )}
 
                 {executionOutput ? (

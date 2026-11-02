@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   ShieldCheck, 
@@ -15,29 +15,15 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AuthUser, UserRole } from '../types';
-import { verifyAdminCredentials, parseGoogleJwt, createGoogleAuthUser } from '../services/authService';
 import { 
   isSupabaseConfigured, 
   signInWithGoogleOAuth, 
+  signInWithEmailPassword,
+  signUpWithEmailPassword,
   saveSupabaseConfig, 
   DEFAULT_SUPABASE_URL,
   getSupabaseConfig
 } from '../services/supabaseAuth';
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          prompt: (notification?: any) => void;
-          renderButton: (element: HTMLElement, options: any) => void;
-          disableAutoSelect: () => void;
-        };
-      };
-    };
-  }
-}
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -59,9 +45,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [showGoogleGuide, setShowGoogleGuide] = useState<boolean>(false);
-  const [googleSetupTab, setGoogleSetupTab] = useState<'supabase' | 'google_id' | 'quick_email'>('supabase');
   const [supabaseAnonKeyInput, setSupabaseAnonKeyInput] = useState<string>(() => getSupabaseConfig().anonKey);
-  const [googleClientIdInput, setGoogleClientIdInput] = useState<string>(() => localStorage.getItem('ahtest_google_client_id') || '');
 
   // Form states
   const [emailInput, setEmailInput] = useState<string>('');
@@ -77,20 +61,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage(null);
     setInfoMessage(null);
   }
-
-  // Load Google Identity Services script dynamically if not present
-  useEffect(() => {
-    if (!isOpen) return;
-    const existingScript = document.getElementById('google-gsi-client');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'google-gsi-client';
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -111,7 +81,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage(null);
     setInfoMessage(null);
 
-    // 1. Prioritize Supabase Google OAuth if configured
+    // Prioritize Supabase Google OAuth PKCE
     if (isSupabaseConfigured()) {
       const res = await signInWithGoogleOAuth();
       if (!res.success) {
@@ -121,36 +91,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // 2. Check if Google Client ID is configured for GIS
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem('ahtest_google_client_id');
-    if (googleClientId && window.google?.accounts?.id) {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: (response: { credential: string }) => {
-            setIsLoading(false);
-            if (response.credential) {
-              const payload = parseGoogleJwt(response.credential);
-              if (payload && payload.email) {
-                const user = createGoogleAuthUser(payload);
-                triggerCelebration();
-                onLoginSuccess(user);
-                onClose();
-              } else {
-                setErrorMessage('Không thể giải mã chứng chỉ xác thực Google.');
-              }
-            }
-          }
-        });
-        window.google.accounts.id.prompt();
-        setIsLoading(false);
-        return;
-      } catch (err) {
-        console.error('Google GSI error:', err);
-      }
-    }
-
-    // 3. Fallback: Prompt user to connect Supabase or Google Client ID
+    // If Supabase not yet configured with an Anon key, open config drawer
     setIsLoading(false);
     setShowGoogleGuide(true);
   };
@@ -169,41 +110,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setIsLoading(false);
       setErrorMessage(res.error || 'Lỗi kết nối tới Supabase Google OAuth.');
     }
-  };
-
-  const handleSaveGoogleClientIdAndSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!googleClientIdInput.trim() || !googleClientIdInput.includes('.apps.googleusercontent.com')) {
-      setErrorMessage('Client ID phải có định dạng xxxxx.apps.googleusercontent.com.');
-      return;
-    }
-    localStorage.setItem('ahtest_google_client_id', googleClientIdInput.trim());
-    setShowGoogleGuide(false);
-    handleGoogleLogin();
-  };
-
-  const handleQuickStudentGoogleAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput.trim() || !emailInput.includes('@')) {
-      setErrorMessage('Vui lòng nhập địa chỉ Gmail chính chủ của bạn (ví dụ: yourname@gmail.com).');
-      return;
-    }
-    const cleanEmail = emailInput.trim().toLowerCase();
-    const studentUser: AuthUser = {
-      id: `usr_google_${Date.now()}`,
-      email: cleanEmail,
-      name: fullNameInput.trim() || cleanEmail.split('@')[0],
-      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
-      role: 'student',
-      provider: 'google',
-      streakDays: 1,
-      rating: 1200,
-      rankClass: 'Newbie',
-      lastLoginAt: 'Vừa xong'
-    };
-    triggerCelebration();
-    onLoginSuccess(studentUser);
-    onClose();
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -231,25 +137,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        const newUser: AuthUser = {
-          id: `usr_${Date.now()}`,
-          email: emailInput.trim().toLowerCase(),
-          name: fullNameInput.trim(),
-          avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(emailInput.trim())}`,
-          role: selectedRole,
-          provider: 'email',
-          streakDays: 1,
-          rating: selectedRole === 'educator' ? 1800 : 1200,
-          rankClass: selectedRole === 'educator' ? 'Expert' : 'Newbie',
-          lastLoginAt: 'Vừa xong'
-        };
-        triggerCelebration();
-        onLoginSuccess(newUser);
-        onClose();
-      }, 400);
+      const res = await signUpWithEmailPassword(emailInput, passwordInput, fullNameInput);
+      setIsLoading(false);
 
+      if (!res.success) {
+        setErrorMessage(res.error || 'Đăng ký tài khoản thất bại.');
+        return;
+      }
+
+      if (res.requiresEmailConfirmation) {
+        setInfoMessage('Đăng ký thành công! Vui lòng kiểm tra hộp thư email để kích hoạt tài khoản trước khi đăng nhập.');
+        setAuthMode('login');
+        return;
+      }
+
+      if (res.user) {
+        triggerCelebration();
+        onLoginSuccess(res.user);
+        onClose();
+      }
     } else {
       // Login validation
       if (!emailInput.trim() || !passwordInput.trim()) {
@@ -257,45 +163,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       }
 
-      const cleanEmail = emailInput.trim().toLowerCase();
-      const isAdminAttempt = cleanEmail === 'anngoc@.com' || cleanEmail === 'anngoc@com' || cleanEmail === 'anngoc@gmail.com';
-
-      if (isAdminAttempt) {
-        setIsLoading(true);
-        const adminResult = await verifyAdminCredentials(emailInput, passwordInput);
-        setIsLoading(false);
-
-        if (adminResult.success && adminResult.user) {
-          triggerCelebration();
-          onLoginSuccess(adminResult.user);
-          onClose();
-          return;
-        } else {
-          setErrorMessage(adminResult.error || 'Đăng nhập Quản trị viên thất bại.');
-          return;
-        }
-      }
-
-      // Normal user email login
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        const newUser: AuthUser = {
-          id: `usr_${Date.now()}`,
-          email: cleanEmail,
-          name: emailInput.split('@')[0],
-          avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
-          role: 'student',
-          provider: 'email',
-          streakDays: 1,
-          rating: 1400,
-          rankClass: 'Pupil',
-          lastLoginAt: 'Vừa xong'
-        };
+      const res = await signInWithEmailPassword(emailInput, passwordInput);
+      setIsLoading(false);
+
+      if (res.success && res.user) {
         triggerCelebration();
-        onLoginSuccess(newUser);
+        onLoginSuccess(res.user);
         onClose();
-      }, 400);
+      } else {
+        setErrorMessage(res.error || 'Email hoặc mật khẩu không chính xác.');
+      }
     }
   };
 
@@ -458,124 +336,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </button>
                 </div>
 
-                {/* Sub-tab Switcher */}
-                <div className="flex items-center p-1 bg-slate-900 rounded-xl text-[11px] font-bold">
+                {/* Supabase Anon Key Setup Form */}
+                <form onSubmit={handleSaveSupabaseAndSignIn} className="space-y-2">
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Dán <strong>Public Anon Key</strong> từ Supabase (Tab Supabase $\rightarrow$ <em>Project Settings $\rightarrow$ API $\rightarrow$ Project API keys $\rightarrow$ anon public</em>):
+                  </p>
+                  <div className="relative">
+                    <KeyRound className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      required
+                      value={supabaseAnonKeyInput}
+                      onChange={(e) => setSupabaseAnonKeyInput(e.target.value)}
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+                      className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition-colors"
+                    />
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => setGoogleSetupTab('supabase')}
-                    className={`flex-1 py-1 rounded-lg transition-colors cursor-pointer ${
-                      googleSetupTab === 'supabase'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
                   >
-                    Supabase Key
+                    <span>Lưu Key & Mở Đăng Nhập Google Ngay</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setGoogleSetupTab('google_id')}
-                    className={`flex-1 py-1 rounded-lg transition-colors cursor-pointer ${
-                      googleSetupTab === 'google_id'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Google Client ID
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGoogleSetupTab('quick_email')}
-                    className={`flex-1 py-1 rounded-lg transition-colors cursor-pointer ${
-                      googleSetupTab === 'quick_email'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Nhập Gmail
-                  </button>
-                </div>
-
-                {/* Tab 1: Supabase Anon Key */}
-                {googleSetupTab === 'supabase' && (
-                  <form onSubmit={handleSaveSupabaseAndSignIn} className="space-y-2">
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Dán <strong>Public Anon Key</strong> từ Supabase (Tab Supabase bạn đang mở $\rightarrow$ <em>Project Settings $\rightarrow$ API $\rightarrow$ Project API keys $\rightarrow$ anon public</em>):
-                    </p>
-                    <div className="relative">
-                      <KeyRound className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        required
-                        value={supabaseAnonKeyInput}
-                        onChange={(e) => setSupabaseAnonKeyInput(e.target.value)}
-                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                        className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition-colors"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-                    >
-                      <span>Lưu Key & Mở Đăng Nhập Google Ngay</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                )}
-
-                {/* Tab 2: Google Client ID */}
-                {googleSetupTab === 'google_id' && (
-                  <form onSubmit={handleSaveGoogleClientIdAndSignIn} className="space-y-2">
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Dán <strong>Client ID</strong> từ Google Cloud Console (tab <em>Client ID for Web application</em> bạn đang mở):
-                    </p>
-                    <div className="relative">
-                      <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        required
-                        value={googleClientIdInput}
-                        onChange={(e) => setGoogleClientIdInput(e.target.value)}
-                        placeholder="xxxxx.apps.googleusercontent.com"
-                        className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition-colors"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                    >
-                      <span>Lưu Client ID & Bật Google One-Tap</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                )}
-
-                {/* Tab 3: Quick Gmail input */}
-                {googleSetupTab === 'quick_email' && (
-                  <form onSubmit={handleQuickStudentGoogleAuth} className="space-y-2">
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Hoặc nhập nhanh địa chỉ Gmail của bạn để vào làm bài ngay lập tức (không cần nhớ mật khẩu):
-                    </p>
-                    <div className="relative">
-                      <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                      <input
-                        type="email"
-                        required
-                        value={emailInput}
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        placeholder="vidu: nguyenvana@gmail.com"
-                        className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition-colors"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                    >
-                      <span>Xác nhận đăng nhập với Gmail</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                )}
+                </form>
               </div>
             )}
 
@@ -637,7 +422,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {/* Email Input */}
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                  {authMode === 'login' ? 'Email Quản trị viên (hoặc Email cá nhân)' : 'Địa chỉ Email'}
+                  Địa chỉ Email
                 </label>
                 <div className="relative">
                   <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
@@ -645,7 +430,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder={authMode === 'login' ? 'Anngoc@.com' : 'yourname@gmail.com'}
+                    placeholder="yourname@gmail.com"
                     className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 font-mono transition-colors"
                   />
                 </div>
