@@ -24,15 +24,13 @@ import { mockProblems } from '../data/mockProblems';
 interface AdminDashboardViewProps {
   currentUser: AuthUser;
   onNavigateTab?: (tab: any) => void;
-  onOpenAuthModal?: () => void;
 }
 
 type AdminSection = 'overview' | 'problems' | 'testcases' | 'users' | 'audit';
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   currentUser,
-  onNavigateTab,
-  onOpenAuthModal
+  onNavigateTab
 }) => {
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -167,10 +165,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           </div>
 
           {/* Current Admin Profile */}
-          <button
-            onClick={onOpenAuthModal}
-            className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 transition-colors cursor-pointer"
-            title="Bấm để đổi tài khoản hoặc đăng nhập Google khác"
+          <div
+            className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700/80"
           >
             <img
               src={currentUser.avatarUrl}
@@ -183,7 +179,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 {currentUser.role === 'super_admin' ? 'Super Admin' : currentUser.role === 'educator' ? 'Giáo viên' : 'Sinh viên'}
               </span>
             </div>
-          </button>
+          </div>
         </div>
       </div>
 

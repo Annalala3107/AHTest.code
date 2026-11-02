@@ -5,13 +5,22 @@ import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
 import { ProblemsView } from './components/ProblemsView';
 import { ViewLoadingFallback } from './components/ViewLoadingFallback';
-import { AuthModal } from './components/AuthModal';
 import { Problem, AuthUser, ExamSessionConfig } from './types';
 import { getStreakState } from './services/streakService';
-import { GUEST_USER } from './services/authService';
-import { setupSupabaseAuthListener, signOutSupabase } from './services/supabaseAuth';
 import { findProblemById } from './services/problemResolver';
-import { Shield } from 'lucide-react';
+
+// Default system administrator account for open access
+const SYSTEM_ADMIN: AuthUser = {
+  id: 'usr_admin',
+  name: 'Quản trị viên',
+  email: 'admin@ahtest.code',
+  avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin',
+  role: 'super_admin',
+  provider: 'email',
+  streakDays: 30,
+  rating: 2400,
+  rankClass: 'Grandmaster'
+};
 
 // Lazy-loaded heavy views for on-demand code-splitting
 const WorkbenchView = lazy(() =>
@@ -105,25 +114,6 @@ function AppContent() {
     };
   }, []);
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-  const [currentUser, setCurrentUser] = useState<AuthUser>(GUEST_USER);
-
-  // Listen for Supabase OAuth redirects and restore authenticated session
-  useEffect(() => {
-    const unsubscribe = setupSupabaseAuthListener(
-      (user) => {
-        setCurrentUser(user);
-      },
-      () => {
-        setCurrentUser(GUEST_USER);
-      }
-    );
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
   // Synchronize dark mode class on HTML element and persist preference
   useEffect(() => {
     if (isDarkMode) {
@@ -153,20 +143,6 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLogout = () => {
-    signOutSupabase();
-    setCurrentUser(GUEST_USER);
-  };
-
-  const handleOpenAuthModal = (mode: 'login' | 'register' = 'login') => {
-    setAuthModalMode(mode);
-    setIsAuthModalOpen(true);
-  };
-
-  const handleLoginSuccess = (user: AuthUser) => {
-    setCurrentUser(user);
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors font-sans antialiased">
       {/* Top Navbar */}
@@ -176,9 +152,6 @@ function AppContent() {
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         streakCount={streakCount}
-        currentUser={currentUser}
-        onOpenAuthModal={handleOpenAuthModal}
-        onLogout={handleLogout}
       />
 
       {/* Main View Container */}
@@ -227,49 +200,17 @@ function AppContent() {
           <Route
             path="/admin"
             element={
-              currentUser.role === 'super_admin' ? (
-                <Suspense fallback={<ViewLoadingFallback />}>
-                  <AdminDashboardView
-                    currentUser={currentUser}
-                    onNavigateTab={handleSelectTab}
-                    onOpenAuthModal={() => handleOpenAuthModal('login')}
-                  />
-                </Suspense>
-              ) : (
-                <div className="flex-1 flex items-center justify-center py-20 px-4">
-                  <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center mx-auto ring-8 ring-rose-50/50 dark:ring-rose-950/20">
-                      <Shield className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                      Khu Vực Quản Trị Hệ Thống
-                    </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Bạn cần đăng nhập bằng tài khoản Quản trị viên (Super Admin) được phân quyền bảo
-                      mật trong hệ thống để truy cập vào phân hệ này.
-                    </p>
-                    <button
-                      onClick={() => handleOpenAuthModal('login')}
-                      className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all cursor-pointer"
-                    >
-                      Đăng nhập Quản trị viên
-                    </button>
-                  </div>
-                </div>
-              )
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <AdminDashboardView
+                  currentUser={SYSTEM_ADMIN}
+                  onNavigateTab={handleSelectTab}
+                />
+              </Suspense>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-
-      {/* Google SSO & Email Authentication Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
-        initialMode={authModalMode}
-      />
 
       {/* Live Exam Simulation Workspace Modal / Overlay */}
       {activeExamSession && (
