@@ -207,7 +207,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
                 {authMode === 'login'
                   ? 'Đăng nhập để đồng bộ tiến độ học tập trên đám mây, nộp bài chấm thi thời gian thực và quản lý kho đề bài.'
-                  : 'Tạo tài khoản để lưu trữ chuỗi ngày Streak, làm bài tập thực hành C/C++, thi đấu Contests và nhận bảng đánh giá năng lực.'}
+                  : 'Tạo tài khoản để lưu trữ tiến độ học tập, làm bài tập thực hành C/C++, thi đấu Contests và nhận bảng đánh giá năng lực.'}
               </p>
             </div>
           </div>

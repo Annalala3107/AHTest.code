@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Trophy, 
-  Flame, 
+  Calendar, 
   ArrowRight, 
   Code2, 
   BookOpen, 
@@ -14,18 +14,17 @@ import { mockProblems } from '../data/mockProblems';
 import { mockContests } from '../data/mockContests';
 import { mockSubmissions } from '../data/mockSubmissions';
 import { InlineMath } from './InlineMath';
-import { getStreakState } from '../services/streakService';
 
 interface HomeViewProps {
   onSelectProblem: (problem: Problem, problemList?: Problem[], collectionTitle?: string) => void;
   onNavigateTab: (tab: any) => void;
-  streakCount: number;
+  streakCount?: number;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onSelectProblem,
   onNavigateTab,
-  streakCount
+  streakCount: _streakCount
 }) => {
   const dailyProblem = mockProblems[0]; // Sodium Sort
   const featuredContest = mockContests[0]; // VNOI Cup Final
@@ -99,7 +98,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   Thử Thách Hằng Ngày (Daily Challenge)
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Giải bài hôm nay để duy trì chuỗi Streak và nhận +50 điểm danh dự
+                  Giải bài hôm nay để rèn luyện tư duy và nhận +50 điểm danh dự
                 </p>
               </div>
             </div>
@@ -137,18 +136,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
 
-        {/* Activity Heatmap & Streak Tracker */}
+        {/* Activity Heatmap */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Flame className="w-6 h-6 fill-amber-500 text-amber-500 animate-pulse" />
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+                  <Calendar className="w-5 h-5" />
+                </span>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    Chuỗi Streak: {streakCount ?? getStreakState().currentStreak} ngày
+                    Biểu Đồ Hoạt Động (Activity Heatmap)
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Kỷ lục cá nhân: {getStreakState().longestStreak} ngày liên tục
+                    Ghi nhận tần suất làm bài và mức độ tích cực
                   </p>
                 </div>
               </div>

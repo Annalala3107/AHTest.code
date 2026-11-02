@@ -3,7 +3,6 @@ import {
   Code2, 
   BookOpen, 
   FolderGit2,
-  Flame, 
   Sun, 
   Moon, 
   Menu, 
@@ -18,7 +17,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import { AuthUser } from '../types';
-import { StreakModal } from './StreakModal';
 
 export type NavTab = 'home' | 'problems' | 'academy' | 'importer' | 'admin' | 'contests' | 'leaderboard';
 
@@ -38,14 +36,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   isDarkMode,
   onToggleTheme,
-  streakCount = 7,
+  streakCount: _streakCount = 7,
   currentUser,
   onOpenAuthModal,
   onLogout
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const isGuest = !currentUser || currentUser.id === 'usr_guest';
@@ -131,17 +128,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Daily Streak Interactive Indicator */}
-            <button 
-              type="button"
-              onClick={() => setIsStreakModalOpen(true)}
-              title="Xem chi tiết Chuỗi ngày luyện tập liên tiếp (Streak)!" 
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 lg:px-3 rounded-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400 text-xs font-bold whitespace-nowrap shrink-0 transition-transform active:scale-95 cursor-pointer shadow-xs"
-            >
-              <Flame className="w-4 h-4 fill-amber-500 text-amber-500 animate-pulse" />
-              <span>{streakCount} ngày</span>
-            </button>
-
             {/* Dark/Light Mode Toggle */}
             <button
               onClick={onToggleTheme}
@@ -464,22 +450,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Mobile Streak Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsStreakModalOpen(true);
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 mb-2 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-400 cursor-pointer shadow-xs"
-          >
-            <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-              <span>Chuỗi ngày luyện tập</span>
-            </div>
-            <span className="font-extrabold">{streakCount} ngày</span>
-          </button>
-
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
@@ -505,16 +475,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </div>
       )}
-
-      {/* Streak Details Modal */}
-      <StreakModal
-        isOpen={isStreakModalOpen}
-        onClose={() => setIsStreakModalOpen(false)}
-        onGoToDailyChallenge={() => {
-          onSelectTab('home');
-          setIsStreakModalOpen(false);
-        }}
-      />
     </header>
   );
 };

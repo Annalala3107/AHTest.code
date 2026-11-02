@@ -645,7 +645,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             <img src={u.avatarUrl} alt={u.name} className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-700" />
                             <div>
                               <span className="font-bold text-white block">{u.name}</span>
-                              <span className="text-[10px] text-slate-500 font-mono">Streak: {u.streakDays} ngày</span>
+                              <span className="text-[10px] text-slate-500 font-mono">Hoạt động: {u.streakDays} ngày</span>
                             </div>
                           </div>
                         </td>
