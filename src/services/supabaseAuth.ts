@@ -10,6 +10,7 @@ import type { AuthUser, UserRole } from '../types/index.ts';
 
 // Default Supabase project URL discovered from user's setup
 export const DEFAULT_SUPABASE_URL = 'https://dcfehiahdpbfvyzekchr.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_tMRwAPAnrNH--Yrj5thgbQ_xa2q0Bdz';
 
 export interface SupabaseConfig {
   url: string;
@@ -45,7 +46,7 @@ export function getSupabaseConfig(): SupabaseConfig {
   }
 
   const url = (envUrl || localUrl || DEFAULT_SUPABASE_URL).trim();
-  const anonKey = (envAnonKey || localAnonKey || '').trim();
+  const anonKey = (envAnonKey || localAnonKey || DEFAULT_SUPABASE_ANON_KEY).trim();
 
   return { url, anonKey };
 }
