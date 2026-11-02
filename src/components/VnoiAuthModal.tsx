@@ -12,14 +12,19 @@ import {
   ArrowRight,
   Shield,
   Zap,
-  Award
+  Award,
+  Key,
+  Settings
 } from 'lucide-react';
 import { AuthUser } from '../types';
 import { 
   signInWithEmailPassword, 
   signUpWithEmailPassword, 
   signInWithGoogleOAuth, 
-  isSupabaseConfigured 
+  isSupabaseConfigured,
+  saveSupabaseConfig,
+  getSupabaseConfig,
+  DEFAULT_SUPABASE_URL
 } from '../services/supabaseAuth';
 import { getVnoiRankInfo } from '../services/vnoiRank';
 
@@ -114,6 +119,11 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Inline Supabase Key Configuration
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [inputUrl, setInputUrl] = useState(() => getSupabaseConfig().url || DEFAULT_SUPABASE_URL);
+  const [inputAnonKey, setInputAnonKey] = useState(() => getSupabaseConfig().anonKey || '');
 
   if (!isOpen) return null;
 
@@ -328,12 +338,21 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setShowKeyConfig(!showKeyConfig)}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Cấu hình Supabase API Key"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Switcher */}
@@ -362,14 +381,98 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
           </div>
         </div>
 
-        {/* Alerts */}
-        <div className="px-6 pt-3">
+        {/* Alerts & Inline Key Configuration Form */}
+        <div className="px-6 pt-3 space-y-2">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-xs flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="font-semibold">{errorMsg}</span>
+              </div>
+              {errorMsg.includes('Supabase Anon Key') && !showKeyConfig && (
+                <button
+                  type="button"
+                  onClick={() => setShowKeyConfig(true)}
+                  className="self-start text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>Dán Supabase Anon Key vào đây để kích hoạt ngay</span>
+                </button>
+              )}
             </div>
           )}
+
+          {/* Inline Supabase Config Form Drawer */}
+          {showKeyConfig && (
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-3 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Key className="w-4 h-4 text-amber-500" />
+                  Cấu hình Supabase API Key (Lưu cục bộ trên trình duyệt)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowKeyConfig(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Project URL:
+                </label>
+                <input
+                  type="text"
+                  value={inputUrl}
+                  onChange={(e) => setInputUrl(e.target.value)}
+                  placeholder="https://dcfehiahdpbfvyzekchr.supabase.co"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Public Anon Key:
+                </label>
+                <input
+                  type="password"
+                  value={inputAnonKey}
+                  onChange={(e) => setInputAnonKey(e.target.value)}
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+                  className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!inputAnonKey.trim()) {
+                      setErrorMsg('Vui lòng nhập Supabase Anon Key hợp lệ.');
+                      return;
+                    }
+                    saveSupabaseConfig(inputUrl.trim(), inputAnonKey.trim());
+                    setShowKeyConfig(false);
+                    setErrorMsg(null);
+                    setSuccessMsg('Đã lưu Supabase Key vào trình duyệt! Bạn có thể bấm Google SSO hoặc Đăng nhập.');
+                  }}
+                  className="px-3 py-1.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-500 text-white cursor-pointer shadow-xs"
+                >
+                  Lưu & Kích hoạt ngay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowKeyConfig(false)}
+                  className="px-3 py-1.5 rounded-xl font-medium text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          )}
+
           {successMsg && (
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
