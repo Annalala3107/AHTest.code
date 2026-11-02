@@ -12,6 +12,7 @@ import { AuthModal } from './components/AuthModal';
 import { Problem, AuthUser, ExamSessionConfig } from './types';
 import { getStreakState } from './services/streakService';
 import { getStoredAuthUser, GUEST_USER } from './services/authService';
+import { setupSupabaseAuthListener, signOutSupabase } from './services/supabaseAuth';
 import { mockProblems } from './data/mockProblems';
 import { Shield } from 'lucide-react';
 
@@ -41,11 +42,29 @@ export function App() {
       window.removeEventListener('ahtest-streak-updated', handleStreakUpdate);
     };
   }, []);
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Current authenticated user (Default: GUEST_USER, never hardcode admin)
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => getStoredAuthUser());
+
+  // Listen for Supabase OAuth redirects and restore authenticated session
+  useEffect(() => {
+    const unsubscribe = setupSupabaseAuthListener(
+      (user) => {
+        setCurrentUser(user);
+        localStorage.setItem('ahtest_auth_user', JSON.stringify(user));
+      },
+      () => {
+        setCurrentUser(GUEST_USER);
+        localStorage.removeItem('ahtest_auth_user');
+      }
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Synchronize dark mode class on HTML element and persist preference
   useEffect(() => {
@@ -89,6 +108,7 @@ export function App() {
   };
 
   const handleLogout = () => {
+    signOutSupabase();
     setCurrentUser(GUEST_USER);
     localStorage.removeItem('ahtest_auth_user');
   };
