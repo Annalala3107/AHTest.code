@@ -1,4 +1,4 @@
-import { AcademyCourse } from '../../types';
+import type { AcademyCourse } from '../../types/index.ts';
 
 export const cppCourse: AcademyCourse = {
     id: 'cpp-fundamentals',
@@ -8,9 +8,9 @@ export const cppCourse: AcademyCourse = {
     language: 'cpp',
     level: 'Beginner',
     description: 'Khoá học tương tác thực chiến dành riêng cho học sinh chuyên Tin và sinh viên nhập môn. Không nhồi nhét lý thuyết suông: mỗi bài học chỉ 3 phút lý thuyết kèm 1 thử thách gõ code trực tiếp trên trình duyệt!',
-    totalLessons: 12,
+    totalLessons: 3,
     estimatedHours: 4,
-    isComingSoon: true,
+    isComingSoon: false,
     modules: [
       {
         id: 'mod-1',
@@ -63,7 +63,7 @@ using namespace std;
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
-    cout << "AHtest.code Academy 2026\n";
+    cout << "AHtest.code Academy 2026\\n";
     return 0;
 }`,
             hints: [
@@ -117,7 +117,7 @@ int main() {
     cin.tie(NULL);
     long long a, b;
     if (cin >> a >> b) {
-        cout << a * b << "\n";
+        cout << a * b << "\\n";
     }
     return 0;
 }`,
@@ -160,7 +160,7 @@ int main() {
         cin >> x;
         sum += x;
     }
-    cout << sum << "\n";
+    cout << sum << "\\n";
     return 0;
 }`,
             solutionCode: `#include <iostream>
@@ -175,7 +175,7 @@ int main() {
             cin >> x;
             sum += x;
         }
-        cout << sum << "\n";
+        cout << sum << "\\n";
     }
     return 0;
 }`,

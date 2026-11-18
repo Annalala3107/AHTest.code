@@ -28,7 +28,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onMount,
   readOnly = false,
   className = '',
-  maxLength = 5000,
+  maxLength = 65536,
   showCharBadge = true,
 }) => {
   const editorRef = useRef<any>(null);
@@ -48,6 +48,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     if (lang.startsWith('cpp')) return 'cpp';
     if (lang === 'py3' || lang === 'python') return 'python';
     if (lang === 'java') return 'java';
+    if (lang === 'sql') return 'sql';
     if (lang === 'rust') return 'rust';
     return 'c';
   };
@@ -158,7 +159,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         }}
       />
 
-      {/* Real-time 5000-character Floating Gauge */}
+      {/* Real-time 65536-character Floating Gauge */}
       {showCharBadge && (
         <div 
           className={`absolute bottom-2.5 right-4 z-10 px-2 py-0.5 rounded text-[10px] font-mono border backdrop-blur-xs select-none pointer-events-none transition-all shadow-xs ${

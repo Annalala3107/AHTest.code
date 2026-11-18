@@ -34,7 +34,7 @@ import { AcademyCourse, AcademyLesson, AppliedExercise } from '../types';
 import { mockCourses } from '../data/academy';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
-import { executeCCodeAsync, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/executionManager';
+import { executeCodeAsync, ExecutionResult, PedagogicalDiagnosis, generatePedagogicalDiagnosis } from '../services/executionManager';
 import { CodeEditor } from './CodeEditor';
 import { PedagogicalDiagnosisCard } from './workbench/PedagogicalDiagnosisCard';
 import confetti from 'canvas-confetti';
@@ -403,6 +403,12 @@ export const AcademyView: React.FC = () => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [exercisePassed]);
 
+  const resolveAcademyLang = (courseLang?: string) => {
+    if (courseLang === 'cpp') return 'cpp20';
+    if (courseLang === 'python') return 'py3';
+    return 'c17';
+  };
+
   const handleRunCode = () => {
     if (isRunning) return; // Prevent spam clicks
     flushPendingDraft();
@@ -413,19 +419,20 @@ export const AcademyView: React.FC = () => {
     }
 
     const runId = ++activeRunIdRef.current;
+    const judgeLang = resolveAcademyLang(selectedCourse.language);
 
     setIsRunning(true);
-    setExecutionOutput('Đang khởi chạy sandbox và thực thi mã C...');
+    setExecutionOutput(`Đang khởi chạy sandbox và thực thi mã ${judgeLang.toUpperCase()}...`);
     setPedagogicalDiagnosis(null);
     setExercisePassed(false);
     setDiffState(null);
 
-    // Enforce 5000 character limit
-    if (userCode.length > 5000) {
+    // Enforce 65,536 character limit
+    if (userCode.length > 65536) {
       setIsRunning(false);
       const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', userCode);
       setPedagogicalDiagnosis(diag || null);
-      setExecutionOutput(`[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${userCode.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`);
+      setExecutionOutput(`[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${userCode.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`);
       setExercisePassed(false);
       setDiffState(null);
       setIsConsoleCollapsed(false);
@@ -450,7 +457,7 @@ export const AcademyView: React.FC = () => {
         for (let i = 0; i < targetTestcases.length; i++) {
           if (activeRunIdRef.current !== runId) return;
           const tc = targetTestcases[i];
-          const exec = await executeCCodeAsync(userCode, tc.input);
+          const exec = await executeCodeAsync(judgeLang, userCode, tc.input);
           if (activeRunIdRef.current !== runId) return;
           lastExecResult = exec;
 
@@ -578,7 +585,7 @@ export const AcademyView: React.FC = () => {
         }
       } else {
         // Freeform lesson without strict testcases
-        const exec = await executeCCodeAsync(userCode, '');
+        const exec = await executeCodeAsync(judgeLang, userCode, '');
         if (activeRunIdRef.current !== runId) return;
         setIsRunning(false);
 
@@ -680,8 +687,11 @@ export const AcademyView: React.FC = () => {
                       setSelectedCourse(c);
                       setActiveExercise(null);
                       if (c.modules[0]?.lessons[0]) {
-                        setActiveLesson(c.modules[0].lessons[0]);
-                        setUserCode(c.modules[0].lessons[0].initialCode);
+                        const firstLesson = c.modules[0].lessons[0];
+                        setActiveLesson(firstLesson);
+                        const saved = localStorage.getItem(getAcademyDraftKey(c.id, firstLesson.id, null));
+                        setUserCode(saved !== null ? saved : firstLesson.initialCode);
+                        setDraftSaved(saved !== null);
                         setExecutionOutput(null);
                         setExercisePassed(false);
                       }
@@ -851,19 +861,19 @@ export const AcademyView: React.FC = () => {
           {/* Run Code / Submit Button */}
           <button
             onClick={handleRunCode}
-            disabled={isRunning || userCode.length > 5000}
+            disabled={isRunning || userCode.length > 65536}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              userCode.length > 5000
+              userCode.length > 65536
                 ? 'bg-rose-950 text-rose-300 border border-rose-700 opacity-80 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-600/30 cursor-pointer disabled:opacity-50'
             }`}
-            title={userCode.length > 5000 ? `Mã nguồn (${userCode.length.toLocaleString('vi-VN')} ký tự) vượt quá giới hạn 5,000 ký tự!` : "Phím tắt: Ctrl + Enter"}
+            title={userCode.length > 65536 ? `Mã nguồn (${userCode.length.toLocaleString('vi-VN')} ký tự) vượt quá giới hạn 65,536 ký tự!` : "Phím tắt: Ctrl + Enter"}
           >
             <Play className="w-3 h-3 fill-white" />
             <span className="hidden sm:inline">
-              {isRunning ? 'Đang chấm...' : userCode.length > 5000 ? 'Quá 5,000 ký tự' : 'Chạy thử'}
+              {isRunning ? 'Đang chấm...' : userCode.length > 65536 ? 'Quá 65,536 ký tự' : 'Chạy thử'}
             </span>
-            {userCode.length <= 5000 && (
+            {userCode.length <= 65536 && (
               <kbd className="hidden sm:inline-block ml-0.5 px-1 py-0.2 rounded text-[9px] bg-indigo-700 text-indigo-200 font-mono">
                 Ctrl+↵
               </kbd>
@@ -1591,26 +1601,28 @@ export const AcademyView: React.FC = () => {
                 <span className="truncate">
                   {activeExercise
                     ? `Auto-Grading: [${activeExercise.questionCode}] ${docLang === 'en' ? activeExercise.titleEn : activeExercise.titleVi}`
-                    : selectedCourse.language === 'c'
-                    ? 'Trình Thực Thi C (Dev-C++ / MinGW GCC Wasm Sandbox)'
-                    : 'Client-Side Wasm Sandbox'}
+                    : selectedCourse.language === 'cpp'
+                    ? 'Trình Thực Thi C++20 (FastIO & STL Sandbox)'
+                    : selectedCourse.language === 'python'
+                    ? 'Trình Thực Thi Python 3.12 (Client Sandbox)'
+                    : 'Trình Thực Thi C (Dev-C++ / MinGW GCC Sandbox)'}
                 </span>
               </div>
 
-              {/* Action Toolbar: 5000-char counter, Auto-save status & Hints */}
+              {/* Action Toolbar: 65,536-char counter, Auto-save status & Hints */}
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                {/* 5000-character limit counter */}
+                {/* 65,536-character limit counter */}
                 <div 
                   className={`text-[11px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1.5 transition-colors ${
-                    userCode.length > 5000 
+                    userCode.length > 65536 
                       ? 'text-rose-400 bg-rose-950/80 border-rose-600 font-bold animate-pulse'
-                      : userCode.length > 4500
+                      : userCode.length > 58000
                       ? 'text-amber-300 bg-amber-950/60 border-amber-600 font-semibold'
                       : 'text-slate-400 bg-slate-900 border-slate-800'
                   }`}
-                  title={`Dung lượng code: ${userCode.length.toLocaleString('vi-VN')} / 5,000 ký tự tối đa`}
+                  title={`Dung lượng code: ${userCode.length.toLocaleString('vi-VN')} / 65,536 ký tự tối đa`}
                 >
-                  <span>{userCode.length.toLocaleString('vi-VN')}/5,000</span>
+                  <span>{userCode.length.toLocaleString('vi-VN')}/65,536</span>
                   <span className="hidden md:inline text-[10px] text-slate-500">ký tự</span>
                 </div>
 
@@ -1637,7 +1649,7 @@ export const AcademyView: React.FC = () => {
               <CodeEditor
                 value={userCode}
                 onChange={handleCodeChange}
-                language={selectedCourse.language || 'c'}
+                language={resolveAcademyLang(selectedCourse.language)}
                 onRun={handleRunCode}
                 onSubmit={handleRunCode}
                 onNextLesson={exercisePassed && nextLessonCandidate ? handleNextLesson : undefined}

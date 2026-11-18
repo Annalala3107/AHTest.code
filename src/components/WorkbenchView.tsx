@@ -35,7 +35,7 @@ import type { Problem, Verdict, TestResult, LocalSubmissionRecord } from '../typ
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { 
-  executeCCodeAsync, 
+  executeCodeAsync, 
   ExecutionResult, 
   PedagogicalDiagnosis, 
   generatePedagogicalDiagnosis 
@@ -116,7 +116,12 @@ public class Main {
 
 fn main() {
     
-}`
+}`,
+  sql: `-- Hệ quản trị cơ sở dữ liệu mẫu sẵn có: students, courses
+SELECT id, name, major, gpa
+FROM students
+WHERE gpa >= 3.5
+ORDER BY gpa DESC;`
 };
 
 function getWorkbenchDraftKey(probId: string, lang: string): string {
@@ -236,7 +241,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
   collectionTitle
 }) => {
   const [activeTab, setActiveTab] = useState<'statement' | 'editorial' | 'submissions' | 'comments'>('statement');
-  const [language, setLanguage] = useState<'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust'>('cpp20');
+  const [language, setLanguage] = useState<'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'sql' | 'rust'>('cpp20');
   const [copiedSample, setCopiedSample] = useState<number | null>(null);
 
   // Bilingual state (VI / EN)
@@ -544,8 +549,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     setSelectedTestResult(null);
     setPedagogicalDiagnosis(null);
 
-    // Enforce 5,000 character limit
-    if (code.length > 5000) {
+    // Enforce 65,536 character limit (64 KB)
+    if (code.length > 65536) {
       setIsGrading(false);
       const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
       setPedagogicalDiagnosis(diag || null);
@@ -559,8 +564,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         maxScore: problem.points,
         isHidden: false,
         input: 'Kiểm tra độ dài code',
-        actualOutput: `[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`,
-        expectedOutput: 'Dưới 5,000 ký tự'
+        actualOutput: `[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`,
+        expectedOutput: 'Dưới 65,536 ký tự'
       };
       setCustomOutput(ceResult.actualOutput || '');
       setTestResults([ceResult]);
@@ -573,7 +578,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
       timerStateRef.current.sample = null;
       const sampleInput = problem.samples[0]?.input ?? (problem.testcases?.[0]?.input || '');
       const sampleOutput = problem.samples[0]?.output ?? (problem.testcases?.[0]?.expectedOutput || '');
-      const exec = await executeCCodeAsync(code, sampleInput);
+      const exec = await executeCodeAsync(language, code, sampleInput);
       if (timerStateRef.current.activeRunId !== runId) return;
 
       setIsGrading(false);
@@ -635,8 +640,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     setSelectedTestResult(null);
     setPedagogicalDiagnosis(null);
 
-    // Enforce 5,000 character limit
-    if (code.length > 5000) {
+    // Enforce 65,536 character limit
+    if (code.length > 65536) {
       setIsGrading(false);
       const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
       setPedagogicalDiagnosis(diag || null);
@@ -650,8 +655,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         maxScore: problem.points,
         isHidden: false,
         input: 'Kiểm tra độ dài code',
-        actualOutput: `[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`,
-        expectedOutput: 'Dưới 5,000 ký tự'
+        actualOutput: `[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`,
+        expectedOutput: 'Dưới 65,536 ký tự'
       };
       setCustomOutput(ceResult.actualOutput || '');
       setTestResults([ceResult]);
@@ -665,7 +670,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
       const sample = problem.samples[index] || (problem.testcases?.[index] ? { input: problem.testcases[index].input, output: problem.testcases[index].expectedOutput } : problem.samples[0]);
       const sampleInput = sample?.input ?? (problem.testcases?.[index]?.input || '');
       const sampleOutput = sample?.output ?? (problem.testcases?.[index]?.expectedOutput || '');
-      const exec = await executeCCodeAsync(code, sampleInput);
+      const exec = await executeCodeAsync(language, code, sampleInput);
       if (timerStateRef.current.activeRunId !== runId) return;
 
       setIsGrading(false);
@@ -718,19 +723,19 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     setConsoleTab('custom');
     setPedagogicalDiagnosis(null);
 
-    // Enforce 5,000 character limit
-    if (code.length > 5000) {
+    // Enforce 65,536 character limit
+    if (code.length > 65536) {
       const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
       setPedagogicalDiagnosis(diag || null);
-      setCustomOutput(`[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn 5,000 ký tự.`);
+      setCustomOutput(`[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn 65,536 ký tự.`);
       return;
     }
 
     const runId = ++timerStateRef.current.activeRunId;
     setIsGrading(true);
-    setCustomOutput('Đang biên dịch và thực thi trong Web Worker sandbox an toàn...');
+    setCustomOutput(`Đang biên dịch & thực thi (${language.toUpperCase()}) trong Sandbox an toàn...`);
 
-    const exec = await executeCCodeAsync(code, customInput);
+    const exec = await executeCodeAsync(language, code, customInput);
     if (timerStateRef.current.activeRunId !== runId) return;
 
     setIsGrading(false);
@@ -772,8 +777,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     setSelectedTestResult(null);
     setPedagogicalDiagnosis(null);
 
-    // Enforce 5,000 character limit
-    if (code.length > 5000) {
+    // Enforce 65,536 character limit
+    if (code.length > 65536) {
       setIsGrading(false);
       const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
       setPedagogicalDiagnosis(diag || null);
@@ -787,8 +792,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
         maxScore: 100,
         isHidden: false,
         input: 'Kích thước mã nguồn',
-        actualOutput: `[Lỗi dung lượng: TỐI ĐA 5,000 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 5,000 ký tự.`,
-        expectedOutput: 'Tối đa 5,000 ký tự'
+        actualOutput: `[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`,
+        expectedOutput: 'Tối đa 65,536 ký tự'
       };
       setTestResults([ceResult]);
       setSelectedTestResult(ceResult);
@@ -797,7 +802,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     }
 
     // Check for Compile Error once first
-    const syntaxCheck = await executeCCodeAsync(code, '');
+    const syntaxCheck = await executeCodeAsync(language, code, '');
     if (timerStateRef.current.activeRunId !== runId) return;
 
     if (syntaxCheck.status === 'CE') {
@@ -883,7 +888,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
       if (timerStateRef.current.activeRunId !== runId) return;
 
       const tDef = testDefinitions[i];
-      const exec = await executeCCodeAsync(code, tDef.input, { timeoutMs: 2000 });
+      const exec = await executeCodeAsync(language, code, tDef.input, { timeoutMs: 2000 });
       if (timerStateRef.current.activeRunId !== runId) return;
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
@@ -1135,17 +1140,17 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
           {/* Run & Submit CTAs with Keyboard Shortcut Badges */}
           <button
             onClick={handleRunSample}
-            disabled={isGrading || code.length > 5000}
+            disabled={isGrading || code.length > 65536}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              code.length > 5000 
+              code.length > 65536 
                 ? 'bg-rose-950/80 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed' 
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 cursor-pointer'
             }`}
-            title={code.length > 5000 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 5,000 ký tự!` : "Phím tắt: F9"}
+            title={code.length > 65536 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 65,536 ký tự!` : "Phím tắt: F9"}
           >
             <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500" />
-            <span>{code.length > 5000 ? 'Quá 5,000 ký tự' : 'Chạy thử'}</span>
-            {code.length <= 5000 && (
+            <span>{code.length > 65536 ? 'Quá 65,536 ký tự' : 'Chạy thử'}</span>
+            {code.length <= 65536 && (
               <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
                 F9
               </kbd>
@@ -1154,17 +1159,17 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
 
           <button
             onClick={handleSubmitSolution}
-            disabled={isGrading || code.length > 5000}
+            disabled={isGrading || code.length > 65536}
             className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              code.length > 5000
+              code.length > 65536
                 ? 'bg-rose-950 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed'
                 : 'bg-rose-600 hover:bg-rose-500 text-white shadow-xs shadow-rose-600/30 disabled:opacity-50 cursor-pointer'
             }`}
-            title={code.length > 5000 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 5,000 ký tự!` : "Phím tắt: Ctrl + Enter"}
+            title={code.length > 65536 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 65,536 ký tự!` : "Phím tắt: Ctrl + Enter"}
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{code.length > 5000 ? 'Quá giới hạn' : 'Nộp bài'}</span>
-            {code.length <= 5000 && (
+            <span>{code.length > 65536 ? 'Quá giới hạn' : 'Nộp bài'}</span>
+            {code.length <= 65536 && (
               <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1.5 py-0.2 rounded bg-rose-700 text-rose-200 border border-rose-500/40 font-mono">
                 Ctrl+↵
               </kbd>
@@ -1621,7 +1626,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                 id="lang-select"
                 value={language}
                 onChange={(e) => {
-                  const newLang = e.target.value as 'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust';
+                  const newLang = e.target.value as 'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'sql' | 'rust';
                   flushPendingDraft(code, language);
                   setLanguage(newLang);
                   const nextDraft = loadCleanWorkbenchDraft(problem.id, newLang);
@@ -1630,28 +1635,29 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
                 }}
                 className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer"
               >
-                <option value="cpp20">C/C++ Cơ bản (Client Sandbox) • Khuyên dùng</option>
+                <option value="cpp20">C++20 (FastIO & STL Sandbox) • Khuyên dùng</option>
                 <option value="c17">C17 Chuẩn (Client Sandbox) • Sẵn sàng</option>
-                <option value="cpp17">C++17 Cơ bản (Client Sandbox) • Sẵn sàng</option>
-                <option value="py3" disabled className="text-slate-500">Python 3 (Phase 2: Pyodide / Server Judge)</option>
-                <option value="java" disabled className="text-slate-500">Java 21 LTS (Phase 2: Server Judge)</option>
-                <option value="rust" disabled className="text-slate-500">SQL / Rust (Phase 2: PGlite / Server Judge)</option>
+                <option value="cpp17">C++17 (Client Sandbox) • Sẵn sàng</option>
+                <option value="py3">Python 3.12 (Client Sandbox) • Sẵn sàng</option>
+                <option value="java">Java 21 LTS (Client Sandbox) • Sẵn sàng</option>
+                <option value="sql">SQL PostgreSQL/SQLite (Sandbox) • Sẵn sàng</option>
+                <option value="rust" disabled className="text-slate-500">Rust 1.82 (Chờ Judge VPS Backend)</option>
               </select>
             </div>
 
             <div className="flex items-center gap-2.5">
-              {/* 5000-character limit counter */}
+              {/* 65,536-character limit counter */}
               <div 
                 className={`text-[11px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1.5 transition-colors ${
-                  code.length > 5000 
+                  code.length > 65536 
                     ? 'text-rose-400 bg-rose-950/80 border-rose-600 font-bold animate-pulse'
-                    : code.length > 4500
+                    : code.length > 58000
                     ? 'text-amber-300 bg-amber-950/60 border-amber-600 font-semibold'
                     : 'text-slate-400 bg-slate-900 border-slate-800'
                 }`}
-                title={`Dung lượng code: ${code.length.toLocaleString('vi-VN')} / 5,000 ký tự tối đa`}
+                title={`Dung lượng code: ${code.length.toLocaleString('vi-VN')} / 65,536 ký tự tối đa`}
               >
-                <span>{code.length.toLocaleString('vi-VN')}/5,000</span>
+                <span>{code.length.toLocaleString('vi-VN')}/65,536</span>
                 <span className="hidden md:inline text-[10px] text-slate-500">ký tự</span>
               </div>
 
