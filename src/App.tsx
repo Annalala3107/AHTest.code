@@ -6,11 +6,14 @@ import { HomeView } from './components/HomeView';
 import { ProblemsView } from './components/ProblemsView';
 import { ViewLoadingFallback } from './components/ViewLoadingFallback';
 import { VnoiAuthModal } from './components/VnoiAuthModal';
-import { Problem, AuthUser, ExamSessionConfig } from './types';
+import { StreakModal } from './components/StreakModal';
+import { GlobalFeedbackHost } from './components/ui/GlobalFeedbackHost';
+import type { Problem, AuthUser, ExamSessionConfig } from './types';
 import { getStreakState } from './services/streakService';
 import { findProblemById } from './services/problemResolver';
 import { GUEST_USER } from './services/authService';
 import { setupSupabaseAuthListener, signOutSupabase } from './services/supabaseAuth';
+import { mockProblems } from './data/mockProblems';
 
 // Lazy-loaded heavy views for on-demand code-splitting
 const WorkbenchView = lazy(() =>
@@ -31,19 +34,42 @@ const ExamSimulationView = lazy(() =>
 const ContestsView = lazy(() =>
   import('./components/ContestsView').then((m) => ({ default: m.ContestsView }))
 );
+const LeaderboardView = lazy(() =>
+  import('./components/LeaderboardView').then((m) => ({ default: m.LeaderboardView }))
+);
+
+interface WorkbenchLocationState {
+  contextIds?: string[];
+  collectionTitle?: string;
+}
+
 function WorkbenchRouteWrapper() {
   const { problemId } = useParams<{ problemId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = (location.state as WorkbenchLocationState | null) || null;
 
   const resolved = useMemo(() => {
     return problemId ? findProblemById(problemId) : null;
   }, [problemId]);
 
+  const contextList = useMemo(() => {
+    if (!resolved) return [];
+    if (routeState?.contextIds && routeState.contextIds.length > 0) {
+      const resolvedItems = routeState.contextIds
+        .map((id) => findProblemById(id)?.problem)
+        .filter((item): item is Problem => Boolean(item));
+      if (resolvedItems.length > 0) return resolvedItems;
+    }
+    return resolved.contextList;
+  }, [resolved, routeState]);
+
   if (!resolved) {
     return <Navigate to="/problems" replace />;
   }
 
-  const { problem, collectionTitle, contextList } = resolved;
+  const { problem } = resolved;
+  const collectionTitle = routeState?.collectionTitle || resolved.collectionTitle;
   const currentIdx = contextList.findIndex((p) => p.id === problem.id);
   const hasNext = currentIdx >= 0 && currentIdx < contextList.length - 1;
   const hasPrev = currentIdx > 0;
@@ -51,20 +77,25 @@ function WorkbenchRouteWrapper() {
   const handleNext = () => {
     if (hasNext) {
       const nextProblem = contextList[currentIdx + 1];
-      navigate(`/problems/${nextProblem.id}`);
+      navigate(`/problems/${nextProblem.id}`, {
+        state: { contextIds: contextList.map((p) => p.id), collectionTitle },
+      });
     }
   };
 
   const handlePrev = () => {
     if (hasPrev) {
       const prevProblem = contextList[currentIdx - 1];
-      navigate(`/problems/${prevProblem.id}`);
+      navigate(`/problems/${prevProblem.id}`, {
+        state: { contextIds: contextList.map((p) => p.id), collectionTitle },
+      });
     }
   };
 
   return (
     <Suspense fallback={<ViewLoadingFallback />}>
       <WorkbenchView
+        key={problem.id}
         problem={problem}
         onBack={() => navigate('/problems')}
         onNextProblem={handleNext}
@@ -89,6 +120,7 @@ function AppContent() {
   const currentTab: NavTab = useMemo(() => {
     if (location.pathname.startsWith('/problems')) return 'problems';
     if (location.pathname.startsWith('/contests')) return 'contests';
+    if (location.pathname.startsWith('/leaderboard')) return 'leaderboard';
     if (location.pathname.startsWith('/academy')) return 'academy';
     if (location.pathname.startsWith('/importer')) return 'importer';
     if (location.pathname.startsWith('/admin')) return 'admin';
@@ -102,39 +134,33 @@ function AppContent() {
     return true; // Default to dark on initial visit
   });
   const [streakCount, setStreakCount] = useState<number>(() => getStreakState().currentStreak);
+  const [isStreakModalOpen, setIsStreakModalOpen] = useState<boolean>(false);
 
-  // Authenticated User State (Restored from localStorage or Guest)
-  const [currentUser, setCurrentUser] = useState<AuthUser>(() => {
-    try {
-      const saved = localStorage.getItem('ahtest_active_user');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-    return GUEST_USER;
-  });
+  // Zero-Trust Auth State: initialized strictly as Guest, upgraded only by verified Supabase JWT session
+  const [currentUser, setCurrentUser] = useState<AuthUser>(GUEST_USER);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Supabase Real-time Auth Listener
   useEffect(() => {
+    try {
+      localStorage.removeItem('ahtest_active_user');
+    } catch {
+      // ignore
+    }
+
     const unsubscribe = setupSupabaseAuthListener(
       (user) => {
         setCurrentUser(user);
+      },
+      () => {
         try {
-          localStorage.setItem('ahtest_active_user', JSON.stringify(user));
+          localStorage.removeItem('ahtest_active_user');
         } catch {
           // ignore
         }
-      },
-      () => {
-        const saved = localStorage.getItem('ahtest_active_user');
-        if (saved && (saved.includes('ah_') || saved.includes('usr_ah'))) {
-          // preserve custom handle
-        } else {
-          setCurrentUser(GUEST_USER);
-        }
+        setCurrentUser(GUEST_USER);
       }
     );
     return () => {
@@ -167,8 +193,17 @@ function AppContent() {
     }
   }, [isDarkMode]);
 
-  const handleSelectProblem = (problem: Problem) => {
-    navigate(`/problems/${problem.id}`);
+  const handleSelectProblem = (
+    problem: Problem,
+    problemList?: Problem[],
+    collectionTitle?: string
+  ) => {
+    navigate(`/problems/${problem.id}`, {
+      state: {
+        contextIds: problemList?.map((p) => p.id),
+        collectionTitle,
+      },
+    });
   };
 
   const handleSelectTab = (tab: NavTab) => {
@@ -176,6 +211,7 @@ function AppContent() {
       home: '/',
       problems: '/problems',
       contests: '/contests',
+      leaderboard: '/leaderboard',
       academy: '/academy',
       importer: '/importer',
       admin: '/admin',
@@ -191,11 +227,6 @@ function AppContent() {
 
   const handleLoginSuccess = (user: AuthUser) => {
     setCurrentUser(user);
-    try {
-      localStorage.setItem('ahtest_active_user', JSON.stringify(user));
-    } catch {
-      // ignore
-    }
   };
 
   const handleLogout = () => {
@@ -217,6 +248,7 @@ function AppContent() {
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         streakCount={streakCount}
+        onOpenStreakModal={() => setIsStreakModalOpen(true)}
         currentUser={currentUser}
         onOpenAuthModal={handleOpenAuthModal}
         onLogout={handleLogout}
@@ -255,6 +287,14 @@ function AppContent() {
             }
           />
           <Route
+            path="/leaderboard"
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <LeaderboardView />
+              </Suspense>
+            }
+          />
+          <Route
             path="/academy"
             element={
               <Suspense fallback={<ViewLoadingFallback />}>
@@ -280,6 +320,7 @@ function AppContent() {
                 <AdminDashboardView
                   currentUser={currentUser}
                   onNavigateTab={handleSelectTab}
+                  onOpenAuthModal={handleOpenAuthModal}
                 />
               </Suspense>
             }
@@ -295,6 +336,16 @@ function AppContent() {
         onLoginSuccess={handleLoginSuccess}
         initialMode={authModalMode}
       />
+
+      {/* Streak Progress Modal */}
+      <StreakModal
+        isOpen={isStreakModalOpen}
+        onClose={() => setIsStreakModalOpen(false)}
+        onGoToDailyChallenge={() => handleSelectProblem(mockProblems[0], mockProblems, 'Thử Thách Hằng Ngày')}
+      />
+
+      {/* Global Toast & Accessible Confirmation Host */}
+      <GlobalFeedbackHost />
 
       {/* Live Exam Simulation Workspace Modal / Overlay */}
       {activeExamSession && (

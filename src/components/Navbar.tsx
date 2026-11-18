@@ -14,13 +14,14 @@ import {
   UserPlus,
   LogOut,
   ChevronDown,
-  User
+  Flame,
+  Award
 } from 'lucide-react';
-import { AuthUser } from '../types';
+import type { AuthUser } from '../types';
 import { isGuestUser } from '../services/authService';
 import { getVnoiRankInfo } from '../services/vnoiRank';
 
-export type NavTab = 'home' | 'problems' | 'academy' | 'importer' | 'admin' | 'contests';
+export type NavTab = 'home' | 'problems' | 'contests' | 'leaderboard' | 'academy' | 'importer' | 'admin';
 
 interface NavbarProps {
   currentTab: NavTab;
@@ -28,6 +29,7 @@ interface NavbarProps {
   isDarkMode: boolean;
   onToggleTheme: () => void;
   streakCount?: number;
+  onOpenStreakModal?: () => void;
   currentUser?: AuthUser;
   onOpenAuthModal?: (mode: 'login' | 'register') => void;
   onLogout?: () => void;
@@ -38,6 +40,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   isDarkMode,
   onToggleTheme,
+  streakCount = 0,
+  onOpenStreakModal,
   currentUser,
   onOpenAuthModal,
   onLogout
@@ -60,16 +64,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const isGuest = isGuestUser(currentUser);
+  const isStaff = !isGuest && (currentUser?.role === 'super_admin' || currentUser?.role === 'educator');
   const rankInfo = getVnoiRankInfo(currentUser?.rating || 1200);
 
-  // Core Navigation Destinations
+  // Core Navigation Destinations (Staff-only Admin tab)
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: LayoutDashboard },
     { id: 'problems', label: 'Bài tập', icon: Code2 },
     { id: 'contests', label: 'Kỳ thi', icon: Trophy },
+    { id: 'leaderboard', label: 'Xếp hạng', icon: Award },
     { id: 'academy', label: 'Khóa học', icon: BookOpen },
     { id: 'importer', label: 'Kho Đề', icon: FolderGit2 },
-    { id: 'admin', label: 'Quản trị', icon: Shield },
+    ...(isStaff ? [{ id: 'admin', label: 'Quản trị', icon: Shield }] : []),
   ];
 
   return (
@@ -130,6 +136,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Interactive Streak Badge */}
+            <button
+              onClick={() => onOpenStreakModal?.()}
+              aria-label="Xem chuỗi Streak học tập"
+              title="Xem chuỗi Streak học tập & mục tiêu tuần"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer text-xs font-extrabold shrink-0"
+            >
+              <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+              <span className="font-mono">{streakCount}</span>
+            </button>
+
             {/* Dark/Light Mode Toggle */}
             <button
               onClick={onToggleTheme}

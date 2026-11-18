@@ -1,17 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Clock, Users, Play } from 'lucide-react';
 import { mockContests } from '../data/mockContests';
-import { Contest } from '../types';
+import type { Contest } from '../types';
+import { showToast } from '../services/uiFeedback';
+
+function formatCountdown(totalSecs: number): string {
+  const hrs = Math.floor(totalSecs / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
 
 export const ContestsView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'scoreboard'>('all');
   const [selectedContest] = useState<Contest>(mockContests[0]);
   const [isVirtualRunning, setIsVirtualRunning] = useState<boolean>(false);
-  const [virtualTimer] = useState<string>('04:59:42');
+  const [virtualRemainingSeconds, setVirtualRemainingSeconds] = useState<number>(5 * 3600);
+
+  useEffect(() => {
+    if (!isVirtualRunning) return;
+    const timer = setInterval(() => {
+      setVirtualRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsVirtualRunning(false);
+          showToast('Đã hết thời gian thi ảo Virtual Contest!', 'warning');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isVirtualRunning]);
 
   const handleStartVirtual = () => {
+    setVirtualRemainingSeconds(selectedContest.durationMinutes * 60);
     setIsVirtualRunning(true);
-    alert('Đã kích hoạt chế độ THAM GIA ẢO (Virtual Contest)! Đồng hồ đếm ngược 5 giờ đang chạy.');
+    showToast(
+      `Đã kích hoạt chế độ THAM GIA ẢO (Virtual Contest)! Đồng hồ đếm ngược ${Math.round(selectedContest.durationMinutes / 60)} giờ đang chạy.`,
+      'success'
+    );
   };
 
   return (
@@ -60,7 +88,7 @@ export const ContestsView: React.FC = () => {
             <span>ĐANG THI ẢO: {selectedContest.title}</span>
           </div>
           <div className="flex items-center gap-4 text-lg font-mono">
-            <span>Thời gian còn lại: <strong>{virtualTimer}</strong></span>
+            <span>Thời gian còn lại: <strong>{formatCountdown(virtualRemainingSeconds)}</strong></span>
             <button
               onClick={() => setIsVirtualRunning(false)}
               className="px-3 py-1 bg-slate-950 text-white rounded-lg text-xs font-sans hover:bg-slate-900 cursor-pointer"
@@ -133,7 +161,7 @@ export const ContestsView: React.FC = () => {
                       </button>
                     ) : isUpcoming ? (
                       <button
-                        onClick={() => alert('Đã đăng ký tham gia kỳ thi!')}
+                        onClick={() => showToast(`Đã ghi nhận đăng ký minh họa cho "${contest.title}".`, 'success')}
                         className="px-5 py-2.5 rounded-xl font-bold text-xs bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30 cursor-pointer"
                       >
                         Đăng ký tham gia
@@ -179,12 +207,12 @@ export const ContestsView: React.FC = () => {
                 Bảng Điểm Trực Tuyến - {selectedContest.title}
               </h3>
               <p className="text-xs text-slate-400">
-                Cập nhật tự động từng giây qua WebSocket. Trạng thái đóng băng (Freeze) trước giờ kết thúc 1 tiếng.
+                Bảng điểm mẫu minh họa (Live sync qua WebSocket sẽ được kích hoạt khi kết nối Judge Worker ở Phase 2).
               </p>
             </div>
             <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Leaderboard
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Bảng điểm Mẫu
             </div>
           </div>
 

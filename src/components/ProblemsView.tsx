@@ -1,15 +1,58 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, CheckCircle2, ChevronRight } from 'lucide-react';
-import { Problem, Difficulty } from '../types';
+import { Search, Filter, CheckCircle2, ChevronRight, Layers } from 'lucide-react';
+import type { Problem, Difficulty } from '../types';
 import { mockProblems } from '../data/mockProblems';
+import { loadCollections } from '../services/collectionStorage';
 
 interface ProblemsViewProps {
   onSelectProblem: (problem: Problem, list?: Problem[], collectionTitle?: string) => void;
 }
 
+type ProblemSourceFilter = 'ALL' | 'competitive' | 'prf192' | 'custom';
+
+interface IndexedProblem {
+  problem: Problem;
+  sourceKind: Exclude<ProblemSourceFilter, 'ALL'>;
+  sourceLabel: string;
+}
+
 export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'ALL'>('ALL');
+  const [selectedSource, setSelectedSource] = useState<ProblemSourceFilter>('ALL');
+
+  const allProblems = useMemo<IndexedProblem[]>(() => {
+    const items: IndexedProblem[] = [];
+    const seenIds = new Set<string>();
+
+    for (const p of mockProblems) {
+      if (!seenIds.has(p.id)) {
+        seenIds.add(p.id);
+        items.push({
+          problem: p,
+          sourceKind: 'competitive',
+          sourceLabel: 'Thi đấu OLP / ICPC',
+        });
+      }
+    }
+
+    const collections = loadCollections();
+    for (const col of collections) {
+      const isPrf = col.id.startsWith('prf192_');
+      for (const p of col.problems || []) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          items.push({
+            problem: p,
+            sourceKind: isPrf ? 'prf192' : 'custom',
+            sourceLabel: isPrf ? 'Thực hành C (PRF192)' : col.title,
+          });
+        }
+      }
+    }
+
+    return items;
+  }, []);
 
   // Check if a problem is officially solved by the student (stored rating / stars > 0)
   const isProblemSolved = (problemId: string): boolean => {
@@ -22,49 +65,58 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
   };
 
   // Filtered problems list
-  const filteredProblems = useMemo(() => {
-    return mockProblems.filter((p) => {
-      const matchSearch = 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchDiff = selectedDifficulty === 'ALL' || p.difficulty === selectedDifficulty;
+  const filteredEntries = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return allProblems.filter(({ problem: p, sourceKind }) => {
+      const matchSearch =
+        !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.slug.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        (p.tags || []).some((t) => t.toLowerCase().includes(q));
 
-      return matchSearch && matchDiff;
+      const matchDiff = selectedDifficulty === 'ALL' || p.difficulty === selectedDifficulty;
+      const matchSource = selectedSource === 'ALL' || sourceKind === selectedSource;
+
+      return matchSearch && matchDiff && matchSource;
     });
-  }, [searchQuery, selectedDifficulty]);
+  }, [allProblems, searchQuery, selectedDifficulty, selectedSource]);
+
+  const filteredProblemList = useMemo(
+    () => filteredEntries.map((entry) => entry.problem),
+    [filteredEntries]
+  );
 
   const difficultyColors: Record<Difficulty, { badge: string; text: string }> = {
     Easy: {
       badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-      text: 'text-emerald-600 dark:text-emerald-400'
+      text: 'text-emerald-600 dark:text-emerald-400',
     },
     Medium: {
       badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-      text: 'text-amber-600 dark:text-amber-400'
+      text: 'text-amber-600 dark:text-amber-400',
     },
     Hard: {
       badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border-rose-200 dark:border-rose-800',
-      text: 'text-rose-600 dark:text-rose-400'
+      text: 'text-rose-600 dark:text-rose-400',
     },
     Expert: {
       badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      text: 'text-purple-600 dark:text-purple-400'
-    }
+      text: 'text-purple-600 dark:text-purple-400',
+    },
   };
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6 animate-fadeIn">
       {/* Header and Filter Controls */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Kho Bài Tập Lập Trình Thi Đấu
+              Kho Bài Tập Lập Trình Tổng Hợp ({allProblems.length} bài)
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Tuyển tập 115+ bài toán chuẩn hóa từ Khảo thí PRF192, VOI, Olympic Tin Học, ICPC và các kỳ thi Quốc gia
+              Hợp nhất toàn bộ đề thi đấu OLP/ICPC, 115+ bài thực hành C (PRF192) và kho bài tập tự tạo
             </p>
           </div>
 
@@ -75,33 +127,62 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên bài hoặc dạng thuật toán..."
+              placeholder="Tìm theo tên bài, tag hoặc thuật toán..."
               className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
             />
           </div>
         </div>
 
-        {/* Difficulty Selector Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-2 flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" /> Độ khó:
-          </span>
-          {(['ALL', 'Easy', 'Medium', 'Hard', 'Expert'] as const).map((diff) => {
-            const isActive = selectedDifficulty === diff;
-            return (
-              <button
-                key={diff}
-                onClick={() => setSelectedDifficulty(diff)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-slate-900 text-white dark:bg-rose-600 shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                {diff === 'ALL' ? 'Tất cả' : diff}
-              </button>
-            );
-          })}
+        {/* Source & Difficulty Selector Pills */}
+        <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5" /> Nguồn đề:
+            </span>
+            {([
+              { id: 'ALL', label: `Tất cả (${allProblems.length})` },
+              { id: 'competitive', label: 'Thi đấu OLP / ICPC' },
+              { id: 'prf192', label: 'Thực hành C (PRF192)' },
+              { id: 'custom', label: 'Tự tạo' },
+            ] as const).map((src) => {
+              const isActive = selectedSource === src.id;
+              return (
+                <button
+                  key={src.id}
+                  onClick={() => setSelectedSource(src.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {src.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-2 flex items-center gap-1">
+              <Filter className="w-3.5 h-3.5" /> Độ khó:
+            </span>
+            {(['ALL', 'Easy', 'Medium', 'Hard', 'Expert'] as const).map((diff) => {
+              const isActive = selectedDifficulty === diff;
+              return (
+                <button
+                  key={diff}
+                  onClick={() => setSelectedDifficulty(diff)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-slate-900 text-white dark:bg-rose-600 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {diff === 'ALL' ? 'Tất cả' : diff}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Quick Topic Shortcut Banner: String Mastery */}
@@ -112,7 +193,7 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
               CHUYÊN ĐỀ MỚI: Chuỗi & Ký Tự (String Mastery)
             </span>
             <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
-              Tuyển tập bài tập chuẩn hóa từ cơ bản đến nâng cao
+              Đang hiển thị {filteredEntries.length} bài phù hợp với bộ lọc
             </span>
           </div>
           <button
@@ -128,7 +209,7 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
         </div>
       </div>
 
-      {/* Problems Table / Cards */}
+      {/* Problems Table */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -144,21 +225,21 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-              {filteredProblems.length === 0 ? (
+              {filteredEntries.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     Không tìm thấy bài toán nào phù hợp với bộ lọc.
                   </td>
                 </tr>
               ) : (
-                filteredProblems.map((problem) => {
+                filteredEntries.map(({ problem, sourceLabel }) => {
                   const passRate = ((problem.solvedCount / Math.max(1, problem.totalSubmissions)) * 100).toFixed(1);
                   const diff = difficultyColors[problem.difficulty];
 
                   return (
                     <tr
                       key={problem.id}
-                      onClick={() => onSelectProblem(problem, filteredProblems, 'Kho Bài Tập Tiêu Chuẩn')}
+                      onClick={() => onSelectProblem(problem, filteredProblemList, sourceLabel)}
                       className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                     >
                       {/* Solved Status Icon */}
@@ -176,9 +257,10 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
 
                       {/* Title */}
                       <td className="py-4 px-4">
-                        <span className="font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                        <span className="font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors block">
                           {problem.title}
                         </span>
+                        <span className="text-[11px] text-slate-400">{sourceLabel}</span>
                       </td>
 
                       {/* Difficulty */}

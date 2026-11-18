@@ -1,5 +1,6 @@
 import type { ProblemCollection, Problem, ExamSessionConfig } from '../types';
 import { DEFAULT_PROBLEM_COLLECTIONS } from '../data/prf192Collections.ts';
+import { showToast } from './uiFeedback.ts';
 
 export const COLLECTIONS_STORAGE_KEY = 'ahtest_problem_collections';
 export const LEGACY_PROBLEMS_STORAGE_KEY = 'ahtest_imported_problems';
@@ -297,7 +298,7 @@ export function deleteCollection(collectionId: string): ProblemCollection[] {
   // Prevent deleting default system collections
   const col = collections.find(c => c.id === collectionId);
   if (col && col.isSystem) {
-    alert('Không thể xóa thư mục hệ thống chuẩn!');
+    showToast('Không thể xóa thư mục hệ thống chuẩn!', 'warning');
     return collections;
   }
   collections = collections.filter(c => c.id !== collectionId);

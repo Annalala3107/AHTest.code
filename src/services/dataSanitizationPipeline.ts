@@ -318,6 +318,7 @@ int main() {
 export function synthesizeDomainTestCases(title: string, _code?: string): {
   samples: SampleCase[];
   testcases: TestCaseItem[];
+  usedGenericFallback?: boolean;
 } {
   const tLower = title.toLowerCase();
 
@@ -481,7 +482,7 @@ export function synthesizeDomainTestCases(title: string, _code?: string): {
     { id: 3, input: '15', expectedOutput: '15', isHidden: true, weight: 25 },
     { id: 4, input: '20', expectedOutput: '20', isHidden: true, weight: 25 }
   ];
-  return { samples, testcases };
+  return { samples, testcases, usedGenericFallback: true };
 }
 
 /**
@@ -512,7 +513,7 @@ export function sanitizeSingleProblem(
   const collectionId = classification.collectionId;
 
   // Step 5: Synthesize clean test cases
-  const { samples, testcases } = synthesizeDomainTestCases(rawTitle, finalCode);
+  const { samples, testcases, usedGenericFallback } = synthesizeDomainTestCases(rawTitle, finalCode);
 
   // Step 6: Compose pedagogical statement and domain-aware specifications
   const cleanTitle = rawTitle.replace(/^Source\s*\d+:\s*/i, '').trim();
@@ -561,6 +562,9 @@ Viết chương trình C giải quyết bài toán theo chuẩn khảo thí PRF1
   }
   if (harnessAdded) {
     report.warnings.push('Đã tự động đóng gói hàm main() để bài tập có thể thực thi độc lập.');
+  }
+  if (usedGenericFallback) {
+    report.warnings.push('Không nhận diện được mẫu bài toán tự động — đã sinh testcase mẫu mặc định, vui lòng rà soát lại Input/Expected Output trước khi xuất bản.');
   }
 
   return {

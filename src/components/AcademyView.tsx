@@ -39,6 +39,11 @@ import { CodeEditor } from './CodeEditor';
 import { PedagogicalDiagnosisCard } from './workbench/PedagogicalDiagnosisCard';
 import confetti from 'canvas-confetti';
 import { recordStreakActivity } from '../services/streakService';
+import { showToast } from '../services/uiFeedback';
+
+function getAcademyDraftKey(courseId: string, lessonId: string, exerciseId?: string | null): string {
+  return `ahtest_draft_academy_${courseId}_${lessonId}_${exerciseId || 'theory'}`;
+}
 
 export const AcademyView: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<AcademyCourse>(mockCourses[0]);
@@ -52,7 +57,16 @@ export const AcademyView: React.FC = () => {
     return (localStorage.getItem('ahtest_academy_lang') as 'vi' | 'en') || 'vi';
   });
 
-  const [userCode, setUserCode] = useState<string>(activeLesson.initialCode || '');
+  const [userCode, setUserCode] = useState<string>(() => {
+    try {
+      const initialLesson = mockCourses[0].modules[0]?.lessons[0];
+      if (!initialLesson) return '';
+      const saved = localStorage.getItem(getAcademyDraftKey(mockCourses[0].id, initialLesson.id, null));
+      return saved !== null ? saved : initialLesson.initialCode || '';
+    } catch {
+      return activeLesson.initialCode || '';
+    }
+  });
   const [executionOutput, setExecutionOutput] = useState<string | null>(null);
   const [pedagogicalDiagnosis, setPedagogicalDiagnosis] = useState<PedagogicalDiagnosis | null>(null);
   const [exercisePassed, setExercisePassed] = useState<boolean>(false);
@@ -61,13 +75,13 @@ export const AcademyView: React.FC = () => {
   const [copiedTestIdx, setCopiedTestIdx] = useState<number | null>(null);
   const [diffState, setDiffState] = useState<{ actual: string; expected: string; input?: string; isFailed: boolean } | null>(null);
 
-  // Lesson Completion State & Gamification
+  // Lesson Completion State & Gamification (starts empty until learner genuinely completes a lesson)
   const [completedLessons, setCompletedLessons] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(`ahtest_completed_${mockCourses[0]?.id}`);
-      return saved ? JSON.parse(saved) : ['c-1-compile'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['c-1-compile'];
+      return [];
     }
   });
 
@@ -145,9 +159,7 @@ export const AcademyView: React.FC = () => {
   const academyMonacoRef = useRef<any>(null);
 
   // Helper for unique localStorage draft key per lesson / exercise
-  const getDraftKey = (courseId: string, lessonId: string, exerciseId?: string | null) => {
-    return `ahtest_draft_academy_${courseId}_${lessonId}_${exerciseId || 'theory'}`;
-  };
+  const getDraftKey = getAcademyDraftKey;
 
   const [draftSaved, setDraftSaved] = useState<boolean>(() => {
     const key = `ahtest_draft_academy_${mockCourses[0]?.id}_${mockCourses[0]?.modules[0]?.lessons[0]?.id}_theory`;
@@ -234,16 +246,6 @@ export const AcademyView: React.FC = () => {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDraggingSplitter, isDraggingConsole, isConsoleCollapsed, isConsoleMaximized]);
-
-  // Load draft on initial mount
-  useEffect(() => {
-    const key = getDraftKey(selectedCourse.id, activeLesson.id, activeExercise?.id);
-    const saved = localStorage.getItem(key);
-    if (saved !== null) {
-      setUserCode(saved);
-      setDraftSaved(true);
-    }
-  }, []);
 
   const handleToggleLang = (lang: 'vi' | 'en') => {
     setDocLang(lang);
@@ -1983,7 +1985,7 @@ export const AcademyView: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  alert('Cảm ơn bạn! Hệ thống sẽ thông báo ngay khi khóa học chính thức phát hành.');
+                  showToast('Cảm ơn bạn! Hệ thống sẽ thông báo ngay khi khóa học chính thức phát hành.', 'success');
                   setComingSoonTrack(null);
                 }}
                 className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/30 transition-colors cursor-pointer"
@@ -2010,13 +2012,13 @@ export const AcademyView: React.FC = () => {
                 Chúc Mừng Bạn Đã Hoàn Thành C Track Tiêu Chuẩn Quốc Tế!
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed max-w-sm mx-auto">
-                Bạn đã vượt qua xuất sắc toàn bộ 14 bài học và bài tập thực hành con trỏ, cấp phát bộ nhớ động & cấu trúc dữ liệu!
+                Bạn đã vượt qua xuất sắc toàn bộ {selectedCourse.totalLessons} bài học và bài tập thực hành con trỏ, cấp phát bộ nhớ động & cấu trúc dữ liệu!
               </p>
             </div>
 
             <div className="grid grid-cols-3 gap-2 py-2">
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <div className="text-base font-black text-indigo-600 dark:text-indigo-400">14/14</div>
+                <div className="text-base font-black text-indigo-600 dark:text-indigo-400">{selectedCourse.totalLessons}/{selectedCourse.totalLessons}</div>
                 <div className="text-[10px] text-slate-400 font-medium">Bài học</div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">

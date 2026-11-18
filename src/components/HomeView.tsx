@@ -9,16 +9,45 @@ import {
   Clock, 
   Sparkles
 } from 'lucide-react';
-import { Problem } from '../types';
+import type { Problem } from '../types';
 import { mockProblems } from '../data/mockProblems';
 import { mockContests } from '../data/mockContests';
 import { mockSubmissions } from '../data/mockSubmissions';
 import { InlineMath } from './InlineMath';
+import { getStreakState } from '../services/streakService';
 
 interface HomeViewProps {
   onSelectProblem: (problem: Problem, problemList?: Problem[], collectionTitle?: string) => void;
   onNavigateTab: (tab: any) => void;
   streakCount?: number;
+}
+
+function buildHeatmapWeeks(activeDates: string[]): Array<Array<{ dateStr: string; intensity: number }>> {
+  const activeSet = new Set(activeDates);
+  const today = new Date();
+  const totalWeeks = 24;
+  const weeks: Array<Array<{ dateStr: string; intensity: number }>> = [];
+
+  // Align end of grid to today's week
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - (totalWeeks * 7 - 1));
+
+  for (let w = 0; w < totalWeeks; w++) {
+    const week: Array<{ dateStr: string; intensity: number }> = [];
+    for (let d = 0; d < 7; d++) {
+      const cur = new Date(startDate);
+      cur.setDate(startDate.getDate() + w * 7 + d);
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const day = String(cur.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${day}`;
+      const isFuture = cur > today;
+      const isActive = !isFuture && activeSet.has(dateStr);
+      week.push({ dateStr, intensity: isActive ? 3 : 0 });
+    }
+    weeks.push(week);
+  }
+  return weeks;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -28,15 +57,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   const dailyProblem = mockProblems[0]; // Sodium Sort
   const featuredContest = mockContests[0]; // AH Cup Final
-
-  // 52-week activity heatmap generator (dummy active days)
-  const heatmapWeeks = Array.from({ length: 36 }, (_, w) => 
-    Array.from({ length: 7 }, (_, d) => {
-      const active = (w * 7 + d) % 4 === 0 || (w * 7 + d) % 7 === 2;
-      const intensity = active ? ((w + d) % 3) + 1 : 0;
-      return { active, intensity };
-    })
-  );
+  const streakState = getStreakState();
+  const heatmapWeeks = buildHeatmapWeeks(streakState.activeDates);
 
   return (
     <div className="space-y-8 py-6">
@@ -162,11 +184,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Mini Heatmap Grid */}
             <div className="overflow-x-auto pb-2">
               <div className="flex gap-1">
-                {heatmapWeeks.slice(-24).map((week, wIdx) => (
+                {heatmapWeeks.map((week, wIdx) => (
                   <div key={wIdx} className="flex flex-col gap-1">
                     {week.map((day, dIdx) => (
                       <div
                         key={dIdx}
+                        title={`${day.dateStr}${day.intensity > 0 ? ' • Đã luyện tập' : ''}`}
                         className={`w-2.5 h-2.5 rounded-xs transition-colors ${
                           day.intensity === 0
                             ? 'bg-slate-100 dark:bg-slate-800'
@@ -185,7 +208,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-            <span className="text-slate-500">Mục tiêu tuần: <strong>5/7 bài</strong></span>
+            <span className="text-slate-500">Ngày hoạt động: <strong>{streakState.activeDates.length} ngày</strong></span>
             <button 
               onClick={() => onNavigateTab('academy')} 
               className="text-rose-600 dark:text-rose-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
@@ -261,7 +284,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               Dòng Bài Nộp Thời Gian Thực (Live Submissions)
             </h3>
           </div>
-          <span className="text-xs font-mono text-slate-400">WebSocket: Connected</span>
+          <span className="text-xs font-mono text-slate-400">Bảng tin Minh họa</span>
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-slate-800">

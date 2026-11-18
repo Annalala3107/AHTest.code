@@ -1,5 +1,7 @@
 import React from 'react';
 import { Heart, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { showToast } from '../services/uiFeedback';
 
 export const Footer: React.FC = () => {
   return (
@@ -22,7 +24,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>12/12 Cụm máy chấm Sandbox sẵn sàng</span>
+              <span>Client Web Worker Sandbox sẵn sàng</span>
             </div>
           </div>
 
@@ -33,18 +35,18 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
               <li>
-                <a href="#wiki" onClick={(e) => { e.preventDefault(); alert('Cổng tài liệu thuật toán AHtest đang được cập nhật!'); }} className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1.5 cursor-pointer">
+                <a href="#wiki" onClick={(e) => { e.preventDefault(); showToast('Cổng tài liệu thuật toán AH Wiki đang được biên soạn cho Phase 2!', 'info'); }} className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1.5 cursor-pointer">
                   <BookOpen className="w-3.5 h-3.5" /> AH Wiki Thuật Toán
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-rose-600 dark:hover:text-rose-400">C++ Reference chuẩn thi đấu</a>
+                <Link to="/academy" className="hover:text-rose-600 dark:hover:text-rose-400">Giáo trình C chuẩn hóa (Academy)</Link>
               </li>
               <li>
-                <a href="#" className="hover:text-rose-600 dark:hover:text-rose-400">Trình chấm ngoài (Custom Checkers)</a>
+                <Link to="/problems" className="hover:text-rose-600 dark:hover:text-rose-400">Kho bài tập OLP & PRF192</Link>
               </li>
               <li>
-                <a href="#" className="hover:text-rose-600 dark:hover:text-rose-400">Thư viện đề thi HSG & OLP</a>
+                <Link to="/leaderboard" className="hover:text-rose-600 dark:hover:text-rose-400">Bảng xếp hạng Elo Quốc gia</Link>
               </li>
             </ul>
           </div>
@@ -64,13 +66,13 @@ export const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-rose-600 dark:hover:text-rose-400">Trạng thái máy chấm (Status)</a>
+                <Link to="/contests" className="hover:text-rose-600 dark:hover:text-rose-400">Đấu trường & Thi ảo (Contests)</Link>
               </li>
               <li>
-                <a href="#" className="hover:text-rose-600 dark:hover:text-rose-400">Quy chế thi đấu AHtest.code</a>
+                <Link to="/importer" className="hover:text-rose-600 dark:hover:text-rose-400">Kho đề thi thử Phòng Lab</Link>
               </li>
               <li>
-                <a href="#" className="hover:text-rose-600 dark:hover:text-rose-400">Chính sách Hạn mức Tổ chức</a>
+                <a href="#privacy" onClick={(e) => { e.preventDefault(); showToast('Dữ liệu cá nhân (Email, Họ tên) được bảo vệ qua Supabase RLS & Nghị định 13/2023/NĐ-CP.', 'info'); }} className="hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer">Chính sách Bảo vệ Dữ liệu Cá nhân</a>
               </li>
             </ul>
           </div>

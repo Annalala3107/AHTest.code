@@ -29,10 +29,9 @@ import {
   ArrowLeft,
   ShieldAlert,
   BookOpen,
-  FolderGit2,
   Code2
 } from 'lucide-react';
-import { Problem, Verdict, TestResult } from '../types';
+import type { Problem, Verdict, TestResult, LocalSubmissionRecord } from '../types';
 import { KaTeXRenderer } from './KaTeXRenderer';
 import { DiffViewer } from './DiffViewer';
 import { 
@@ -46,6 +45,7 @@ import { ProblemSpecificationView } from './ProblemSpecificationView';
 import { CodeEditor } from './CodeEditor';
 import { recordStreakActivity } from '../services/streakService';
 import { PedagogicalDiagnosisCard } from './workbench/PedagogicalDiagnosisCard';
+import { showToast } from '../services/uiFeedback';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -55,6 +55,175 @@ interface WorkbenchViewProps {
   onPrevProblem?: () => void;
   hasPrevProblem?: boolean;
   collectionTitle?: string;
+}
+
+interface LocalProblemNote {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
+
+const DEFAULT_CODES: Record<string, string> = {
+  c17: `#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <ctype.h>
+
+int main() {
+    return 0;
+}`,
+  cpp20: `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <cmath>
+
+using namespace std;
+
+int main() {
+    return 0;
+}`,
+  cpp17: `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <cmath>
+
+using namespace std;
+
+int main() {
+    return 0;
+}`,
+  py3: `import sys
+import math
+
+def solve():
+    pass
+
+if __name__ == '__main__':
+    solve()`,
+  java: `import java.util.*;
+import java.io.*;
+
+public class Main {
+    public static void main(String[] args) {
+        
+    }
+}`,
+  rust: `use std::io::{self, BufRead};
+
+fn main() {
+    
+}`
+};
+
+function getWorkbenchDraftKey(probId: string, lang: string): string {
+  return `ahtest_draft_workbench_${probId}_${lang}`;
+}
+
+function loadCleanWorkbenchDraft(probId: string, lang: string): { code: string; saved: boolean } {
+  const key = getWorkbenchDraftKey(probId, lang);
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved !== null) {
+      const isLeaked =
+        saved.includes('// [Sanitized]') ||
+        saved.includes('Dynamically allocate') ||
+        saved.includes('min_odd') ||
+        saved.includes('max_odd') ||
+        saved.includes('veTamGiac') ||
+        saved.includes('PRF192 Master') ||
+        (probId.startsWith('prf192_') && (
+          saved.includes('void swap') ||
+          saved.includes('scanf(') ||
+          saved.length > 250
+        ));
+      if (isLeaked) {
+        localStorage.removeItem(key);
+        return { code: DEFAULT_CODES[lang] || '', saved: false };
+      }
+      return { code: saved, saved: true };
+    }
+  } catch {
+    // ignore
+  }
+  return { code: DEFAULT_CODES[lang] || '', saved: false };
+}
+
+function loadLocalSubmissions(probId: string): LocalSubmissionRecord[] {
+  try {
+    const raw = localStorage.getItem(`ahtest_submissions_${probId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalSubmission(probId: string, record: LocalSubmissionRecord): LocalSubmissionRecord[] {
+  const existing = loadLocalSubmissions(probId);
+  const updated = [record, ...existing].slice(0, 20);
+  try {
+    localStorage.setItem(`ahtest_submissions_${probId}`, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+  return updated;
+}
+
+function loadLocalNotes(probId: string): LocalProblemNote[] {
+  try {
+    const raw = localStorage.getItem(`ahtest_notes_${probId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getVerdictMeta(verdict: Verdict | null): { label: string; badgeClass: string; shortClass: string } {
+  switch (verdict) {
+    case 'AC':
+      return {
+        label: 'ACCEPTED (100/100)',
+        badgeClass: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40',
+        shortClass: 'bg-emerald-500/20 text-emerald-400',
+      };
+    case 'CE':
+      return {
+        label: 'COMPILE ERROR (CE)',
+        badgeClass: 'bg-rose-500/20 text-rose-400 border border-rose-500/40',
+        shortClass: 'bg-rose-500/20 text-rose-400',
+      };
+    case 'TLE':
+      return {
+        label: 'TIME LIMIT EXCEEDED (TLE)',
+        badgeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
+        shortClass: 'bg-amber-500/20 text-amber-400',
+      };
+    case 'RTE':
+      return {
+        label: 'RUNTIME ERROR (RTE)',
+        badgeClass: 'bg-purple-500/20 text-purple-400 border border-purple-500/40',
+        shortClass: 'bg-purple-500/20 text-purple-400',
+      };
+    case 'MLE':
+      return {
+        label: 'MEMORY LIMIT EXCEEDED (MLE)',
+        badgeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
+        shortClass: 'bg-amber-500/20 text-amber-400',
+      };
+    default:
+      return {
+        label: 'WRONG ANSWER (WA)',
+        badgeClass: 'bg-rose-500/20 text-rose-400 border border-rose-500/40',
+        shortClass: 'bg-rose-500/20 text-rose-400',
+      };
+  }
 }
 
 export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ 
@@ -84,63 +253,14 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     }
   };
 
-  // Code editor starter templates: only library imports and empty entry point (no leaked solution code)
-  const defaultCodes: Record<string, string> = {
-    c17: `#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-
-int main() {
-    return 0;
-}`,
-    cpp20: `#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <cmath>
-
-using namespace std;
-
-int main() {
-    return 0;
-}`,
-    cpp17: `#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <cmath>
-
-using namespace std;
-
-int main() {
-    return 0;
-}`,
-    py3: `import sys
-import math
-
-def solve():
-    pass
-
-if __name__ == '__main__':
-    solve()`,
-    java: `import java.util.*;
-import java.io.*;
-
-public class Main {
-    public static void main(String[] args) {
-        
+  const [code, setCode] = useState<string>(() => loadCleanWorkbenchDraft(problem.id, 'cpp20').code);
+  const [draftSaved, setDraftSaved] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(getWorkbenchDraftKey(problem.id, 'cpp20')) !== null;
+    } catch {
+      return false;
     }
-}`,
-    rust: `use std::io::{self, BufRead};
-
-fn main() {
-    
-}`
-  };
-
-  const [code, setCode] = useState<string>(defaultCodes['cpp20']);
+  });
   const [customInput, setCustomInput] = useState<string>(problem.samples[0]?.input || '');
   const [customOutput, setCustomOutput] = useState<string>('');
   const [customExpected, setCustomExpected] = useState<string>('');
@@ -248,25 +368,21 @@ fn main() {
     };
   }, [isDraggingSplitter, isDraggingConsole, showConsole, isConsoleMaximized]);
 
-  // Helper for unique localStorage draft key per problem & language
-  const getWorkbenchDraftKey = (probId: string, lang: string) => {
-    return `ahtest_draft_workbench_${probId}_${lang}`;
-  };
-
-  const [draftSaved, setDraftSaved] = useState<boolean>(false);
-  const gradingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const sampleTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const debounceSaveRef = useRef<NodeJS.Timeout | null>(null);
-  const activeGradingIdRef = useRef<number>(0);
+  const timerStateRef = useRef({
+    grading: null as ReturnType<typeof setInterval> | null,
+    sample: null as ReturnType<typeof setTimeout> | null,
+    debounce: null as ReturnType<typeof setTimeout> | null,
+    activeRunId: 0,
+  });
 
   // Helper to immediately flush any pending draft to localStorage
-  const flushPendingDraft = (curCode?: string) => {
-    if (debounceSaveRef.current) {
-      clearTimeout(debounceSaveRef.current);
-      debounceSaveRef.current = null;
+  const flushPendingDraft = (curCode?: string, targetLang?: string) => {
+    if (timerStateRef.current.debounce) {
+      clearTimeout(timerStateRef.current.debounce);
+      timerStateRef.current.debounce = null;
     }
     const targetCode = curCode !== undefined ? curCode : code;
-    const key = getWorkbenchDraftKey(problem.id, language);
+    const key = getWorkbenchDraftKey(problem.id, targetLang || language);
     try {
       localStorage.setItem(key, targetCode);
       setDraftSaved(true);
@@ -275,72 +391,35 @@ fn main() {
     }
   };
 
-  // Cleanup timers on problem change or unmount to eliminate memory leaks and race conditions
+  // Cleanup timers on unmount to eliminate memory leaks and race conditions
   useEffect(() => {
-    setMobileActiveTab('statement');
+    const timers = timerStateRef.current;
     return () => {
-      activeGradingIdRef.current = 0;
-      if (gradingTimerRef.current) {
-        clearInterval(gradingTimerRef.current);
-        gradingTimerRef.current = null;
+      timers.activeRunId = 0;
+      if (timers.grading) {
+        clearInterval(timers.grading);
+        timers.grading = null;
       }
-      if (sampleTimerRef.current) {
-        clearTimeout(sampleTimerRef.current);
-        sampleTimerRef.current = null;
+      if (timers.sample) {
+        clearTimeout(timers.sample);
+        timers.sample = null;
       }
-      if (debounceSaveRef.current) {
-        clearTimeout(debounceSaveRef.current);
-        debounceSaveRef.current = null;
+      if (timers.debounce) {
+        clearTimeout(timers.debounce);
+        timers.debounce = null;
       }
     };
-  }, [problem.id]);
-
-  // Load draft on mount / problem or lang change
-  useEffect(() => {
-    const key = getWorkbenchDraftKey(problem.id, language);
-    const saved = localStorage.getItem(key);
-    if (saved !== null) {
-      // Check if draft contains leaked solution code from legacy imports
-      const isLeaked =
-        saved.includes('// [Sanitized]') ||
-        saved.includes('Dynamically allocate') ||
-        saved.includes('min_odd') ||
-        saved.includes('max_odd') ||
-        saved.includes('veTamGiac') ||
-        saved.includes('PRF192 Master') ||
-        (problem.id.startsWith('prf192_') && (
-          saved.includes('void swap') || 
-          saved.includes('scanf(') || 
-          saved.length > 250
-        ));
-
-      if (isLeaked) {
-        try {
-          localStorage.removeItem(key);
-        } catch {
-          // ignore
-        }
-        setCode(defaultCodes[language] || '');
-        setDraftSaved(false);
-      } else {
-        setCode(saved);
-        setDraftSaved(true);
-      }
-    } else {
-      setCode(defaultCodes[language] || '');
-      setDraftSaved(false);
-    }
-  }, [problem.id, language]);
+  }, []);
 
   // Debounced auto-save (400ms) for smooth 60fps typing without disk thrashing
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
     setDraftSaved(false);
 
-    if (debounceSaveRef.current) {
-      clearTimeout(debounceSaveRef.current);
+    if (timerStateRef.current.debounce) {
+      clearTimeout(timerStateRef.current.debounce);
     }
-    debounceSaveRef.current = setTimeout(() => {
+    timerStateRef.current.debounce = setTimeout(() => {
       const key = getWorkbenchDraftKey(problem.id, language);
       try {
         localStorage.setItem(key, newCode);
@@ -348,19 +427,20 @@ fn main() {
       } catch {
         // ignore
       }
-      debounceSaveRef.current = null;
+      timerStateRef.current.debounce = null;
     }, 400);
   };
 
   const handleResetCode = () => {
-    if (debounceSaveRef.current) {
-      clearTimeout(debounceSaveRef.current);
-      debounceSaveRef.current = null;
+    if (timerStateRef.current.debounce) {
+      clearTimeout(timerStateRef.current.debounce);
+      timerStateRef.current.debounce = null;
     }
     const key = getWorkbenchDraftKey(problem.id, language);
     localStorage.removeItem(key);
-    setCode(defaultCodes[language] || '');
+    setCode(DEFAULT_CODES[language] || '');
     setDraftSaved(false);
+    showToast('Đã khôi phục mã nguồn mẫu ban đầu.', 'info');
   };
   
   // Grading & Execution State
@@ -369,7 +449,9 @@ fn main() {
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
   const [selectedTestResult, setSelectedTestResult] = useState<TestResult | null>(null);
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
-  const [aiHint, setAiHint] = useState<string | null>(null);
+  const [submissions, setSubmissions] = useState<LocalSubmissionRecord[]>(() => loadLocalSubmissions(problem.id));
+  const [notes, setNotes] = useState<LocalProblemNote[]>(() => loadLocalNotes(problem.id));
+  const [noteInput, setNoteInput] = useState<string>('');
 
   // Progressive Hints & Mastery Star System (Deep Practice Mode)
   const progressiveHints = useMemo(() => resolveProgressiveHints(problem), [problem]);
@@ -379,13 +461,6 @@ fn main() {
     return saved ? Number(saved) : 0;
   });
   const [copiedTier3Code, setCopiedTier3Code] = useState<boolean>(false);
-
-  // Sync unlocked hint tier when problem changes
-  useEffect(() => {
-    const saved = localStorage.getItem(`ahtest_hint_tier_${problem.id}`);
-    setUnlockedHintTier(saved ? Number(saved) : 0);
-    setIsHintDrawerOpen(false);
-  }, [problem.id]);
 
   // Keyboard shortcut: Shift + Enter to go to next problem when AC
   useEffect(() => {
@@ -456,10 +531,10 @@ fn main() {
     if (isGrading) return; // Prevent spam clicks
     flushPendingDraft();
     if (!isLgScreen) setMobileActiveTab('editor');
-    if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
-    if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
+    if (timerStateRef.current.sample) clearTimeout(timerStateRef.current.sample);
+    if (timerStateRef.current.grading) clearInterval(timerStateRef.current.grading);
 
-    const runId = ++activeGradingIdRef.current;
+    const runId = ++timerStateRef.current.activeRunId;
 
     setConsoleTab('result');
     setShowConsole(true);
@@ -494,12 +569,12 @@ fn main() {
       return;
     }
 
-    sampleTimerRef.current = setTimeout(async () => {
-      sampleTimerRef.current = null;
+    timerStateRef.current.sample = setTimeout(async () => {
+      timerStateRef.current.sample = null;
       const sampleInput = problem.samples[0]?.input ?? (problem.testcases?.[0]?.input || '');
       const sampleOutput = problem.samples[0]?.output ?? (problem.testcases?.[0]?.expectedOutput || '');
       const exec = await executeCCodeAsync(code, sampleInput);
-      if (activeGradingIdRef.current !== runId) return;
+      if (timerStateRef.current.activeRunId !== runId) return;
 
       setIsGrading(false);
       setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
@@ -547,10 +622,10 @@ fn main() {
     if (isGrading) return; // Prevent spam clicks
     flushPendingDraft();
     if (!isLgScreen) setMobileActiveTab('editor');
-    if (sampleTimerRef.current) clearTimeout(sampleTimerRef.current);
-    if (gradingTimerRef.current) clearInterval(gradingTimerRef.current);
+    if (timerStateRef.current.sample) clearTimeout(timerStateRef.current.sample);
+    if (timerStateRef.current.grading) clearInterval(timerStateRef.current.grading);
 
-    const runId = ++activeGradingIdRef.current;
+    const runId = ++timerStateRef.current.activeRunId;
 
     setConsoleTab('result');
     setShowConsole(true);
@@ -585,13 +660,13 @@ fn main() {
       return;
     }
 
-    sampleTimerRef.current = setTimeout(async () => {
-      sampleTimerRef.current = null;
+    timerStateRef.current.sample = setTimeout(async () => {
+      timerStateRef.current.sample = null;
       const sample = problem.samples[index] || (problem.testcases?.[index] ? { input: problem.testcases[index].input, output: problem.testcases[index].expectedOutput } : problem.samples[0]);
       const sampleInput = sample?.input ?? (problem.testcases?.[index]?.input || '');
       const sampleOutput = sample?.output ?? (problem.testcases?.[index]?.expectedOutput || '');
       const exec = await executeCCodeAsync(code, sampleInput);
-      if (activeGradingIdRef.current !== runId) return;
+      if (timerStateRef.current.activeRunId !== runId) return;
 
       setIsGrading(false);
       setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
@@ -651,12 +726,12 @@ fn main() {
       return;
     }
 
-    const runId = ++activeGradingIdRef.current;
+    const runId = ++timerStateRef.current.activeRunId;
     setIsGrading(true);
     setCustomOutput('Đang biên dịch và thực thi trong Web Worker sandbox an toàn...');
 
     const exec = await executeCCodeAsync(code, customInput);
-    if (activeGradingIdRef.current !== runId) return;
+    if (timerStateRef.current.activeRunId !== runId) return;
 
     setIsGrading(false);
     setCustomExecResult(exec);
@@ -677,16 +752,16 @@ fn main() {
     if (isGrading) return; // Prevent spam submit clicks
     flushPendingDraft();
     if (!isLgScreen) setMobileActiveTab('editor');
-    if (gradingTimerRef.current) {
-      clearInterval(gradingTimerRef.current);
-      gradingTimerRef.current = null;
+    if (timerStateRef.current.grading) {
+      clearInterval(timerStateRef.current.grading);
+      timerStateRef.current.grading = null;
     }
-    if (sampleTimerRef.current) {
-      clearTimeout(sampleTimerRef.current);
-      sampleTimerRef.current = null;
+    if (timerStateRef.current.sample) {
+      clearTimeout(timerStateRef.current.sample);
+      timerStateRef.current.sample = null;
     }
 
-    const runId = ++activeGradingIdRef.current;
+    const runId = ++timerStateRef.current.activeRunId;
 
     setShowConsole(true);
     setConsoleTab('result');
@@ -695,7 +770,6 @@ fn main() {
     setFinalVerdict(null);
     setTestResults(null);
     setSelectedTestResult(null);
-    setAiHint(null);
     setPedagogicalDiagnosis(null);
 
     // Enforce 5,000 character limit
@@ -724,7 +798,7 @@ fn main() {
 
     // Check for Compile Error once first
     const syntaxCheck = await executeCCodeAsync(code, '');
-    if (activeGradingIdRef.current !== runId) return;
+    if (timerStateRef.current.activeRunId !== runId) return;
 
     if (syntaxCheck.status === 'CE') {
       setIsGrading(false);
@@ -806,11 +880,11 @@ fn main() {
     let firstFailDiagnosis: PedagogicalDiagnosis | null = null;
 
     for (let i = 0; i < mockTotalTests; i++) {
-      if (activeGradingIdRef.current !== runId) return;
+      if (timerStateRef.current.activeRunId !== runId) return;
 
       const tDef = testDefinitions[i];
       const exec = await executeCCodeAsync(code, tDef.input, { timeoutMs: 2000 });
-      if (activeGradingIdRef.current !== runId) return;
+      if (timerStateRef.current.activeRunId !== runId) return;
 
       let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
       if (exec.status === 'CE') verdict = 'CE';
@@ -847,7 +921,7 @@ fn main() {
       await new Promise(res => setTimeout(res, 60));
     }
 
-    if (activeGradingIdRef.current !== runId) return;
+    if (timerStateRef.current.activeRunId !== runId) return;
     setIsGrading(false);
 
     const allAC = simulatedTests.every(t => t.verdict === 'AC');
@@ -862,6 +936,25 @@ fn main() {
     else if (hasRTE) finalV = 'RTE';
 
     setFinalVerdict(finalV);
+
+    // Record submission into local history
+    const totalScore = simulatedTests.reduce((acc, t) => acc + t.score, 0);
+    const maxScoreTotal = simulatedTests.reduce((acc, t) => acc + t.maxScore, 0) || 100;
+    const maxTimeMs = Math.max(0, ...simulatedTests.map((t) => t.time));
+    const maxMemKb = Math.max(0, ...simulatedTests.map((t) => t.memory));
+    const newSubmission: LocalSubmissionRecord = {
+      id: `sub_${Date.now()}`,
+      problemId: problem.id,
+      language: language === 'c17' ? 'C17 Sandbox' : language === 'cpp17' ? 'C++17 Sandbox' : 'C/C++ Sandbox',
+      verdict: finalV,
+      score: totalScore,
+      maxScore: maxScoreTotal,
+      timeMs: maxTimeMs,
+      memoryKb: maxMemKb,
+      submittedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      code,
+    };
+    setSubmissions(saveLocalSubmission(problem.id, newSubmission));
     
     // Auto-select first failing test, or test 1
     const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
@@ -910,6 +1003,14 @@ fn main() {
           >
             ← Danh sách bài
           </button>
+          {collectionTitle && (
+            <span
+              className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[200px]"
+              title={collectionTitle}
+            >
+              {collectionTitle}
+            </span>
+          )}
           <div className="flex items-center gap-1.5 ml-1">
             <button
               onClick={onPrevProblem}
@@ -1356,19 +1457,6 @@ fn main() {
               </div>
             )}
 
-            {/* AI Hint Banner if triggered */}
-            {aiHint && (
-              <div className="p-4 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-200 space-y-1.5 animate-fadeIn">
-                <div className="flex items-center justify-between font-bold text-indigo-700 dark:text-indigo-300">
-                  <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-indigo-500" /> Gợi ý thuật toán AI
-                  </span>
-                  <button onClick={() => setAiHint(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
-                </div>
-                <p className="leading-relaxed">{aiHint}</p>
-              </div>
-            )}
-
             {activeTab === 'statement' && (
               <div className="space-y-4">
                 <ProblemSpecificationView
@@ -1393,40 +1481,108 @@ fn main() {
 
             {activeTab === 'submissions' && (
               <div className="space-y-3 text-xs">
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-emerald-600">AC • 100/100</span>
-                    <p className="text-[11px] text-slate-400">C++20 • 0.08s • 18.2MB • 10 phút trước</p>
+                {submissions.length === 0 ? (
+                  <div className="p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1.5">
+                    <p className="font-bold text-slate-600 dark:text-slate-300">Chưa có bài nộp nào cho bài toán này</p>
+                    <p className="text-[11px] text-slate-400">
+                      Hãy bấm &quot;Nộp bài&quot; (Ctrl + Enter) để lưu lịch sử nộp và so sánh các phiên bản mã nguồn của bạn.
+                    </p>
                   </div>
-                  <button className="text-rose-600 font-semibold hover:underline">Xem code</button>
-                </div>
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-amber-600">TLE • 60/100</span>
-                    <p className="text-[11px] text-slate-400">C++17 • 2.05s • 24.1MB • 2 giờ trước</p>
-                  </div>
-                  <button className="text-rose-600 font-semibold hover:underline">Xem code</button>
-                </div>
+                ) : (
+                  submissions.map((sub) => {
+                    const meta = getVerdictMeta(sub.verdict);
+                    return (
+                      <div
+                        key={sub.id}
+                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/40"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black ${meta.shortClass}`}>
+                              {sub.verdict}
+                            </span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                              {sub.score}/{sub.maxScore} điểm
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            {sub.language} • {sub.timeMs}ms • {sub.memoryKb}KB • {sub.submittedAt}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleCodeChange(sub.code);
+                            showToast(`Đã nạp lại mã nguồn lần nộp lúc ${sub.submittedAt}.`, 'info');
+                          }}
+                          className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors cursor-pointer shrink-0"
+                        >
+                          Nạp lại code
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
 
             {activeTab === 'comments' && (
               <div className="space-y-4 text-xs">
-                <div className="flex gap-2">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const trimmed = noteInput.trim();
+                    if (!trimmed) return;
+                    const newNote: LocalProblemNote = {
+                      id: `note_${Date.now()}`,
+                      author: 'Ghi chú cá nhân',
+                      text: trimmed,
+                      createdAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                    };
+                    const updated = [newNote, ...notes];
+                    setNotes(updated);
+                    setNoteInput('');
+                    try {
+                      localStorage.setItem(`ahtest_notes_${problem.id}`, JSON.stringify(updated));
+                    } catch {
+                      // ignore
+                    }
+                    showToast('Đã lưu ghi chú thuật toán cho bài toán này.', 'success');
+                  }}
+                  className="flex gap-2"
+                >
                   <input
                     type="text"
-                    placeholder="Viết câu hỏi hoặc thảo luận về bài toán..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs"
+                    value={noteInput}
+                    onChange={(e) => setNoteInput(e.target.value)}
+                    placeholder="Ghi chú ý tưởng thuật toán hoặc câu hỏi ôn tập..."
+                    className="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
                   />
-                  <button className="px-4 py-2 bg-rose-600 text-white font-bold rounded-xl">Gửi</button>
-                </div>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl cursor-pointer transition-colors"
+                  >
+                    Lưu ghi chú
+                  </button>
+                </form>
+
+                {notes.map((n) => (
+                  <div key={n.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+                      <span>{n.author}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">{n.createdAt}</span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{n.text}</p>
+                  </div>
+                ))}
+
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-1">
                   <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
-                    <span>Trần Đức Lương (Grandmaster)</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Hôm qua</span>
+                    <span>Gợi ý Thảo luận Mẫu (Ban chuyên môn)</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Ghim</span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300">
-                    Các bạn chú ý Subtask 3 có các giá trị $A_i$ lên tới $10^9$ nên bắt buộc phải nén tọa độ trước khi dựng Fenwick Tree nhé!
+                    Chú ý kiểm tra trường hợp biên ($N = 1$, số âm, hoặc khoảng trắng cuối dòng) bằng tab Custom Test trước khi nộp bài.
                   </p>
                 </div>
               </div>
@@ -1465,17 +1621,21 @@ fn main() {
                 id="lang-select"
                 value={language}
                 onChange={(e) => {
-                  const newLang = e.target.value as any;
+                  const newLang = e.target.value as 'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'rust';
+                  flushPendingDraft(code, language);
                   setLanguage(newLang);
+                  const nextDraft = loadCleanWorkbenchDraft(problem.id, newLang);
+                  setCode(nextDraft.code);
+                  setDraftSaved(nextDraft.saved);
                 }}
                 className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer"
               >
-                <option value="cpp20">C++20 (GCC 16.2 FastIO) • Khuyên Dùng</option>
-                <option value="c17">C17 (GCC 16.2 Dev-C++) • Sẵn sàng</option>
-                <option value="cpp17">C++17 (g++ 16.2) • Sẵn sàng</option>
-                <option value="py3" disabled className="text-slate-500">Python 3 (PyPy 3.10) • Sắp ra mắt (Wasm VM)</option>
-                <option value="java" disabled className="text-slate-500">Java 21 LTS • Sắp ra mắt</option>
-                <option value="rust" disabled className="text-slate-500">Rust 1.82 • Sắp ra mắt</option>
+                <option value="cpp20">C/C++ Cơ bản (Client Sandbox) • Khuyên dùng</option>
+                <option value="c17">C17 Chuẩn (Client Sandbox) • Sẵn sàng</option>
+                <option value="cpp17">C++17 Cơ bản (Client Sandbox) • Sẵn sàng</option>
+                <option value="py3" disabled className="text-slate-500">Python 3 (Phase 2: Pyodide / Server Judge)</option>
+                <option value="java" disabled className="text-slate-500">Java 21 LTS (Phase 2: Server Judge)</option>
+                <option value="rust" disabled className="text-slate-500">SQL / Rust (Phase 2: PGlite / Server Judge)</option>
               </select>
             </div>
 
@@ -1594,9 +1754,7 @@ fn main() {
                 >
                   <span>Kết quả chấm</span>
                   {finalVerdict && (
-                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${
-                      finalVerdict === 'AC' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                    }`}>
+                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${getVerdictMeta(finalVerdict).shortClass}`}>
                       {finalVerdict}
                     </span>
                   )}
@@ -1956,12 +2114,8 @@ fn main() {
                         {/* Overall Verdict Banner */}
                         <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
-                              finalVerdict === 'AC' 
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' 
-                                : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                            }`}>
-                              {finalVerdict === 'AC' ? 'ACCEPTED (100/100)' : 'WRONG ANSWER'}
+                            <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${getVerdictMeta(finalVerdict).badgeClass}`}>
+                              {getVerdictMeta(finalVerdict).label}
                             </span>
                             <span className="text-slate-300 text-xs font-bold">
                               {testResults.filter(t => t.verdict === 'AC').length}/{testResults.length} Test cases đạt yêu cầu

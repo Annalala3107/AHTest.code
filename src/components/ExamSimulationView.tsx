@@ -20,6 +20,7 @@ import { ExamSessionConfig, ExamQuestionState, ExamScorecard, TestResult } from 
 import { CodeEditor } from './CodeEditor';
 import { ProblemSpecificationView } from './ProblemSpecificationView';
 import { executeCCodeAsync } from '../services/executionManager';
+import { askConfirm } from '../services/uiFeedback';
 
 interface ExamSimulationViewProps {
   session: ExamSessionConfig;
@@ -164,15 +165,6 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
     };
   }, []);
 
-  // Sync buffer on question change
-  useEffect(() => {
-    if (questionStates[currentIndex]) {
-      setCodeBuffer(questionStates[currentIndex].code);
-      setSampleRunStdout(questionStates[currentIndex].lastRunStdout || '');
-      setSampleRunStatus('');
-    }
-  }, [currentIndex]);
-
   // Persist code changes in memory and debounced localStorage (350ms)
   const handleCodeChange = (newCode: string) => {
     setCodeBuffer(newCode);
@@ -263,7 +255,7 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
     }
     setIsEvaluating(false);
 
-    // Save current code to state before switching
+    // Save current code to state and load target question buffer immediately
     setQuestionStates(prev => ({
       ...prev,
       [currentIndex]: {
@@ -271,6 +263,12 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
         code: codeBuffer
       }
     }));
+    const targetState = questionStates[targetIdx];
+    if (targetState) {
+      setCodeBuffer(targetState.code);
+      setSampleRunStdout(targetState.lastRunStdout || '');
+      setSampleRunStatus('');
+    }
     setCurrentIndex(targetIdx);
   };
 
@@ -597,8 +595,15 @@ export const ExamSimulationView: React.FC<ExamSimulationViewProps> = ({ session,
           </button>
 
           <button
-            onClick={() => {
-              if (window.confirm('Bạn có chắc muốn thoát phòng thi? Tiến trình thi sẽ bị hủy!')) {
+            onClick={async () => {
+              const confirmed = await askConfirm({
+                title: 'Thoát phòng thi?',
+                message: 'Tiến trình làm bài hiện tại sẽ bị hủy nếu bạn rời phòng thi.',
+                confirmLabel: 'Thoát phòng thi',
+                cancelLabel: 'Tiếp tục làm bài',
+                variant: 'danger',
+              });
+              if (confirmed) {
                 onExit();
               }
             }}

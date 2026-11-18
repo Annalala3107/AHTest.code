@@ -50,6 +50,7 @@ import {
   SanitizedProblemResult,
   SanitizationReport
 } from '../services/dataSanitizationPipeline';
+import { showToast, askConfirm } from '../services/uiFeedback';
 
 interface ProblemImporterViewProps {
   onSelectProblem?: (problem: Problem, list?: Problem[], collectionTitle?: string) => void;
@@ -192,21 +193,28 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
 
 
   // Delete Collection
-  const handleDeleteCollection = (id: string, e: React.MouseEvent) => {
+  const handleDeleteCollection = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Bạn có chắc chắn muốn xóa thư mục bộ đề này?')) {
+    const confirmed = await askConfirm({
+      title: 'Xóa thư mục bộ đề?',
+      message: 'Bạn có chắc chắn muốn xóa thư mục bộ đề tùy chỉnh này? Hành động này không thể hoàn tác.',
+      confirmLabel: 'Xóa thư mục',
+      variant: 'danger',
+    });
+    if (confirmed) {
       const updated = deleteCollection(id);
       setCollections(updated);
       if (activeCollectionId === id) {
         setActiveCollectionId(null);
       }
+      showToast('Đã xóa thư mục bộ đề.', 'info');
     }
   };
 
   // Save New Collection
   const handleCreateCollection = () => {
     if (!newColTitle.trim()) {
-      alert('Vui lòng nhập tên thư mục!');
+      showToast('Vui lòng nhập tên thư mục!', 'warning');
       return;
     }
     const created = createCollection(
@@ -221,18 +229,19 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     setNewColTitle('');
     setNewColDescription('');
     setActiveCollectionId(created.id);
+    showToast(`Đã tạo thư mục "${created.title}".`, 'success');
   };
 
   // Save New Problem
   const handleSaveProblem = (autoStart: boolean = false) => {
     if (!newTitle.trim()) {
-      alert('Vui lòng nhập Tên bài toán!');
+      showToast('Vui lòng nhập Tên bài toán!', 'warning');
       return;
     }
     const slug = newSlug.trim() || newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     const validTests = newTestcases.filter(t => t.input.trim() || t.output.trim());
     if (validTests.length === 0) {
-      alert('Vui lòng nhập ít nhất 1 test case!');
+      showToast('Vui lòng nhập ít nhất 1 test case!', 'warning');
       return;
     }
 
@@ -299,7 +308,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
   // Trigger Data Sanitization Pipeline on Manual Form Input
   const handleTriggerSanitization = () => {
     if (!rawSourceCodeInput.trim()) {
-      alert('Vui lòng dán mã nguồn C cần làm sạch vào ô nhập liệu!');
+      showToast('Vui lòng dán mã nguồn C cần làm sạch vào ô nhập liệu!', 'warning');
       return;
     }
     const res = sanitizeSingleProblem(rawSourceCodeInput, newTitle || 'Bài Tập Ngoại Nhập PRF192', newStatement);
@@ -313,6 +322,11 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     setNewConstraints(res.constraints);
     setNewTestcases(res.testcases.map(t => ({ input: t.input, output: t.expectedOutput, isHidden: !!t.isHidden })));
     setPipelineReport(res.report);
+    if (res.report.warnings.length > 0) {
+      showToast(res.report.warnings[0], 'warning', 5000);
+    } else {
+      showToast('Đã làm sạch và chuẩn hóa mã nguồn thành công!', 'success');
+    }
   };
 
   // Handle Batch Import of all sanitized problems from DOCX (O(1) disk writes)
@@ -359,7 +373,10 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
     setCollections(updated);
     setShowBatchReviewModal(false);
     setBatchSanitizedResults([]);
-    alert(`🎉 Thành công! Đã nạp và phân bổ ${batchSanitizedResults.length} bài tập chuẩn hóa ${autoRouteTo4Categories ? 'vào đúng 4 Bộ Đề Lớn!' : 'vào thư mục đích!'} (Tối ưu O(1) ghi đĩa)`);
+    showToast(
+      `Đã nạp và phân bổ ${batchSanitizedResults.length} bài tập chuẩn hóa ${autoRouteTo4Categories ? 'vào đúng 4 Bộ Đề Lớn' : 'vào thư mục đích'}!`,
+      'success'
+    );
   };
 
   // Handle File Upload into Target Collection with Data Sanitization Pipeline
@@ -425,7 +442,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
           const updated = addProblemToCollection(targetCollectionId, prob);
           setCollections(updated);
           setIsAddProblemModalOpen(false);
-          alert(`Đã nạp thành công bài tập "${prob.title}" vào thư mục!`);
+          showToast(`Đã nạp thành công bài tập "${prob.title}" vào thư mục!`, 'success');
         } else {
           // .c, .cpp, .txt: RUN THROUGH DATA SANITIZATION PIPELINE
           const sanitized = sanitizeSingleProblem(text, file.name);
@@ -458,7 +475,10 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
           const updated = addProblemToCollection(targetCollectionId, prob);
           setCollections(updated);
           setIsAddProblemModalOpen(false);
-          alert(`🛡️ Đã nạp & làm sạch thành công bài tập "${prob.title}"!\n- Lệnh rác đã loại bỏ: ${sanitized.report.windowsCommandsRemoved.join(', ') || '0 lệnh'}\n- Tự động sinh ${sanitized.testcases.length} test cases hợp lệ.`);
+          showToast(
+            `Đã nạp & làm sạch bài "${prob.title}" (${sanitized.report.windowsCommandsRemoved.length} lệnh Windows loại bỏ, ${sanitized.testcases.length} tests).`,
+            'success'
+          );
         }
       } catch (err: any) {
         setUploadError(`Lỗi phân tích tập tin: ${err.message}`);
@@ -468,13 +488,18 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
   };
 
   // Delete problem from active collection
-  const handleDeleteProblem = (probId: string, e: React.MouseEvent) => {
+  const handleDeleteProblem = async (probId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Bạn có chắc chắn muốn xóa bài tập này khỏi thư mục?')) {
-      if (activeCollectionId) {
-        const updated = deleteProblemFromCollection(activeCollectionId, probId);
-        setCollections(updated);
-      }
+    const confirmed = await askConfirm({
+      title: 'Xóa bài tập?',
+      message: 'Bạn có chắc chắn muốn xóa bài tập này khỏi thư mục?',
+      confirmLabel: 'Xóa bài tập',
+      variant: 'danger',
+    });
+    if (confirmed && activeCollectionId) {
+      const updated = deleteProblemFromCollection(activeCollectionId, probId);
+      setCollections(updated);
+      showToast('Đã xóa bài tập khỏi thư mục.', 'info');
     }
   };
 
@@ -482,7 +507,7 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
   const handleTriggerGrandExam = () => {
     const systemCols = collections.filter(c => c.isSystem);
     if (systemCols.length === 0 || systemCols.every(c => c.problems.length === 0)) {
-      alert('Chưa có bài tập nào trong các Bộ đề lớn để tạo kỳ thi!');
+      showToast('Chưa có bài tập nào trong các Bộ đề lớn để tạo kỳ thi!', 'warning');
       return;
     }
     const session = createExamSession(systemCols, examQuestionCount, examDurationMinutes, 'Kỳ Thi Thử Phòng Lab Toàn Diện PRF192');
@@ -491,18 +516,24 @@ export const ProblemImporterView: React.FC<ProblemImporterViewProps> = ({ onSele
   };
 
   // Restore/Sync Full 115 Master Problems
-  const handleRestore115MasterProblems = () => {
-    if (window.confirm('Bạn có muốn đồng bộ lại toàn bộ 115+ bài tập chuẩn hóa PRF192 vào 4 Bộ Đề Lớn không? (Các bài tập tự tạo cá nhân vẫn được bảo lưu an toàn).')) {
+  const handleRestore115MasterProblems = async () => {
+    const confirmed = await askConfirm({
+      title: 'Đồng bộ 115+ Đề Chuẩn Hóa?',
+      message: 'Hệ thống sẽ đồng bộ lại toàn bộ 115+ bài tập chuẩn hóa PRF192 vào 4 Bộ Đề Lớn. Các bài tập tự tạo cá nhân vẫn được bảo lưu an toàn.',
+      confirmLabel: 'Đồng bộ ngay',
+      variant: 'primary',
+    });
+    if (confirmed) {
       const fresh = restoreFull115MasterBank();
       setCollections(fresh);
-      alert('🎉 Đã đồng bộ thành công 115+ bài tập chuẩn hóa vào 4 Bộ Đề Lớn!');
+      showToast('Đã đồng bộ thành công 115+ bài tập chuẩn hóa vào 4 Bộ Đề Lớn!', 'success');
     }
   };
 
   // Launch Exam Simulation
   const handleTriggerExamSetup = (collection: ProblemCollection) => {
     if (collection.problems.length === 0) {
-      alert('Thư mục này hiện chưa có bài tập nào để tạo đề thi!');
+      showToast('Thư mục này hiện chưa có bài tập nào để tạo đề thi!', 'warning');
       return;
     }
     const session = createExamSession(collection, examQuestionCount, examDurationMinutes);
