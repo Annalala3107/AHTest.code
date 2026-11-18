@@ -51,12 +51,12 @@ export function getSupabaseConfig(): SupabaseConfig {
   let localUrl = '';
   let localAnonKey = '';
   if (typeof window !== 'undefined' && window.localStorage) {
-    localUrl = localStorage.getItem('ahtest_supabase_url') || '';
-    localAnonKey = localStorage.getItem('ahtest_supabase_anon_key') || '';
+    localUrl = window.localStorage.getItem('ahtest_supabase_url') || '';
+    localAnonKey = window.localStorage.getItem('ahtest_supabase_anon_key') || '';
   }
 
-  const url = (envUrl || localUrl || DEFAULT_SUPABASE_URL).trim();
-  const anonKey = (envAnonKey || localAnonKey || DEFAULT_SUPABASE_ANON_KEY).trim();
+  const url = (localUrl || envUrl || DEFAULT_SUPABASE_URL).trim();
+  const anonKey = (localAnonKey || envAnonKey || DEFAULT_SUPABASE_ANON_KEY).trim();
 
   return { url, anonKey };
 }
@@ -66,10 +66,21 @@ export function getSupabaseConfig(): SupabaseConfig {
  */
 export function saveSupabaseConfig(url: string, anonKey: string): void {
   if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.setItem('ahtest_supabase_url', url.trim());
-    localStorage.setItem('ahtest_supabase_anon_key', anonKey.trim());
+    window.localStorage.setItem('ahtest_supabase_url', url.trim());
+    window.localStorage.setItem('ahtest_supabase_anon_key', anonKey.trim());
   }
   cachedClient = null; // force re-initialization
+}
+
+/**
+ * Remove browser localStorage overrides so env / default Supabase config takes effect again.
+ */
+export function clearSupabaseLocalConfig(): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem('ahtest_supabase_url');
+    window.localStorage.removeItem('ahtest_supabase_anon_key');
+  }
+  cachedClient = null;
 }
 
 /**

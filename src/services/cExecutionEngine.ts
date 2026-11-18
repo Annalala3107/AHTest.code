@@ -4,7 +4,7 @@
  * standard I/O streams (scanf/printf/cin/cout), and loop iteration caps (TLE).
  */
 
-export const MAX_CODE_LENGTH = 5000;
+export const MAX_CODE_LENGTH = 65536;
 
 export interface PedagogicalDiagnosis {
   category: 'SYNTAX' | 'RUNTIME' | 'TIMEOUT' | 'MEMORY_LEAK' | 'SIZE_LIMIT' | 'LOGIC';
@@ -48,10 +48,10 @@ export function generatePedagogicalDiagnosis(
   if (code.length > MAX_CODE_LENGTH) {
     return {
       category: 'SIZE_LIMIT',
-      badge: 'Vượt quá 5,000 ký tự',
+      badge: `Vượt quá ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự`,
       title: 'Mã nguồn vượt quá dung lượng cho phép',
-      explanation: `Hệ thống giới hạn mỗi bài tập tối đa 5,000 ký tự để rèn luyện tư duy tối ưu mã và đảm bảo hiệu năng. Mã của bạn hiện đang có ${code.length.toLocaleString('vi-VN')} ký tự (dư ${(code.length - MAX_CODE_LENGTH).toLocaleString('vi-VN')} ký tự).`,
-      suggestion: 'Hãy xóa bớt các ghi chú (comment) rườm rà, các hàm không dùng đến, hoặc tối ưu lại cấu trúc thuật toán.'
+      explanation: `Hệ thống giới hạn mỗi bài nộp tối đa ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự (64 KB). Mã của bạn hiện đang có ${code.length.toLocaleString('vi-VN')} ký tự (dư ${(code.length - MAX_CODE_LENGTH).toLocaleString('vi-VN')} ký tự).`,
+      suggestion: 'Hãy chia nhỏ module hoặc loại bỏ dữ liệu hardcode dư thừa.'
     };
   }
 
@@ -288,6 +288,11 @@ export function checkCSyntax(code: string): { isValid: boolean; error?: string }
     if (line.endsWith('{') || line.endsWith('}') || line.endsWith(':')) continue;
     if (/^(if|else|for|while|do|switch|case|default)\b/.test(line) && !line.endsWith(';')) continue;
     
+    // Skip C/C++ function signatures split onto next brace line (Allman style)
+    if (/^(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned|signed|size_t|std::string|string|int|float|double|char|long|short|bool|void)\s*\*?\s+[a-zA-Z_]\w*\s*\([^;]*\)\s*$/.test(line)) {
+      continue;
+    }
+
     // Statements that must end with semicolon
     if (/^(return\b|printf\b|scanf\b|int\b|float\b|double\b|char\b|long\b|free\b|malloc\b|calloc\b)/.test(line)) {
       if (!line.endsWith(';') && !line.endsWith('{') && !line.endsWith(',')) {
@@ -502,6 +507,57 @@ export class VirtualCRuntime {
       return token.length > 0 ? token[0] : '';
     }
     return token;
+  }
+
+  public cinNext(typeHint: 'int' | 'float' | 'string' | 'auto' = 'auto'): any {
+    this.tick();
+    if (this.stdinTokens.length === 0) {
+      return typeHint === 'string' ? '' : 0;
+    }
+    const token = this.stdinTokens.shift()!;
+    if (typeHint === 'string') return token;
+    if (typeHint === 'float') {
+      const val = parseFloat(token);
+      return isNaN(val) ? 0.0 : val;
+    }
+    if (typeHint === 'int') {
+      const val = parseInt(token, 10);
+      return isNaN(val) ? 0 : val;
+    }
+    if (/^-?\d+$/.test(token)) return parseInt(token, 10);
+    if (/^-?\d+\.\d+$/.test(token)) return parseFloat(token);
+    return token;
+  }
+
+  public cinRead(typeHint: 'int' | 'float' | 'string' | 'auto', setter: (val: any) => void): boolean {
+    this.tick();
+    if (this.stdinTokens.length === 0) {
+      return false;
+    }
+    setter(this.cinNext(typeHint));
+    return true;
+  }
+
+  public getlineCin(): string {
+    return this.readLine();
+  }
+
+  public sort(arr: any, startIdx: number = 0, endIdx?: number): void {
+    this.tick();
+    if (!Array.isArray(arr)) return;
+    const from = Math.max(0, startIdx);
+    const to = endIdx !== undefined ? Math.min(arr.length, endIdx) : arr.length;
+    if (to - from <= 1) return;
+    const slice = arr.slice(from, to);
+    slice.sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') return a - b;
+      const sa = String(a);
+      const sb = String(b);
+      return sa < sb ? -1 : sa > sb ? 1 : 0;
+    });
+    for (let i = 0; i < slice.length; i++) {
+      arr[from + i] = slice[i];
+    }
   }
 
   // Simulated getchar()
@@ -790,11 +846,55 @@ export function transpileCToJS(cCode: string): string {
     return `__CHAR_LITERAL_${idx}__`;
   });
 
-  // Step 2: Strip preprocessor directives & namespaces
+  // Step 2: Expand object-like #define macros (e.g. #define ll long long, #define MAXN 1000)
+  const macroDefs: { name: string; value: string }[] = [];
+  code = code.replace(/^\s*#define\s+([a-zA-Z_]\w*)[ \t]+([^\r\n]+)$/gm, (_, name, value) => {
+    const cleanVal = String(value).replace(/\/\/.*$/, '').trim();
+    if (cleanVal) {
+      macroDefs.push({ name, value: cleanVal });
+    }
+    return '';
+  });
+  for (const { name, value } of macroDefs) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    code = code.replace(new RegExp(`\\b${escaped}\\b`, 'g'), value);
+  }
+
+  // Strip remaining preprocessor directives, namespaces & C++ FastIO boilerplate
   code = code.replace(/^\s*#include\s*<.*?>\s*$/gm, '');
   code = code.replace(/^\s*#include\s*".*?"\s*$/gm, '');
   code = code.replace(/^\s*#define\s+.*$/gm, '');
   code = code.replace(/\busing\s+namespace\s+std\s*;/g, '');
+  code = code.replace(/\b(?:std::)?ios(?:_base)?::sync_with_stdio\s*\([^)]*\)\s*;/g, '');
+  code = code.replace(/\b(?:std::)?cin\.tie\s*\([^)]*\)\s*;/g, '');
+  code = code.replace(/\b(?:std::)?cout\.tie\s*\([^)]*\)\s*;/g, '');
+
+  // Track C++ variable types for type-aware cin >>
+  const stringVars = new Set<string>();
+  const floatVars = new Set<string>();
+  const intVars = new Set<string>();
+  const collectDeclaredVars = (declStr: string, target: Set<string>) => {
+    for (const part of declStr.split(',')) {
+      const lhs = part.split('=')[0].trim();
+      const m = lhs.match(/([a-zA-Z_]\w*)(?:\s*\[[^\]]*\])?$/);
+      if (m) target.add(m[1]);
+    }
+  };
+  code.replace(/\b(?:std::)?string\s+([^;{}()]+);/g, (m, decls) => {
+    collectDeclaredVars(decls, stringVars);
+    return m;
+  });
+  code.replace(/\b(?:float|double)\s+([^;{}()]+);/g, (m, decls) => {
+    collectDeclaredVars(decls, floatVars);
+    return m;
+  });
+  code.replace(
+    /\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+long|unsigned\s+int|unsigned\s+short|size_t|int|long|short)\s+([^;{}()]+);/g,
+    (m, decls) => {
+      if (!decls.includes('main')) collectDeclaredVars(decls, intVars);
+      return m;
+    }
+  );
 
   // Step 2.5: Struct & Typedef definitions
   code = code.replace(/\btypedef\s+struct\s*(?:[a-zA-Z_]\w*)?\s*\{[\s\S]*?\}\s*([a-zA-Z_]\w*)\s*;/g, '// typedef struct $1');
@@ -802,13 +902,51 @@ export function transpileCToJS(cCode: string): string {
   code = code.replace(/\bstruct\s+[a-zA-Z_]\w*\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*;/g, 'let $1 = Array.from({ length: $2 }, () => ({}))');
   code = code.replace(/\bstruct\s+[a-zA-Z_]\w*\s+([a-zA-Z_]\w*)\s*;/g, 'let $1 = {}');
 
+  // Step 2.6: C++ std::string, std::vector, getline, sort & STL helpers
+  code = code.replace(/\bgetline\s*\(\s*(?:std::)?cin\s*,\s*([a-zA-Z_]\w*)\s*\)/g, '($1 = __rt.getlineCin())');
+  code = code.replace(
+    /\b(?:std::)?sort\s*\(\s*([a-zA-Z_]\w*)\.begin\s*\(\s*\)\s*,\s*\1\.end\s*\(\s*\)\s*\)/g,
+    '__rt.sort($1)'
+  );
+  code = code.replace(
+    /\b(?:std::)?sort\s*\(\s*([a-zA-Z_]\w*)\s*,\s*\1\s*\+\s*([^)]+)\)/g,
+    '__rt.sort($1, 0, $2)'
+  );
+  code = code.replace(
+    /\b(?:std::)?vector\s*<\s*[^>]+>\s+([a-zA-Z_]\w*)\s*\(\s*([^,)]+)\s*,\s*([^)]+)\s*\)\s*;/g,
+    'let $1 = new Array($2).fill($3);'
+  );
+  code = code.replace(
+    /\b(?:std::)?vector\s*<\s*[^>]+>\s+([a-zA-Z_]\w*)\s*\(\s*([^)]+)\s*\)\s*;/g,
+    'let $1 = new Array($2).fill(0);'
+  );
+  code = code.replace(
+    /\b(?:std::)?vector\s*<\s*[^>]+>\s+([a-zA-Z_]\w*)\s*=\s*\{/g,
+    'let $1 = {'
+  );
+  code = code.replace(/\b(?:std::)?vector\s*<\s*[^>]+>\s+([a-zA-Z_]\w*)\s*;/g, 'let $1 = [];');
+  code = code.replace(/\b(?:std::)?string\s+([^;{}()]+);/g, (_, declList: string) => {
+    const initialized = declList
+      .split(',')
+      .map((part) => {
+        const clean = part.trim();
+        return clean.includes('=') ? clean : `${clean} = ""`;
+      })
+      .join(', ');
+    return `let ${initialized};`;
+  });
+  code = code.replace(/\.push_back\s*\(/g, '.push(');
+  code = code.replace(/\.pop_back\s*\(\s*\)/g, '.pop()');
+  code = code.replace(/\.empty\s*\(\s*\)/g, '.length === 0');
+  code = code.replace(/\.size\s*\(\s*\)/g, '.length');
+
   // Step 3: Functions MUST be transformed BEFORE variable declarations!
   // Main entrypoint
   code = code.replace(/\b(?:int|void)\s+main\s*\((.*?)\)\s*\{/g, 'function __c_main() {');
 
   // Other function signatures: int add(int a, int b) -> function add(a, b)
   // Cleanly handles array parameters: int arr[], char s[100] and pointer parameters: int *a
-  code = code.replace(/\b(?:int|void|float|double|char|long|short|bool)\s*\*?\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{/g, (_, fnName, params) => {
+  code = code.replace(/\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+int|unsigned|signed|size_t|std::string|string|int|void|float|double|char|long|short|bool)\s*\*?\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{/g, (_, fnName, params) => {
     const cleanParams = params.split(',').map((p: string) => {
       const parts = p.trim().split(/\s+/);
       const last = parts[parts.length - 1];
@@ -827,10 +965,21 @@ export function transpileCToJS(cCode: string): string {
     return `__rt.cout(${parts.join(', ')});`;
   });
 
-  // C++ cin >> a >> b;
-  code = code.replace(/\b(?:std::)?cin\s*>>\s*([^;]+);/g, (_, expr) => {
-    const vars = expr.split('>>').map((v: string) => v.trim()).filter(Boolean);
-    return vars.map((v: string) => `${v} = __rt.scanfNext("int");`).join('; ') + ';';
+  // C++ cin >> a >> b (works standalone AND inside if/while conditions)
+  code = code.replace(/\b(?:std::)?cin((?:\s*>>\s*[a-zA-Z_]\w*(?:\s*\[[^\]]+\])?)+)/g, (_, chain) => {
+    const vars = chain.split('>>').map((v: string) => v.trim()).filter(Boolean);
+    const calls = vars.map((v: string) => {
+      const baseName = v.replace(/\[.*$/, '').trim();
+      const hint = stringVars.has(baseName)
+        ? 'string'
+        : floatVars.has(baseName)
+        ? 'float'
+        : intVars.has(baseName)
+        ? 'int'
+        : 'auto';
+      return `__rt.cinRead("${hint}", (val) => { ${v} = val; })`;
+    });
+    return `(${calls.join(' && ')})`;
   });
 
   // Step 5: Wrap loops with runtime.tick() watchdog (including unbraced and empty loop bodies)
@@ -923,21 +1072,21 @@ export function transpileCToJS(cCode: string): string {
 
   // Step 8: Replace type declarations
   // Strip pointer symbols in variable declarations: int *arr -> let arr
-  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double|char|void)\s*\*+\s*([a-zA-Z_]\w*)/g, 'let $1');
+  code = code.replace(/\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+long|unsigned\s+int|unsigned\s+short|size_t|int|long|short|unsigned|signed|float|double|char|void)\s*\*+\s*([a-zA-Z_]\w*)/g, 'let $1');
   // 2D numeric arrays: int a[3][3];
-  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*\[\s*(\d+|\w+)\s*\](?:\s*=\s*\{.*?\})?/g,
+  code = code.replace(/\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+long|unsigned\s+int|unsigned\s+short|size_t|int|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*\[\s*(\d+|\w+)\s*\](?:\s*=\s*\{.*?\})?/g,
     'let $1 = Array.from({ length: $2 }, () => new Array($3).fill(0))');
   // 2D char arrays: char s[10][50];
   code = code.replace(/\bchar\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]\s*\[\s*(\d+|\w+)\s*\](?:\s*=\s*\{.*?\})?/g,
     'let $1 = Array.from({ length: $2 }, () => [])');
 
   // 1D numeric arrays WITH initializer: int a[4] = { ... } or int a[] = { ... }
-  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(?:\d+|\w+)?\s*\]\s*=\s*\{/g, 'let $1 = {');
+  code = code.replace(/\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+long|unsigned\s+int|unsigned\s+short|size_t|int|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(?:\d+|\w+)?\s*\]\s*=\s*\{/g, 'let $1 = {');
 
   // Fixed size 1D arrays WITHOUT initializer: int arr[100]; -> let arr = new Array(100).fill(0)
-  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]/g, 'let $1 = new Array($2).fill(0)');
-  // Normal declarations: int a = 5;
-  code = code.replace(/\b(?:int|long\s+long|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)/g, 'let $1');
+  code = code.replace(/\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+long|unsigned\s+int|unsigned\s+short|size_t|int|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+|\w+)\s*\]/g, 'let $1 = new Array($2).fill(0)');
+  // Normal declarations: int a = 5; unsigned long long x = 1;
+  code = code.replace(/\b(?:unsigned\s+long\s+long|signed\s+long\s+long|long\s+long|unsigned\s+long|unsigned\s+int|unsigned\s+short|size_t|int|long|short|unsigned|signed|float|double)\s+([a-zA-Z_]\w*)/g, 'let $1');
   // Char arrays
   code = code.replace(/\bchar\s+([a-zA-Z_]\w*)\s*\[\s*\d*\s*\]/g, 'let $1 = []');
   code = code.replace(/\bchar\s+([a-zA-Z_]\w*)/g, 'let $1');
@@ -1033,7 +1182,7 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
       stderr: `[Dung lượng vượt mức]: Mã nguồn chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa cho phép là ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự.`,
       executionTimeMs: elapsed,
       memoryKb: 0,
-      diagnostics: [diag?.explanation || 'Mã nguồn vượt quá giới hạn 5,000 ký tự.'],
+      diagnostics: [diag?.explanation || `Mã nguồn vượt quá giới hạn ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự.`],
       pedagogicalDiagnosis: diag
     };
   }

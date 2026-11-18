@@ -12,6 +12,11 @@ import {
 } from './cExecutionEngine.ts';
 import type { ExecutionResult } from './cExecutionEngine.ts';
 import type { WorkerExecutionRequest, WorkerExecutionResponse } from '../workers/cExecution.worker.ts';
+import {
+  executePythonCode,
+  executeJavaCode,
+  executeSqlQuery,
+} from './multiLangJudgeService.ts';
 
 export interface ExecutionOptions {
   timeoutMs?: number;
@@ -51,7 +56,7 @@ export async function executeCCodeAsync(
       stderr: `[Dung lượng vượt mức]: Mã nguồn chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa cho phép là ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự.`,
       executionTimeMs: elapsed,
       memoryKb: 0,
-      diagnostics: [diag?.explanation || 'Mã nguồn vượt quá giới hạn 5,000 ký tự.'],
+      diagnostics: [diag?.explanation || `Mã nguồn vượt quá giới hạn ${MAX_CODE_LENGTH.toLocaleString('vi-VN')} ký tự.`],
       pedagogicalDiagnosis: diag
     };
   }
@@ -168,6 +173,46 @@ export async function executeCCodeAsync(
 
   // 3. Non-Browser / Test Runner Fallback (Node.js)
   return Promise.resolve(executeCCode(code, stdin));
+}
+
+/**
+ * Unified Multi-Language Sandbox Entry Point (Phase 2).
+ * Dispatches C17, C++17/20, Python 3, Java 21 LTS, and SQL cleanly.
+ */
+export async function executeCodeAsync(
+  language: string,
+  code: string,
+  stdin: string = '',
+  options: ExecutionOptions = {}
+): Promise<ExecutionResult> {
+  const normalized = (language || 'c17').toLowerCase().trim();
+  if (
+    normalized === 'c' ||
+    normalized === 'c17' ||
+    normalized === 'cpp' ||
+    normalized === 'cpp17' ||
+    normalized === 'cpp20'
+  ) {
+    return executeCCodeAsync(code, stdin, options);
+  }
+  if (normalized === 'py3' || normalized === 'python') {
+    return executePythonCode(code, stdin, options);
+  }
+  if (normalized === 'java') {
+    return executeJavaCode(code, stdin, options);
+  }
+  if (normalized === 'sql') {
+    return executeSqlQuery(code, stdin);
+  }
+  return {
+    status: 'CE',
+    exitCode: 1,
+    stdout: '',
+    stderr: `Ngôn ngữ '${language}' chưa được kích hoạt trong Client Sandbox.`,
+    executionTimeMs: 1,
+    memoryKb: 0,
+    diagnostics: [`Unsupported language '${language}' in sandbox.`],
+  };
 }
 
 // Re-export core definitions for consumer convenience
