@@ -36,3 +36,81 @@
 .font-mono-code {
   font-family: var(--font-mono);
 }
+
+/* Smooth GPU-accelerated motion keyframes */
+@keyframes ahFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ahScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ahSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ahShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+.animate-fadeIn,
+.animate-fade-in {
+  animation: ahFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scaleUp {
+  animation: ahScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slideUp {
+  animation: ahSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-shake {
+  animation: ahShake 0.32s ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

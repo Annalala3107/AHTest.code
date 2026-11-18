@@ -26,6 +26,16 @@ export interface UserProfileRecord {
   rating: number;
   streak_days: number;
   rank_class: string;
+  username?: string | null;
+  organization?: string | null;
+  show_organization?: boolean | null;
+}
+
+export interface SignUpExtraMeta {
+  username?: string;
+  organization?: string;
+  showOrganization?: boolean;
+  privacyConsentedAt?: string;
 }
 
 let cachedClient: SupabaseClient | null = null;
@@ -108,11 +118,22 @@ export async function fetchUserProfile(userId: string): Promise<UserProfileRecor
   if (!client) return null;
 
   try {
-    const { data, error } = await client
+    let { data, error } = await client
       .from('profiles')
-      .select('id, email, name, avatar_url, role, rating, streak_days, rank_class')
+      .select('id, email, name, avatar_url, role, rating, streak_days, rank_class, username, organization, show_organization')
       .eq('id', userId)
       .maybeSingle();
+
+    // Graceful fallback if extended privacy columns haven't been migrated yet
+    if (error) {
+      const fallback = await client
+        .from('profiles')
+        .select('id, email, name, avatar_url, role, rating, streak_days, rank_class')
+        .eq('id', userId)
+        .maybeSingle();
+      data = fallback.data as typeof data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.warn('Could not fetch user profile from Supabase:', error.message);
@@ -129,7 +150,10 @@ export async function fetchUserProfile(userId: string): Promise<UserProfileRecor
       role: (data.role as UserRole) || 'student',
       rating: data.rating ?? 1200,
       streak_days: data.streak_days ?? 0,
-      rank_class: data.rank_class ?? 'Newbie'
+      rank_class: data.rank_class ?? 'Newbie',
+      username: data.username ?? null,
+      organization: data.organization ?? null,
+      show_organization: data.show_organization ?? true,
     };
   } catch (err) {
     console.warn('Error fetching user profile:', err);
@@ -167,8 +191,14 @@ export function mapSupabaseUserToAuthUser(
     : profile?.role === 'educator' ? 'educator'
     : 'student';
 
+  const showOrganization = profile?.show_organization ?? metadata.show_organization ?? true;
+  const rawOrg = profile?.organization || metadata.organization || undefined;
+  const organization = showOrganization === false ? undefined : rawOrg;
+  const username = profile?.username || metadata.username || undefined;
+
   return {
     id: `usr_sb_${supabaseUser.id}`,
+    username,
     name: fullName,
     email: supabaseUser.email || email,
     avatarUrl,
@@ -177,6 +207,8 @@ export function mapSupabaseUserToAuthUser(
     streakDays: profile?.streak_days ?? 1,
     rating: profile?.rating ?? (role === 'super_admin' ? 3000 : 1200),
     rankClass: profile?.rank_class ?? (role === 'super_admin' ? 'Super Admin' : 'Newbie'),
+    organization,
+    showOrganization,
     lastLoginAt: 'Vừa xong'
   };
 }
@@ -230,7 +262,8 @@ export async function signInWithEmailPassword(
 export async function signUpWithEmailPassword(
   email: string,
   password: string,
-  name: string
+  name: string,
+  extraMeta?: SignUpExtraMeta
 ): Promise<{ success: boolean; user?: AuthUser; error?: string; requiresEmailConfirmation?: boolean }> {
   const client = getSupabaseClient();
   if (!client) {
@@ -241,13 +274,19 @@ export async function signUpWithEmailPassword(
   }
 
   try {
+    const emailRedirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
     const { data, error } = await client.auth.signUp({
       email: email.trim(),
       password,
       options: {
+        emailRedirectTo,
         data: {
           full_name: name.trim(),
-          name: name.trim()
+          name: name.trim(),
+          ...(extraMeta?.username ? { username: extraMeta.username.trim() } : {}),
+          ...(extraMeta?.organization ? { organization: extraMeta.organization.trim() } : {}),
+          ...(extraMeta?.showOrganization !== undefined ? { show_organization: extraMeta.showOrganization } : {}),
+          ...(extraMeta?.privacyConsentedAt ? { privacy_consented_at: extraMeta.privacyConsentedAt } : {}),
         }
       }
     });
@@ -257,7 +296,7 @@ export async function signUpWithEmailPassword(
       if (error.message.includes('User already registered')) {
         friendlyError = 'Email này đã tồn tại trong hệ thống. Vui lòng chọn đăng nhập.';
       } else if (error.message.includes('Password should be at least')) {
-        friendlyError = 'Mật khẩu phải có độ dài tối thiểu 6 ký tự.';
+        friendlyError = 'Mật khẩu phải có độ dài tối thiểu 8 ký tự.';
       }
       return { success: false, error: friendlyError };
     }
@@ -279,6 +318,60 @@ export async function signUpWithEmailPassword(
     return { success: false, error: 'Không thể khởi tạo tài khoản mới.' };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Lỗi kết nối máy chủ xác thực.' };
+  }
+}
+
+/**
+ * Send password reset email via Supabase Auth
+ */
+export async function requestPasswordReset(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      success: false,
+      error: 'Hệ thống chưa kết nối tới Supabase. Vui lòng kiểm tra cấu hình.'
+    };
+  }
+
+  try {
+    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const { error } = await client.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Không thể gửi yêu cầu khôi phục mật khẩu.' };
+  }
+}
+
+/**
+ * Resend signup verification email via Supabase Auth
+ */
+export async function resendConfirmationEmail(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      success: false,
+      error: 'Hệ thống chưa kết nối tới Supabase. Vui lòng kiểm tra cấu hình.'
+    };
+  }
+
+  try {
+    const { error } = await client.auth.resend({
+      type: 'signup',
+      email: email.trim()
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Không thể gửi lại email xác nhận.' };
   }
 }
 

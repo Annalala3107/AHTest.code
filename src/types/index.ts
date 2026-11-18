@@ -288,6 +288,20 @@ export interface AuthUser {
   rating?: number;
   rankClass?: string;
   organization?: string;
+  showOrganization?: boolean;
   lastLoginAt?: string;
+}
+
+export interface LocalSubmissionRecord {
+  id: string;
+  problemId: string;
+  language: string;
+  verdict: Verdict;
+  score: number;
+  maxScore: number;
+  timeMs: number;
+  memoryKb: number;
+  submittedAt: string;
+  code: string;
 }
 

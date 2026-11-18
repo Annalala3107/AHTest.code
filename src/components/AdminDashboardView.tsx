@@ -18,20 +18,23 @@ import {
   Edit3, 
   ArrowUpRight
 } from 'lucide-react';
-import { AuthUser } from '../types';
+import type { AuthUser } from '../types';
 import { mockProblems } from '../data/mockProblems';
 
 interface AdminDashboardViewProps {
   currentUser: AuthUser;
   onNavigateTab?: (tab: any) => void;
+  onOpenAuthModal?: (mode: 'login' | 'register') => void;
 }
 
 type AdminSection = 'overview' | 'problems' | 'testcases' | 'users' | 'audit';
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   currentUser,
-  onNavigateTab
+  onNavigateTab,
+  onOpenAuthModal
 }) => {
+  const isAuthorizedStaff = currentUser.role === 'super_admin' || currentUser.role === 'educator';
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
@@ -58,12 +61,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     { id: 5, name: 'System Stress Test (N = 100,000)', isHidden: true, input: '100000\n[Large Array 10^5 elements]', output: '4999', weight: 20 }
   ]);
 
-  // Mock student roster
+  // Mock student roster (emails masked for privacy)
   const [userList, setUserList] = useState<AuthUser[]>([
     {
       id: 'usr_01',
       name: 'Trương Quốc Anh',
-      email: 'admin.truong@ahtest.code',
+      email: 'adm***@ahtest.code',
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
       role: 'super_admin',
       provider: 'google',
@@ -75,7 +78,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     {
       id: 'usr_02',
       name: 'ThS. Nguyễn Thanh Tùng',
-      email: 'thay.tung@academy.edu',
+      email: 'tha***@academy.edu',
       avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100',
       role: 'educator',
       provider: 'google',
@@ -87,7 +90,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     {
       id: 'usr_03',
       name: 'Nguyễn Hà An (fextivity)',
-      email: 'fextivity@gmail.com',
+      email: 'fex***@gmail.com',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
       role: 'student',
       provider: 'google',
@@ -99,7 +102,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     {
       id: 'usr_04',
       name: 'Lê Hoàng Long',
-      email: 'longlh@gmail.com',
+      email: 'lon***@gmail.com',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
       role: 'student',
       provider: 'google',
@@ -109,6 +112,43 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       lastLoginAt: '1 giờ trước'
     }
   ]);
+
+  if (!isAuthorizedStaff) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] w-full flex items-center justify-center p-6 bg-slate-950 text-white font-sans">
+        <div className="max-w-md w-full p-7 rounded-3xl bg-slate-900 border border-rose-500/30 shadow-2xl text-center space-y-5 animate-scaleUp">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30 mx-auto flex items-center justify-center">
+            <Lock className="w-7 h-7" />
+          </div>
+          <div className="space-y-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
+              403 • Khu Vực Giới Hạn Quyền Truy Cập
+            </span>
+            <h2 className="text-xl font-extrabold text-white">
+              Yêu cầu quyền Giảng viên hoặc Super Admin
+            </h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Khu vực Quản trị Hệ thống chứa thông tin nhạy cảm và công cụ điều phối đề thi. Vui lòng đăng nhập bằng tài khoản được cấp quyền trên cơ sở dữ liệu Supabase.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+            <button
+              onClick={() => onNavigateTab?.('home')}
+              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer"
+            >
+              Về Trang Chủ
+            </button>
+            <button
+              onClick={() => onOpenAuthModal?.('login')}
+              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all cursor-pointer"
+            >
+              Đăng Nhập Quản Trị
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleToggleUserRole = (userId: string) => {
     setUserList((prev) =>
@@ -157,6 +197,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
         {/* Global Live Judge Status + Admin Identity Hub */}
         <div className="flex items-center gap-3">
+          <span className="hidden lg:inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            Chế độ Mô phỏng Dữ liệu
+          </span>
           {/* Judge Health Badge */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-[11px] font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -707,7 +750,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="space-y-2.5 font-mono text-xs">
                   <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                     <div>
-                      <span className="text-emerald-400 font-bold">[LOGIN_SUCCESS]</span> Google SSO Auth: <strong className="text-white">admin.truong@ahtest.code</strong> (IP: 14.232.208.12)
+                      <span className="text-emerald-400 font-bold">[LOGIN_SUCCESS]</span> Google SSO Auth: <strong className="text-white">adm***@ahtest.code</strong> (IP: 14.232.***.***)
                     </div>
                     <span className="text-slate-500 text-[11px]">Vừa xong</span>
                   </div>
