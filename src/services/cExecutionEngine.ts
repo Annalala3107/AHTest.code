@@ -207,7 +207,7 @@ export function checkCSyntax(code: string): { isValid: boolean; error?: string }
     .replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, '')
     .replace(/'([^'\\]*(\\.[^'\\]*)*)'/g, '');
   const forbiddenMatch = strippedCode.match(
-    /\b(document|localStorage|sessionStorage|indexedDB|cookie|fetch|XMLHttpRequest|WebSocket|__proto__|constructor|prototype|eval)\b/
+    /\b(document|localStorage|sessionStorage|indexedDB|cookie|fetch|XMLHttpRequest|WebSocket|__proto__|constructor|prototype|eval|self|importScripts|postMessage|Function|Reflect|Proxy|process|global|caches)\b/
   );
   if (forbiddenMatch) {
     return {
@@ -518,6 +518,15 @@ export class VirtualCRuntime {
     return 10; // '\n'
   }
 
+  private cStrToString(val: any): string {
+    if (Array.isArray(val)) {
+      const nullIdx = val.indexOf('\0');
+      const slice = nullIdx !== -1 ? val.slice(0, nullIdx) : val;
+      return slice.join('');
+    }
+    return String(val !== undefined && val !== null ? val : '');
+  }
+
   // String & Character helpers (C-Standard Library)
   public strlen(str: any): number {
     this.tick();
@@ -531,8 +540,8 @@ export class VirtualCRuntime {
 
   public strcmp(s1: any, s2: any): number {
     this.tick();
-    const str1 = Array.isArray(s1) ? s1.join('') : String(s1 || '');
-    const str2 = Array.isArray(s2) ? s2.join('') : String(s2 || '');
+    const str1 = this.cStrToString(s1);
+    const str2 = this.cStrToString(s2);
     if (str1 < str2) return -1;
     if (str1 > str2) return 1;
     return 0;
@@ -540,7 +549,7 @@ export class VirtualCRuntime {
 
   public strcpy(dest: any, src: any): any {
     this.tick();
-    const s = Array.isArray(src) ? src.join('') : String(src || '');
+    const s = this.cStrToString(src);
     if (Array.isArray(dest)) {
       dest.length = 0;
       for (let i = 0; i < s.length; i++) dest.push(s[i]);
@@ -552,7 +561,7 @@ export class VirtualCRuntime {
 
   public strncpy(dest: any, src: any, n: number): any {
     this.tick();
-    const s = Array.isArray(src) ? src.join('') : String(src || '');
+    const s = this.cStrToString(src);
     if (Array.isArray(dest)) {
       dest.length = 0;
       for (let i = 0; i < Math.min(s.length, n); i++) dest.push(s[i]);
@@ -563,28 +572,28 @@ export class VirtualCRuntime {
 
   public strcat(dest: any, src: any): any {
     this.tick();
-    const s = Array.isArray(src) ? src.join('') : String(src || '');
+    const s = this.cStrToString(src);
     if (Array.isArray(dest)) {
       const nullIdx = dest.indexOf('\0');
-      if (nullIdx !== -1) dest.splice(nullIdx, 1);
+      if (nullIdx !== -1) dest.splice(nullIdx);
       for (let i = 0; i < s.length; i++) dest.push(s[i]);
       dest.push('\0');
       return dest;
     }
-    return String(dest) + s;
+    return this.cStrToString(dest) + s;
   }
 
   public strstr(haystack: any, needle: any): any {
     this.tick();
-    const h = Array.isArray(haystack) ? haystack.join('') : String(haystack || '');
-    const n = Array.isArray(needle) ? needle.join('') : String(needle || '');
+    const h = this.cStrToString(haystack);
+    const n = this.cStrToString(needle);
     const idx = h.indexOf(n);
     return idx === -1 ? null : idx;
   }
 
   public strchr(str: any, ch: any): any {
     this.tick();
-    const s = Array.isArray(str) ? str.join('') : String(str || '');
+    const s = this.cStrToString(str);
     const c = typeof ch === 'number' ? String.fromCharCode(ch) : String(ch || '');
     const idx = s.indexOf(c);
     return idx === -1 ? null : idx;
@@ -593,9 +602,22 @@ export class VirtualCRuntime {
   public strrev(str: any): any {
     this.tick();
     if (Array.isArray(str)) {
-      return str.reverse();
+      const nullIdx = str.indexOf('\0');
+      const len = nullIdx !== -1 ? nullIdx : str.length;
+      for (let i = 0, j = len - 1; i < j; i++, j--) {
+        const tmp = str[i];
+        str[i] = str[j];
+        str[j] = tmp;
+      }
+      return str;
     }
     return String(str || '').split('').reverse().join('');
+  }
+
+  public puts(str: any): number {
+    this.tick();
+    this.stdoutBuffer += this.cStrToString(str) + '\n';
+    return 0;
   }
 
   public tolower(ch: any): any {
@@ -690,7 +712,7 @@ export class VirtualCRuntime {
         return isNaN(num) ? '0' : String(num);
       }
       if (match === '%s') {
-        return String(val !== undefined && val !== null ? val : '');
+        return this.cStrToString(val);
       }
       if (match === '%c') {
         return String(val !== undefined && val !== null ? String(val)[0] : '');
@@ -858,7 +880,30 @@ export function transpileCToJS(cCode: string): string {
   });
 
   // Step 6: Memory allocations & sizeof
-  code = code.replace(/sizeof\s*\([^)]*\)/g, '4');
+  const arrayByteSizes = new Map<string, number>();
+  const arrayDeclRegex = /\b(char|short|int|long\s+long|long|float|double)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\](?:\s*\[\s*(\d+)\s*\])?/g;
+  let arrMatch: RegExpExecArray | null;
+  while ((arrMatch = arrayDeclRegex.exec(code)) !== null) {
+    const typeName = arrMatch[1].replace(/\s+/g, ' ').trim();
+    const varName = arrMatch[2];
+    const dim1 = parseInt(arrMatch[3], 10);
+    const dim2 = arrMatch[4] ? parseInt(arrMatch[4], 10) : 1;
+    const elemSize =
+      typeName === 'char' ? 1 :
+      typeName === 'short' ? 2 :
+      typeName === 'double' || typeName === 'long long' ? 8 : 4;
+    arrayByteSizes.set(varName, elemSize * dim1 * dim2);
+  }
+
+  code = code.replace(/\bsizeof\s*\(\s*([^)]+?)\s*\)/g, (_, expr) => {
+    const cleanExpr = String(expr).replace(/\s+/g, ' ').trim();
+    const arraySize = arrayByteSizes.get(cleanExpr);
+    if (arraySize !== undefined) return String(arraySize);
+    if (cleanExpr === 'char') return '1';
+    if (cleanExpr === 'short') return '2';
+    if (cleanExpr === 'double' || cleanExpr === 'long long') return '8';
+    return '4';
+  });
   // Strip C-style pointer casts: (int*), (char**), (void*), etc.
   code = code.replace(/\(\s*(?:const\s+)?(?:int|long\s+long|long|short|unsigned(?:\s+int)?|signed(?:\s+int)?|float|double|char|void|bool|auto|\w+_t)\s*\*+\s*\)\s*/g, '');
   // Strip C-style primitive type casts: (float), (double), (int), (char), (long), etc.
@@ -923,6 +968,7 @@ export function transpileCToJS(cCode: string): string {
 
   // Step 9: Replace printf, getchar, strlen, strcmp, and string suite
   code = code.replace(/\bprintf\s*\(/g, '__rt.printf(');
+  code = code.replace(/\bputs\s*\(/g, '__rt.puts(');
   code = code.replace(/\bgetchar\s*\(\s*\)/g, '__rt.getchar()');
   code = code.replace(/\bstrlen\s*\(/g, '__rt.strlen(');
   code = code.replace(/\bstrcmp\s*\(/g, '__rt.strcmp(');
@@ -960,6 +1006,9 @@ export function transpileCToJS(cCode: string): string {
   return `
     const EOF = -1;
     const NULL = null;
+    const stdin = 0;
+    const stdout = 1;
+    const stderr = 2;
     ${code}
     if (typeof __c_main === 'function') {
       __c_main();
@@ -1026,7 +1075,12 @@ export function executeCCode(code: string, stdin: string = ''): ExecutionResult 
       'globalThis',
       'top',
       'parent',
-      'frames'
+      'frames',
+      'self',
+      'importScripts',
+      'postMessage',
+      'caches',
+      'indexedDB'
     ];
     const runner = new Function(
       '__rt',

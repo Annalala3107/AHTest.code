@@ -8,9 +8,9 @@ import type { Problem } from '../types';
  * 3. prf192_string_mastery: Chuỗi & Ký Tự Nâng Cao (String & Characters)
  * 4. prf192_math_algorithms: Số Học, Đệ Quy & Số Đặc Biệt (Math & Special Numbers)
  *
- * NOTE: 100% of problems have verified, domain-accurate test cases and sample cases synchronized with reference C source code.
+ * NOTE: Reference solution code is intentionally omitted from client bundles to protect academic integrity.
  */
-export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
+export const PRF192_MASTER_PROBLEMS: Problem[] = [
   {
     "id": "prf192_src_1",
     "slug": "prf192_src_1__i_v_tr_s_l_l_n_nh_t_v_nh_nh_t",
@@ -94,8 +94,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nvoid swap(int *a, int *b) {\nint temp = *a;\n*a = *b;\n*b = temp;\n}\nint main() {\n// [Sanitized]:  removed\n\nint n;\nscanf(\"%d\", &n);\nint* arr = (int*)malloc(n * sizeof(int));  // Dynamically allocate memory\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint min_odd = -1, max_odd = -1;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 != 0) {\nif (min_odd == -1 || arr[i] < arr[min_odd]) {\nmin_odd = i;\n}\nif (max_odd == -1 || arr[i] > arr[max_odd]) {\nmax_odd = i;\n}\n}\n}\nif (min_odd != -1 && max_odd != -1) {\nswap(&arr[min_odd], &arr[max_odd]);\n}\n\n\n\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\nfree(arr);\n\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn(0);\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_2",
@@ -179,8 +178,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint isLeapYear(int year) {\nif (year % 4 == 0) {\nif (year % 100 == 0) {\nif (year % 400 == 0)\nreturn 1;\nelse\nreturn 0;\n}\nelse\nreturn 1;\n}\nelse\nreturn 0;\n}\nint main() {\n// [Sanitized]:  removed\n\nint year;\nscanf(\"%d\", &year);\n\n\n\nif (isLeapYear(year))\nprintf(\"%d is a leap year.\", year);\nelse\nprintf(\"%d is not a leap year.\", year);\n\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn(0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_3",
@@ -264,8 +262,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint countDigits(int n) {\nint count = 0;\nwhile (n > 0){\nn /= 10;\ncount++;\n}\nreturn count;\n}\nbool isArmstrong(int n) {\nint numDigits = countDigits(n);\nint tmp = n;\nint sum = 0;\nint last;\nwhile (tmp > 0) {\nlast = tmp % 10;\ntmp /= 10;\nsum += pow(last, numDigits);\n}\nreturn sum == n;\n}\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\", &n);\n\nif (isArmstrong(n)) {\nprintf(\"%d is an Armstrong number.\", n);\n} else {\nprintf(\"%d is not an Armstrong number.\", n);\n}\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_4",
@@ -349,8 +346,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong1(int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong1(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_5",
@@ -434,8 +430,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong(int n){\nint i, j;\nfor (i = 0; i < n; i++) {\nif (i == 0) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\n} else {\nprintf(\"*\");\nfor (j = 0; j < n - 2; j++) {\nprintf(\"  \");\n}\nprintf(\" *\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_6",
@@ -519,8 +514,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong(int n){\nint i, j;\nfor (i = 0; i < n; i++) {\nif (i == n-1) {\nfor (j = 0; j < n; j++) {\nprintf(\"* \");\n}\n} else {\nprintf(\"*\");\nfor (j = 0; j < n - 2; j++) {\nprintf(\"  \");\n}\nprintf(\" *\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_7",
@@ -604,8 +598,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veHinhVuong (int n){\nint i,j;\nfor (i= 0;i<n;i++) {\nif (i==n-1 || i==0 ) {\nfor ( j=0;j<n;j++){\nprintf (\"* \");\n}\n}\nelse {\nprintf (\"*\");\nfor (j=0;j<2*n-3;j++){\nprintf (\" \");\n}\nprintf (\"*\");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveHinhVuong(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_8",
@@ -689,8 +682,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<=n;i++) {\nfor (j=0;j<i;j++){\nprintf (\"* \");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_9",
@@ -774,8 +766,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<=n;i++) {\nfor (j=0;j<n-i;j++){\nprintf (\"* \");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_10",
@@ -859,8 +850,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nvoid veTamGiac(int n) {\nint i, j, size = n;\nfor (i = 0; i < size; i++) {\nfor (j = 0; j < i; j++) {\nprintf(\" \");\n}\nfor (j = i; j < size; j++) {\nprintf(\"*\");\n}\nprintf(\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_11",
@@ -944,8 +934,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nvoid veTamGiac (int n){\nint i,j;\nfor (i=0;i<n;i++){\nfor (j=0;j<n-i-1;j++){\nprintf (\" \");\n}\nfor (j=0;j<i+1;j++){\nprintf (\"*\");\n}\nprintf (\"\\n\");\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nveTamGiac(n);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_12",
@@ -1029,8 +1018,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, space, rows, k = 0;\nscanf(\"%d\", &rows);\nfor (i = 1; i <= rows; ++i, k = 0) {\nfor (space = 1; space <= rows - i; ++space) {\nprintf(\"  \");\n}\nwhile (k != 2 * i - 1) {\nprintf(\"* \");\n++k;\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_13",
@@ -1114,8 +1102,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint rows, i, j, space;\nscanf(\"%d\", &rows);\nfor (i = rows; i >= 1; --i) {\nfor (space = 0; space < rows - i; ++space)\nprintf(\"  \");\nfor (j = i; j <= 2 * i - 1; ++j)\nprintf(\"* \");\nfor (j = 0; j < i - 1; ++j)\nprintf(\"* \");\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_14",
@@ -1199,8 +1186,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint rows, i, j, number = 1;\nscanf(\"%d\", &rows);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= rows; i++) {\nfor (j = 1; j <= i; ++j) {\nprintf(\"%d \", number);\n++number;\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_15",
@@ -1284,8 +1270,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main(){\nint i, j, row;\nscanf(\"%d\", &row);\nprintf(\"OUTPUT:\\n\");\nfor(i = 1; i <= row; i++){\nfor(j = 1; j <= i; j++){\nprintf(\"%d \", j);\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_16",
@@ -1369,8 +1354,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main() {\nint i, j, rows, count=0;\nscanf(\"%d\", &rows);\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < 2*rows; i=i+2) {\nfor (j = 0; j <= i; j++) {\nprintf(\"%c\", 'A'+count);\nif(j < i/2)\ncount++;\nelse\ncount--;\n}\ncount = 0;\nprintf(\"\\n\");\n}\nreturn(0);\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_17",
@@ -1454,8 +1438,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= n; i++) {\nfor (j = 1; j < n - i + 1; j++) {\nprintf(\" \");\n}\nfor (j = 1; j <= n; j++) {\nif (i == 1 || j == 1 || i == n || j == n) {\nprintf(\"*\");\n} else {\nprintf(\" \");\n}\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_18",
@@ -1539,8 +1522,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, space, rows = 8, star = 0;\nfor (i = 0; i < rows; i++)\n{\nif (i < 5)\n{\nfor (space = 1; space < 5 - i; space++)\n{\nprintf(\" \");\n}\nwhile (star != (2 * i + 1))\n{\nprintf(\"*\");\nstar++;\n;\n}\nstar = 0;\n/* move to next row */\nprintf(\"\\n\");\n}\nelse\n{\nfor (j = 0; j < 9; j++)\n{\nif ((int)(j / 3) == 1)\nprintf(\" \");\nelse\nprintf(\"*\");\n}\nprintf(\"\\n\");\n}\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_19",
@@ -1624,8 +1606,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nint i;\nfor (i = 1; i <= n; i++)\n{\nint j;\nfor (j = 1; j <= n - i; j++)\n{\nprintf(\"   \");\n}\nfor (j = 1; j <= 2 * i - 1; j++)\n{\nprintf(\" * \");\n}\nprintf(\"\\n\");\n}\nfor (i = n - 1; i >= 1; i--)\n{\nint j;\nfor (j = 1; j <= n - i; j++)\n{\nprintf(\"   \");\n}\nfor (j = 1; j <= 2 * i - 1; j++)\n{\nprintf(\" * \");\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_20",
@@ -1709,8 +1690,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main() {\nint i, j, n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 1; i <= n; i++) {\nfor (j = 1; j <= i; j++) {\nif (j == 1 || i == n || i == j)\nprintf(\"*\");\nelse\nprintf(\" \");\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_21",
@@ -1794,8 +1774,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) {\nscanf(\"%d\", &a[i]);\n}\nint sum=0;\nfor(i=0; i<n; i++) {\nsum+=a[i];\n}\n\nprintf(\"%d\", sum);\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_22",
@@ -1879,8 +1858,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor (i=0;i<n;i++){\nscanf (\"%d\",&a[i]);\n}\nint count=0;\nfor (i=0;i<n;i++) {\nif (a[i]<0) {\ncount++;\n}\n}\n\nprintf(\"%d\", count);\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_23",
@@ -1964,8 +1942,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include <stdbool.h>\nint main() {\n// [Sanitized]:  removed\nint n;\nscanf(\"%d\",&n);\nint i,Arr[n];\nfor(i=0;i<n;i++)\nscanf(\"%d\",&Arr[i]);\nint min = Arr[0];\nint max = Arr[0];\nfor (i=0;i<n;i++) {\nif (Arr[i] < min) {\nmin = Arr[i];\n}\n}\nfor (i=0;i<n;i++) {\nif (Arr[i] > max) {\nmax = Arr[i];\n}\n}\n\nprintf (\"%d %d\",min, max);\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_24",
@@ -2049,8 +2026,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nvoid findSecondLargestAndSmallest(int arr[], int size) {\nint max = arr[0];\nint secondMax = arr[0];\nint min = arr[0];\nint secondMin = arr[0];\nint i;\nfor (i = 0; i < size; i++) {\nif (arr[i] > max) {\nsecondMax = max;\nmax = arr[i];\n} else if (arr[i] > secondMax && arr[i] != max) {\nsecondMax = arr[i];\n}\nif (arr[i] < min) {\nsecondMin = min;\nmin = arr[i];\n} else if (arr[i] < secondMin && arr[i] != min) {\nsecondMin = arr[i];\n}\n}\nprintf(\"%d\\n\", secondMax);\nprintf(\"%d\\n\", secondMin);\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint* arr = (int*)malloc(n * sizeof(int));\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nprintf(\"OUTPUT:\\n\");\nfindSecondLargestAndSmallest(arr, n);\nfree(arr);\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_25",
@@ -2134,8 +2110,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint i,j;\nlong n;\ndo\nscanf(\"%d\",&n);\nwhile (n<0);\nlong rev=0;\nwhile (n!=0){\nrev=rev*10+n%10;\nn/=10;\n}\nn=rev;\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\",n);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_26",
@@ -2219,8 +2194,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%d\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] > a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", a[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_27",
@@ -2304,8 +2278,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%d\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] < a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", a[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_28",
@@ -2389,8 +2362,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]:  removed\n\nint n;\nint arr[1000], b[1000] = {0}, c[1000] = {0}; //Khoi tao 3 mang so nguyen\nint i;\nscanf(\"%d\", &n); //Nhap so phan tu cua mang arr\nfor(i = 0; i < n;i++)\n{\nscanf(\"%d\", &arr[i]);// Nhap n phan tu mang so nguyen arr\n}\nfor(i = 0; i < n;i++)\n{\nif(arr[i] > 0) //Mang so nguyen b[] ghi lai so lan xuat hien cua\nb[arr[i]]++;  //cac phan tu lon hon 0 trong day arr\nif(arr[i] < 0) //Mang so nguyen c[] ghi lai so lan xuat hien cua\nc[-arr[i]]++; //cac phan tu nho hon 0 trong day arr\n}\nint max = 0;\nfor(i = 0; i <n ;i++)\n{\nif(arr[i] > 0)\n{\nif(b[arr[i]] > max)\nmax = b[arr[i]];\n}\nelse\n{\nif(c[-arr[i]] > max)\nmax = c[-arr[i]];\n}\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_29",
@@ -2474,8 +2446,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint main(){\nint a;\nscanf(\"%d\",&a);\nprintf(\"OUTPUT:\\n\");\nint h,m,s;\nh=a/3600;\nm=(a-(h*3600))/60;\ns=a-h*3600-m*60;\nprintf(\"%d:%d:%d\", h, m, s);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_30",
@@ -2559,8 +2530,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nint main() {\nint size;\nscanf(\"%d\",&size);\nint i,Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nprintf(\"OUTPUT:\\n\");\nfor(i=0;i<size;i++)\nif(Arr[i]%2==1&& Arr[i]>0) {\nprintf(\"%d \",Arr[i]*Arr[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_31",
@@ -2644,8 +2614,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint Prime(int n) {\nint i;\nif (n < 2) return 0;\nfor (i = 2; i <= sqrt(n); i++) {\nif (n % i == 0) return 0;\n}\nreturn 1;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (Prime(n)) {\nprintf(\"%d is a prime number.\\n\", n);\n} else {\nprintf(\"%d is not a prime number.\\n\", n);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_32",
@@ -2729,8 +2698,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint SumInRange(int n) {\nint i;\nint sum = 0;\nfor (i = 1; i <= n; i++) {\nsum += i;\n}\nreturn sum;\n}\nint main() {\nint n;\nint sum;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nsum = SumInRange(n);\nprintf(\"%d\", sum);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_33",
@@ -2814,8 +2782,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint SCP(int n) {\nif (sqrt(n) == (int)sqrt(n))\nreturn 1;\nelse\nreturn 0;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (SCP(n))\nprintf(\"%d is a perfect square.\\n\", n);\nelse\nprintf(\"%d is not a perfect square.\\n\", n);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_34",
@@ -2899,8 +2866,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint isPerfectSquare(int n) {\nint sqrtN = sqrt(n);\nreturn (sqrtN * sqrtN == n);\n}\nint isFibonacci(int n) {\nreturn isPerfectSquare(5 * n * n + 4) || isPerfectSquare(5 * n * n - 4);\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nprintf(\"OUTPUT:\\n\");\nif (isFibonacci(n)) {\nprintf(\"%d is a Fibonacci number.\\n\", n);\n} else {\nprintf(\"%d is not a Fibonacci number.\\n\", n);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_35",
@@ -2984,8 +2950,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <math.h>\ndouble getPerimCircle(double r) {\nif (r > 0)\nreturn 2 * r * 3.14159; // Sử dụng giá trị pi chính xác hơn\nelse\nreturn 0;\n}\ndouble getAreaCircle(double r) {\nif (r > 0)\nreturn r * r * 3.14159;\nelse\nreturn 0;\n}\ndouble getPerimRectangle(double A, double B) {\nif (A > 0 && B > 0)\nreturn 2 * (A + B);\nelse\nreturn 0;\n}\ndouble getAreaRectangle(double A, double B) {\nif (A > 0 && B > 0)\nreturn A * B;\nelse\nreturn 0;\n}\ndouble getPerimTriangle(double A, double B, double C) {\nif (A > 0 && B > 0 && C > 0 && A + B > C && B + C > A && A + C > B)\nreturn A + B + C;\nelse\nreturn 0;\n}\ndouble getAreaTriangle(double A, double B, double C) {\nif (A > 0 && B > 0 && C > 0 && A + B > C && B + C > A && A + C > B) {\ndouble P = getPerimTriangle(A, B, C) / 2;\nreturn sqrt(P * (P - A) * (P - B) * (P - C));\n} else {\nprintf(\"\\nĐây không phải là tam giác, vui lòng kiểm tra độ dài các cạnh A, B, C\\n\");\nreturn 0;\n}\n}\nint main() {\ndouble r = 5.0; // Bán kính của hình tròn\ndouble A = 3.0, B = 4.0, C = 5.0; // Các cạnh của tam giác\nprintf(\"Chu vi của Hình Tròn: %lf\\n\", getPerimCircle(r));\nprintf(\"Diện tích của Hình Tròn: %lf\\n\", getAreaCircle(r));\nprintf(\"Chu vi của Hình Chữ Nhật: %lf\\n\", getPerimRectangle(A, B));\nprintf(\"Diện tích của Hình Chữ Nhật: %lf\\n\", getAreaRectangle(A, B));\nprintf(\"Chu vi của Tam Giác: %lf\\n\", getPerimTriangle(A, B, C));\nprintf(\"Diện tích của Tam Giác: %lf\\n\", getAreaTriangle(A, B, C));\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_36",
@@ -3069,8 +3034,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid Insertion(int A[], int n) {\nint i, j;\nfor (i = 1; i < n; i++) {\nint value = A[i];\nj = i - 1;\nwhile (j >= 0 && value < A[j]) {\nA[j + 1] = A[j];\nj--;\n}\nA[j + 1] = value;\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint A[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &A[i]);\n}\nInsertion(A, n);\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_37",
@@ -3154,8 +3118,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid bubble(int A[], int n, int switchOper) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n - 1 - i; j++) {\nif ((A[j] - A[j + 1]) * switchOper > 0) {\nint temp = A[j];\nA[j] = A[j + 1];\nA[j + 1] = temp;\n}\n}\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nint A[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &A[i]);\n}\nbubble(A, n, 1);\nprintf(\"OUTPUT:\\n\");\nprintf(\"Sắp xếp tang dan: \");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nbubble(A, n, -1);\nprintf(\"Sắp xếp giam dan: \");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", A[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_38",
@@ -3239,8 +3202,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nvoid bubble(float A[], int n, int switchOper) {\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n - 1 - i; j++) {\nif ((A[j] - A[j + 1]) * switchOper > 0) {\nfloat temp = A[j];\nA[j] = A[j + 1];\nA[j + 1] = temp;\n}\n}\n}\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nfloat Arr[n];\nint i;\nfor (i = 0; i < n; i++) {\nscanf(\"%f\", &Arr[i]);\n}\nprintf(\"OUTPUT:\\n\");\nbubble(Arr, n, -1);\nfor (i = 0; i < n; i++) {\nprintf(\"%.2f \", Arr[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_39",
@@ -3324,8 +3286,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "void selection(int A[],int size,int opt){\nint i,j;\nfor(i=0;i<size;i++) {\nint min_pos=i;\nfor(j=i+1;j<size;j++)\nif((A[min_pos]-A[j])*opt>0)\nmin_pos=j;\nif(i!=min_pos){\nint temp=A[i];\nA[i]=A[min_pos];\nA[min_pos]=temp;\n}\n}\n}\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1 && n > 0) {\n        int a[1000];\n        for (int i = 0; i < n; i++) scanf(\"%d\", &a[i]);\n        selection(a, n);\n        for (int i = 0; i < n; i++) printf(\"%d \", a[i]);\n        printf(\"\\n\");\n    }\n    return 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_40",
@@ -3409,8 +3370,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "void DelEle(int Arr[],int size,int Pos){\nint i;\nfor(i=Pos;i<size-1;i++)\nArr[i]=Arr[i+1];\nsize--;\n}\nint main(){\nint i,j,size;\ndo {\nscanf(\"%d\", &size);\n}while ( size>=10);\nint Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\", &Arr[i]);\nfor(i=0;i<size;i++)\nfor(j=i+1;j<size;j++)\nif(Arr[i]==Arr[j] && Arr[j]%2!=0)\n{\nDelEle(Arr,size,j);\nsize--;\nj--; // descrease size and iterator\n}\n\nfor(i=0;i<size;i++)\nprintf(\"%d\\n\",Arr[i]);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_41",
@@ -3494,8 +3454,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "int string_length(char s[]) {\nint i=0;\nwhile(s[i]!='\\0')\ni++;\nreturn i;\n}\n// ham dao nguoc chuoi\nvoid string_reverse(char str[]) {\nint i, j, len;\nchar ch;\nj = len = string_length(str) - 1;\ni = 0;\nwhile(i < j) {\nch = str[j];\nstr[j] = str[i];\nstr[i] = ch;\ni++;\nj--;\n}\n}\n\nint main() {\n    char s[1005];\n    if (gets(s) != NULL) {\n        string_length(s);\n        printf(\"%s\\n\", s);\n    }\n    return 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_42",
@@ -3579,8 +3538,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include<string.h>\nint main (){\nchar str[100];\nprintf(\"Please enter a string:\");\ngets(str);\nint i,count=0;\nint len;\nlen=strlen(str);\nfor(i=0;i<len;i++)\n{\nif(str[i]>48 && str[i]<57)\ncount++;\n}\nprintf(\"%d\",count);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_43",
@@ -3664,8 +3622,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include<string.h>\nint main (){\n//int size;\n//scanf(\"%d\",&size);\nint i,Arr[5];\nfor(i=0;i<5;i++)\nscanf(\"%d\",&Arr[i]);\nint Max_even=-1;\nfor(i=0;i<5;i++)\nif(Arr[i]>Max_even && Arr[i]%2==0)\nMax_even=Arr[i];\n//printf(\"OUTPUT:\\n\")\nprintf(\"\\nOUTPUT:\\n%d\",Max_even);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_44",
@@ -3749,8 +3706,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint GCD(int a, int b){\nwhile (a!=b)\nif(a>b) a=a-b;\nelse b=b-a;\nreturn b;\n}\nint LCM(int a, int b){\nint lcm=a * b /GCD(a,b);\nreturn lcm;\n}\nint main(){\nint a,b;\nprintf(\"Please enter two positive integer to find GCD,LCM: \");\nscanf(\"%d%d\", &a,&b);\nGCD(a,b);\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\\t%d\", GCD(a,b),LCM(a,b));\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_45",
@@ -3834,8 +3790,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid printsx(int A[], int* n)\n{\nint *adds[*n];\nint i,j;\nint* temp;\nfor(i=0;i<*n;i++)\n{\nadds[i]=&A[i];\n}\nfor(j=0;j<*n-1;j++)\n{\nif(adds[j]>adds[j+1])\n{\ntemp=adds[j];\nadds[j]=adds[j+1];\nadds[j+1]=temp;\n}\n}\nfor (i = 0; i < *n; i++)\n{\nif(*adds[i]%2==0 && i%2==0 && i!=0)\nprintf(\"%d\\t\", *adds[i]);\n}\n}\nint main(){\nint i,size;\nscanf(\"%d\",&size);\nint Arr[size];\nArr[0]=size;\nfor(i=1;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nprintsx(Arr,&size);\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_46",
@@ -3919,8 +3874,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint main(){\nint size;\nint sum=0;\ndo {\nscanf(\"%d\",&size);\n}while(size>10);\nint i,Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nfor(i=0;i<size;i++)\nif(Arr[i]%2!=0)\nsum=sum+(Arr[i]*Arr[i]);\nprintf(\"%d\",sum);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_47",
@@ -4004,8 +3958,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint main(){\nint n,a,pro=1;\nscanf(\"%d\",&a);\ndo {\nn=a%10;\npro*=n;\na=a/10;\n}while (a>0);\nprintf(\"%d\",pro);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_48",
@@ -4089,8 +4042,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint main(){\nint remainder,a,n=0,a1;\nscanf(\"%d\", &a);\na1=a;\n\nwhile (a !=0 ){\nremainder=a%2;\nif(remainder!=0) break;\na/=2;\nn++;\n}\nif(a>1) printf(\"%d is not power of 2\",a1);\nelse printf(\"%d\", n);\nreturn (0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_49",
@@ -4174,8 +4126,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#include<string.h>\nint main(){\nchar str[100];\nscanf(\"%s\",&str);\nint i,len=strlen(str);\nfor(i=0;i<len;i++)\nif(i%2!=0) str[i]-=32;\nprintf(\"%s\",str);\nreturn (0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_50",
@@ -4259,8 +4210,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#include<string.h>\nint main(){\nchar str[100];\nscanf(\"%[^\\n]\",&str);\nint i,len;\nlen=strlen(str);\n\nfor(i=0;i<len;i++)\n{\nif(str[i]>='a' && str[i]<='z' || str[i]>='A' && str[i]<='Z')\nprintf(\"%c\",str[i]);\n}\nreturn (0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_51",
@@ -4344,8 +4294,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#include<string.h>\nint main(){\nint n;\nscanf(\"%d\",&n);\nint i,sum=0;\nfor(i=1;i<n;i++) {\nif(n%i==0) sum+=i;\n} if (sum==n)\nprintf(\"perfect\");\nelse printf(\"NOT\");\nreturn (0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_52",
@@ -4429,8 +4378,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include<stdio.h>\n#include<string.h>\nint main(){\nchar str[100];\nscanf(\"%s\",&str);\nint i;\nint len=strlen(str);\nint count=0;\nfor(i=0;i<len;i++){\nif(isdigit(str[i])) count++;\n} printf(\"%d\",count);\nreturn (0);\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_53",
@@ -4514,8 +4462,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include<string.h>\nint main(){\nchar str[200];\nprintf(\"Enter a string: \");\nscanf(\"%[^\\n]\",&str);\nint i,n=strlen(str)/2;\n{ for(i=0;i<n;i++);\nif(str[i]>='A'&&str[i]<='Z') str[i]+=32;\nfor(i=n;i<strlen(str);i++)\nif(str[i]>='a' && str[i]<='z')\nstr[i]-=32;\n}\nputs(str);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_54",
@@ -4599,8 +4546,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include<stdio.h>\n#include<string.h>\nint main(){\nchar str[100];\nfgets(str, sizeof(str), stdin);\nint i;\n// check extra space\nfor(i = 0 ; i < strlen(str); i++){\nif(str[i] == ' ' && str[i+1] == ' ') {\nprintf(\"0\");\nreturn 0;\n}\n}\n// check alpha\nint count  = 0;\n// dem nhung thang nao ma khong phai alpha , nhung ki tu dac biet\nfor(i = 0; i < strlen(str) ; i++){\nif(str[i] >= 'a' && str[i] <= 'z' || str[i] >= 'A' && str[i] <= 'Z' || str[i] == ' ' ) {\n}\nelse{\ncount++;\n}\n}\nif(count-1!=0) printf(\"0\");\nelse printf(\"1\");\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_55",
@@ -4684,8 +4630,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#include<string.h>\ndouble averageNumber(int Arr[], int size){\nint i,count=0;\nint sum=0;\nfor(i=0;i<size;i++)\nif(Arr[i]>=0) {\nsum+=Arr[i];\ncount++;\n}\nif(count==0) return 0;\nelse return  sum*1.0 /count ;\n}\nint main(){\nint size;\nscanf(\"%d\",&size);\nint i,Arr[size];\nfor(i=0;i<size;i++) {\nscanf(\"%d\",&Arr[i]);\n}\nprintf(\"%.2lf\",averageNumber(Arr,size));\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_56",
@@ -4769,8 +4714,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include<stdio.h>\n#define PI 3.14159\nint main(){\ndouble a;\nprintf(\"Enter radius to calculate the area of a circle:\");\nscanf(\"%lf\",&a);\ndouble area=0;\nif (a>0) area=PI*a*a;\nprintf(\"%lf\",area);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_57",
@@ -4854,8 +4798,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#include<math.h>\nint SCP(int n){\nif (sqrt(n)==(int)sqrt(n)) return 1;\nelse return 0;\n}\nint main(){\nint a;\nscanf(\"%d\",&a);\nif(SCP(a)) printf(\"Pefect number\");\nelse printf(\"Not\");\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_58",
@@ -4939,8 +4882,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include<time.h>\n#include<stdlib.h>\nint main(){\nint i,size;\nsrand(time(NULL));\nprintf(\"Enter the size of the array: \"); scanf(\"%d\", &size);\nint A[size];\nfor(i=0;i<size;i++)\n{\nA[i]=rand()%51-rand()%30;\n}\nfor(i=0;i<size;i++)\nprintf(\"%d\\t\", A[i]);\nint pos;\nprintf(\"\\nEnter the position to remove an element: \"); scanf(\"%d\", &pos);\nif(pos>=0 && pos<size) {\nint value=A[pos];\nfor(i=pos;i<size;i++)\nA[i]=A[i+1];\nsize--;\nprintf(\"\\nThe array after removing element %d at position %d:\\n\",value,pos);\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n} else {\nprintf(\"\\nCannot remove the element at %d, plz check range !\", pos);\nprintf(\"\\nThe origin array:\\n\");\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_59",
@@ -5024,8 +4966,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include<time.h>\n#include<stdlib.h>\nint main(){\nint i,size;\nsrand(time(NULL));\nprintf(\"Enter the size of the array: \"); scanf(\"%d\", &size);\nint A[size];\nfor(i=0;i<size;i++)\n{\nA[i]=rand()%51-rand()%30;\n}\nfor(i=0;i<size;i++)\nprintf(\"%d\\t\", A[i]);\nint pos;\nprintf(\"\\nEnter the position to insert an element: \"); scanf(\"%d\", &pos);\nif(pos>=0 && pos<=size) {\nfor(i=size;i>=pos;i--)\nA[i]=A[i-1];\nint n;\nprintf(\"Enter new element: \"); scanf(\"%d\", &n);\nA[pos]=n;\nprintf(\"\\nThe array after insert element %d at position %d:\\n\",n,pos);\nsize++;\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n} else {\nprintf(\"\\nCannot insert the element at %d, plz check range !\", pos);\nprintf(\"\\nThe origin array:\\n\");\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_60",
@@ -5109,8 +5050,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include<stdlib.h>\nint main(){\nint i,size;\nprintf(\"Enter the size of the array: \"); scanf(\"%d\", &size);\nint A[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&A[i]);\nint pos1,pos2;\nprintf(\"\\nEnter the two positions to swap : \"); scanf(\"%d%d\", &pos1, &pos2);\nif (pos1>=0 && pos2>=0 && pos1<size && pos2<size && pos1 != pos2) {\n{\nA[pos1]=A[pos1]+A[pos2];\nA[pos2]=A[pos1]-A[pos2];\nA[pos1]=A[pos1]-A[pos2];\n}\nprintf(\"\\nThe array after swapping :\\n\",pos1,pos2);\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n} else {\nprintf(\"\\nCannot swap the element at position %d and %d, plz check range !\", pos1, pos2);\nprintf(\"\\nThe origin array:\\n\");\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_61",
@@ -5194,8 +5134,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include<stdlib.h>\nint main(){\nint i,size;\nprintf(\"Enter the size of the array: \"); scanf(\"%d\", &size);\nint A[size];\nfor(i=0;i<size;i++)\n{\nscanf(\"%d\",&A[i]);\n}\nfor(i=0;i<size;i++)\nprintf(\"%d\\t\", A[i]);\nint pos;\nprintf(\"\\nEnter the position to remove an element: \"); scanf(\"%d\", &pos);\nif(pos>=0 && pos<size) {\nint value=A[pos];\nfor(i=pos;i<size;i++)\nA[i]=A[i+1];\nsize--;\nprintf(\"\\nThe array after removing element %d at position %d:\\n\",value,pos);\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n} else {\nprintf(\"\\nCannot remove the element at %d, plz check range !\", pos);\nprintf(\"\\nThe origin array:\\n\");\nfor(i=0;i<size;i++) printf(\"%d\\t\", A[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_62",
@@ -5279,8 +5218,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint main(){\nint a;\nscanf(\"%d\",&a);\nint h,m,s;\nh=a/3600;\nprintf(\"\\n%d\",h);\nm=(a-(h*3600))/60;\nprintf(\"\\n%d\",m);\ns=a-h*3600-m*60;\nprintf(\"\\n%d\",s);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_63",
@@ -5364,8 +5302,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint sum, a[100], x, count1 = 0, i;\nint main()\n{\nscanf(\"%d\", &x);\nwhile (x != 0)\n{\nint n = x % 10;\nx = x / 10;\na[count1++] = n;\n}\nsum = a[0] + a[count1 - 1];\nprintf(\"%d\", sum);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_64",
@@ -5449,8 +5386,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint main() {\nint num, base;\ndouble exponent;\nprintf(\"Nhập số nguyên: \");\nscanf(\"%d\", &num);\nfor (base = 2; base <= num; base++) {\nexponent = log(num) / log(base);\nif (exponent == (int) exponent) {\nprintf(\"%d là lũy thừa của %d^%d\\n\", num, base, (int) exponent);\nreturn 0;\n}\n}\nprintf(\"%d không phải là lũy thừa của bất kỳ số nào\\n\", num);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_65",
@@ -5534,8 +5470,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#define max 100\nint main()\n{\nint i,n;\nscanf(\"%d\",&n);\nint Arr[n];\nfor(i=0;i<n;i++)\n{\nscanf(\"%d\",&Arr[i]);\n}\nint count[max] = {0};\n\nfor ( i = 0; i < n; i++)\n{\nif(Arr[i]%5==0)\ncount[Arr[i]]++;\n}\nfor ( i = 0; i < max; i++)\n{\nif (count[i] > 0)\n{\nprintf(\"%d-%d\\n\", count[i], i);\n}\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_66",
@@ -5619,8 +5554,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint binaryToOctal(long long binaryNumber);\nint main() {\nlong long binaryNumber;\nprintf(\"Enter a binary number: \");\nscanf(\"%lld\", &binaryNumber);\nprintf(\"Octal number = %d\", binaryToOctal(binaryNumber));\nreturn 0;\n}\nint binaryToOctal(long long binaryNumber) {\nint octalNumber = 0, decimalNumber = 0, i = 0;\nwhile (binaryNumber != 0) {\ndecimalNumber += (binaryNumber % 10) * pow(2, i);\n++i;\nbinaryNumber /= 10;\n}\ni = 1;\nwhile (decimalNumber != 0) {\noctalNumber += (decimalNumber % 8) * i;\ndecimalNumber /= 8;\ni *= 10;\n}\nreturn octalNumber;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_67",
@@ -5704,8 +5638,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#pragma warning (disable : 4996)\n#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include <math.h>\n#define maxn 1000\nint check(int a[], int n)\n{\nint i;\nfor (i = 0; i < n - 1; ++i)\n{\nif (a[i] > a[i + 1]) return 0;\n}\nreturn 1;\n}\nint main()\n{\nint n, i, j, a[maxn];\nscanf(\"%d\", &n);\nfor (i = 0; i < n; i++)\nscanf(\"%d\", &a[i]);\nif (check(a, n) == 0) printf(\"-1\");\nelse printf(\"Mang tang dan\");\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_68",
@@ -5789,8 +5722,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#pragma warning (disable : 4996)\n#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include <math.h>\n#include <ctype.h>\n#define MAXN 1000\nint main()\n{\nint n, i, a[MAXN], check;\nscanf(\"%d\", &n);\nfor (i = 0; i < n; ++i) scanf(\"%d\", a + i);\nfor (i = 0; i <= n / 2; ++i)\n{\nif (a[i] != a[n - i - 1])\n{\ncheck = 0;\nbreak;\n}\nelse check = 1;\n}\nif (check == 1) printf(\"1\");\nelse printf(\"0\");\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_69",
@@ -5874,8 +5806,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "int checkprime(int n)\n{\nint i;\nif (n < 2) return 0;\nfor (i = 2; i <= sqrt(n); ++i)\nif (n % i == 0) return 0;\nreturn 1;\n}\nint main()\n{\nint n, i, j, a[n];\nscanf(\"%d\", &n);\nfor (i = 0; i < n; i++)\nscanf(\"%d\", &a[i]);\nfor (i = 0; i < n; i++)\nif (checkprime(a[i]) == 1)\n{\nprintf(\"%d\", a[i]);\nbreak;\n}\nif (i == n) printf(\"-1\");\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_70",
@@ -5959,8 +5890,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\n#include<math.h>\nint main()\n{\nint sum=0, i, n,x;\nscanf(\"%d\",&n);\n// [Sanitized]: fflush(stdin) removed\nscanf(\"%d\",&x);\nfor(i=1;i<=n;i++)\n{\nsum+= ((pow(-1,i+1))*(pow(x,i)));\n}\nprintf(\"\\nOUTPUT:\\n%d\",sum);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_71",
@@ -6044,8 +5974,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint main(){\nint i,j;\nlong n;\ndo\nscanf(\"%d\",&n);\nwhile (n<0);\nlong rev=0;\nwhile (n!=0){\nrev=rev*10+n%10;\nn/=10;\n}\nn=rev;\nprintf(\"%d\",n);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_72",
@@ -6129,8 +6058,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include<stdio.h>\nint main(){\nint size;\nscanf(\"%d\",&size);\nint i,Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nfor(i=0;i<size;i++)\nif(Arr[i]%2==1&& Arr[i]>0) {\nprintf(\"%d \",Arr[i]*Arr[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_73",
@@ -6214,8 +6142,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include<stdio.h>\nint main (){\nint size;\nscanf(\"%d\",&size);\nint i,j,Arr[size];\nfor(i=0;i<size;i++)\nscanf(\"%d\",&Arr[i]);\nfor(i=0;i<size;i++)\nfor(j=size-1;j>=0;j--)\n{\nif(Arr[i]+Arr[j]==5)\nprintf(\"Sum = 5 at position %d and %d\\n\",i,j);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_74",
@@ -6299,8 +6226,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main() {\nfloat chieu_dai = 5.0;\nfloat chieu_rong = 3.0;\nfloat dien_tich, chu_vi;\ndien_tich = chieu_dai * chieu_rong;\nchu_vi = 2 * (chieu_dai + chieu_rong);\nprintf(\"Chieu dai = %f\\n\", chieu_dai);\nprintf(\"Chieu rong = %f\\n\", chieu_rong);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_75",
@@ -6384,8 +6310,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main() {\nfloat day = 5.0;\nfloat chieu_cao = 3.0;\nfloat canh_a = 4.0;\nfloat canh_b = 3.0;\nfloat canh_c = 5.0;\nfloat dien_tich, chu_vi;\ndien_tich = (day * chieu_cao) / 2;\nchu_vi = canh_a + canh_b + canh_c;\nprintf(\"Day = %f\\n\", day);\nprintf(\"Chieu cao = %f\\n\", chieu_cao);\nprintf(\"Canh a = %f\\n\", canh_a);\nprintf(\"Canh b = %f\\n\", canh_b);\nprintf(\"Canh c = %f\\n\", canh_c);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_76",
@@ -6469,8 +6394,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "- Dien tích hình tròn = pi x bán kính x bán kính\n- Chu vi hình tròn = 2 x pi x bán kính */\n#include <stdio.h>\n#define PI 3.14159265358979323846\nint main() {\nfloat ban_kinh = 3.0;\nfloat dien_tich, chu_vi;\ndien_tich = PI * ban_kinh * ban_kinh;\nchu_vi = 2 * PI * ban_kinh;\nprintf(\"Ban kinh = %f\\n\", ban_kinh);\nprintf(\"Dien tich = %f\\n\", dien_tich);\nprintf(\"Chu vi = %f\\n\", chu_vi);\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_77",
@@ -6554,8 +6478,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\nint n;\nscanf(\"%d\", &n);\nint F1 = 1, i;\nfor (i = 1; i <= n; i++){\nF1 *= i;\n}\nprintf(\"OUTPUT:\\n\");\nprintf(\"%d\\n\", F1);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_78",
@@ -6639,8 +6562,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "void SumFraction(int n){\nint F2 = 0, i;\nfor (i = 1; i <= n; i++){\nF2 += i;\n}\nprintf(\"F2(%d) = %d\\n\", n, F2);\n}\n// Tinh F1(n) + F2(n) = m\nvoid SumF1F2(int n, int m){\nint tempF1, i;\nfor (i = 1; i <= n; i++){\ntempF1 = 1;\nint j;\nfor (j = 1; j <= i; j++){\ntempF1 *= j;\n}\nif(tempF1 + (int)(i * (i + 1) / 2.0) == m){\nprintf(\"n = %d\\n\", i);\nbreak;\n}\n}\n}\n\nint main() {\n    int x;\n    if (scanf(\"%d\", &x) == 1) {\n        int res = SumFraction(x);\n        printf(\"%d\\n\", res);\n    }\n    return 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_79",
@@ -6724,8 +6646,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "int Input(){\nint n;\nprintf(\"Enter an int num:\");\nscanf(\"%d\", &n);\nreturn n;\n}\n//Tinh n^m\nvoid Tinhsomu(int n, int m){\nint nm = 1, i;\nfor (i = 1; i <= m; i++){\nnm *= n;\n}\nprintf(\"%d^%d = %d\\n\", n, m, nm);\n}\nint main(){\nint n = Input();\nFactorNumber(n);\nSumFraction(n);\nint m;\nprintf(\"Enter an int m:\");\nscanf(\"%d\", &m);\nSumF1F2(n, m);\nTinhsomu(n, m);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_80",
@@ -6809,8 +6730,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "int main() {\nint n, a[20], b[10], k = 0;\nint i, j;\nprintf(\"Nhap so phan tu cua mang (5 <= n <= 20): \");\nscanf(\"%d\", &n);\nfor (i = 0; i < n; i++) {\nprintf(\"Nhap phan tu thu %d: \", i+1);\nscanf(\"%d\", &a[i]);\nif (i % 2 != 0 && a[i] % 2 == 0) { // kiem tra vi tri le va gia tri chan\nb[k] = a[i];\nk++;\n}\n}\n// sắp xếp mang b theo thu tu giam dan\nfor (i = 0; i < k-1; i++) {\nfor (j = i+1; j < k; j++) {\nif (b[i] < b[j]) {\nint temp = b[i];\nb[i] = b[j];\nb[j] = temp;\n}\n}\n}\n// in ket qua\nprintf(\"Cac so chan o vi tri le theo thu tu giam dan: \");\nfor (i = 0; i < k; i++) {\nprintf(\"%d \", b[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_81",
@@ -6894,8 +6814,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\nchar str[100], word[100], largest[100], smallest[100];\nint i, j, len, largest_len = 0, smallest_len = 100;\nfgets(str, 100, stdin);\nj = 0;\nfor(i=0; i<=strlen(str); i++){\nif(str[i]==' ' || str[i]=='\\0'){\nword[j] = '\\0';\nlen = strlen(word);\nif(len > largest_len){\nlargest_len = len;\nstrcpy(largest, word);\n}\nif(len < smallest_len){\nsmallest_len = len;\nstrcpy(smallest, word);\n}\nj = 0;\n}\nelse{\nword[j] = str[i];\nj++;\n}\n}\nprintf(\"OUTPUT:\\n\");\nprintf(\"%s\\n\", largest); //The largest word\nprintf(\"%s\\n\", smallest); //The smallest word\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_82",
@@ -6979,8 +6898,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n// Function to calculate the length of a string\nint string_length(char str[]) {\nint length = 0;\nwhile (str[length] != '\\0') {\nlength++;\n}\nreturn length;\n}\n// Function to reverse a string\nvoid string_reverse(char str[]) {\nint i, j, len;\nchar ch;\nlen = string_length(str);\nj = len - 1;\ni = 0;\nwhile (i < j) {\nch = str[j];\nstr[j] = str[i];\nstr[i] = ch;\ni++;\nj--;\n}\n}\nint main() {\nchar n[100]; // Assuming a maximum string length of 100 characters\nscanf(\"%s\", n);\nstring_reverse(n);\nprintf(\"Reversed string: %s\\n\", n);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_83",
@@ -7064,8 +6982,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h>\nint main() {\nchar sentence[201];\nfgets(sentence, sizeof(sentence), stdin);\nint i = 0;\nint capitalizeNext = 1; // Flag to indicate if the next character should be capitalized\nwhile (sentence[i] != '\\0') {\nif (isalpha(sentence[i])) {\nif (capitalizeNext) {\nsentence[i] = toupper(sentence[i]);\ncapitalizeNext = 0;\n} else {\nsentence[i] = tolower(sentence[i]);\n}\n} else if (isspace(sentence[i])) {\ncapitalizeNext = 1;\n}\ni++;\n}\nprintf(\"\\nOUTPUT:\\n%s\", sentence);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_84",
@@ -7149,8 +7066,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#define MAX_SIZE 100\nvoid addMatrices(int A[][MAX_SIZE], int B[][MAX_SIZE], int C[][MAX_SIZE], int rows, int cols) {\nint i,j;\nfor (i = 0; i < rows; i++) {\nfor (j = 0; j < cols; j++) {\nC[i][j] = A[i][j] + B[i][j];\n}\n}\n}\nint main() {\nint N, M,i,j;\nint A[MAX_SIZE][MAX_SIZE];\nint B[MAX_SIZE][MAX_SIZE];\nint C[MAX_SIZE][MAX_SIZE];\n// Read input\nscanf(\"%d %d\", &N, &M);\nfor (i = 0; i < N; i++) {\nfor (j = 0; j < M; j++) {\nscanf(\"%d\", &A[i][j]);\n}\n}\nfor (i = 0; i < N; i++) {\nfor (j = 0; j < M; j++) {\nscanf(\"%d\", &B[i][j]);\n}\n}\n// Add matrices\naddMatrices(A, B, C, N, M);\n// Print output\n\nfor (i = 0; i < N; i++) {\nfor (j = 0; j < M; j++) {\nprintf(\"%d \", C[i][j]);\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_85",
@@ -7234,8 +7150,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n// Hàm tính tổng các chữ số của một số nguyên dương\nint sumOfDigits(int num) {\nint sum = 0;\nwhile (num > 0) {\nsum += num % 10; // Lấy chữ số cuối cùng và cộng vào tổng\nnum /= 10;       // Loại bỏ chữ số cuối cùng\n}\nreturn sum;\n}\n// Hàm tích các chữ số của một số nguyên dương\nint productOfDigits(int num) {\nint product = 1;\nwhile (num > 0) {\nproduct *= num % 10; // Lấy chữ số cuối cùng và nhân vào tích\nnum /= 10;           // Loại bỏ chữ số cuối cùng\n}\nreturn product;\n}\nint main() {\nint number;\nprintf(\"Nhập một số nguyên dương: \");\nscanf(\"%d\", &number);\nint sum = sumOfDigits(number);\nint product = productOfDigits(number);\nif (sum == product) {\nprintf(\"yes\");\n} else {\nprintf(\"no\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_86",
@@ -7319,8 +7234,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <math.h>\nvoid sort(int a[], int n);\nint main() {\nint n;\nscanf(\"%d\", &n);\nint i, a[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &a[i]);\n}\nsort(a, n);\nfor (i = 0; i < n; i++) {\nif (a[i] % 2 == 0) {\nprintf(\"%d \", a[i]);\n}\n}\nfor (i = 0; i < n; i++) {\nif (a[i] % 2) {\nprintf(\"%d \", a[i]);\n}\n}\nreturn(0);\n}\nvoid swap(int *a, int *b) {\nint temp = *a;\n*a = *b;\n*b = temp;\n}\nvoid sort(int a[], int n) {\nint i, j;\nfor (i = 0; i < n - 1; i++) {\nfor (j = 0; j < n - i - 1; j++) {\nif (a[j + 1] > a[j]) {\nswap(&a[j + 1], &a[j]);\n}\n}\n}\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_87",
@@ -7404,8 +7318,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h>\nint main() {\nchar input[101];\nint i;\nfgets(input, sizeof(input), stdin);\nfor (i = 0; input[i] != '\\0'; i++) {\nif (isalpha(input[i]) || isspace(input[i])) {\nprintf(\"%c\", input[i]);\n}\n}\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_88",
@@ -7489,8 +7402,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nint main() {\nint n,i,j;\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint unique_arr[n], unique_count = 0;\nfor (i = 0; i < n; i++) {\nint is_duplicate = 0;\nfor (j = 0; j < i; j++) {\nif (arr[i] == arr[j]) {\nis_duplicate = 1;\nbreak;\n}\n}\nif (!is_duplicate) {\nunique_arr[unique_count] = arr[i];\nunique_count++;\n}\n}\nprintf(\"OUTPUT: \\n\");\nfor (i = 0; i < unique_count; i++) {\nif (i == unique_count - 1) {\nprintf(\"%d\\n\", unique_arr[i]);\n} else {\nprintf(\"%d \", unique_arr[i]);\n}\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_89",
@@ -7574,8 +7486,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\ngetchar();\nchar s[100];\nscanf(\"%[^\\n]\", s);\n// [Sanitized]: fflush(stdin) removed\nchar find;\nscanf(\"%c\", &find);\nchar a[100][100];\nint cnt = 0;\nchar* token = strtok(s, \" \");\nwhile (token != NULL) {\nstrcpy(a[cnt++], token);\ntoken = strtok(NULL, \" \");\n}\nint i;\nfor (i = 0; i < cnt; i++) {\nif (a[i][0] == find) {\nprintf(\"%s\\n\", a[i]);\n}\n}\nreturn(0);\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_90",
@@ -7659,8 +7570,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint main()\n{\nint n;\nscanf(\"%d\",&n);\nint arr[n],i;\nfor(i=0;i<n;i++)\nscanf(\"%d\",&arr[i]);\nint sum=0;\nfor(i=0;i<n;i++)\nif(arr[i]%2!=0)\nsum+=arr[i];\nprintf(\"OUTPUT:\\n%d\",sum);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_91",
@@ -7744,8 +7654,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\n#include <math.h>\nint main() {\nint rows;\nscanf(\"%d\", &rows);\nint prime[1000], cnt = 0;\nint i, j;\nfor (i = 0; i < 1000; i++) {\nif (isPrime(i)) {\nprime[cnt] = i;\n++cnt;\n}\n}\nint number = 0;\nfor (i = rows; i > 0; i--) {\nfor (j = 1; j <= i; ++j) {\nprintf(\"%d \", prime[number]);\n++number;\n}\nprintf(\"\\n\");\n}\nreturn(0);\n}\nint isPrime(int n) {\nint i;\nif (n < 2) {\nreturn 0;\n}\nfor (i = 2; i <= sqrt(n); i++) {\nif (n % i == 0) {\nreturn 0;\n}\n}\nreturn 1;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_92",
@@ -7829,8 +7738,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint a[n][n];\nint i, j;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n; j++) {\nscanf(\"%d\", &a[i][j]);\n}\ngetchar();\n}\nint max = -1e6 + 1;\nfor (i = 0; i < n; i++) {\nfor (j = 0; j < n; j++) {\nif (i == j) {\nif (a[i][j] > max) {\nmax = a[i][j];\n}\n}\n}\n}\nprintf(\"%d\", max);\nreturn(0);\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_93",
@@ -7914,8 +7822,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nint i;\nlong long fibo[n];\nfibo[0] = 0; fibo[1] = 1;\nprintf(\"0 1 \");\nfor (i = 2; i < n; i++) {\nfibo[i] = fibo[i - 1] + fibo[i - 2];\nprintf(\"%lld \", fibo[i]);\n}\nreturn(0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_94",
@@ -7999,8 +7906,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\nint main() {\nint n;\nprintf(\"Nhập một số nguyên dương: \");\nscanf(\"%d\", &n);\nint evenCount = 0; // Số lượng chữ số chẵn\nint oddCount = 0;  // Số lượng chữ số lẻ\n// Đếm chữ số chẵn và lẻ\nint digit;\nwhile (n > 0) {\ndigit = n % 10; // Lấy chữ số cuối cùng\nif (digit % 2 == 0) {\nevenCount++;\n} else {\noddCount++;\n}\nn /= 10; // Loại bỏ chữ số cuối cùng\n}\nprintf(\"Số lượng chữ số chẵn: %d\\n\", evenCount);\nprintf(\"Số lượng chữ số lẻ: %d\\n\", oddCount);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_95",
@@ -8084,8 +7990,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h> // Để sử dụng hàm islower\nint main() {\nint i;\nchar inputString[100]; // Khai báo mảng kí tự để lưu chuỗi\nprintf(\"Nhập một chuỗi kí tự: \");\nfgets(inputString, sizeof(inputString), stdin); // Nhận chuỗi từ người dùng\nprintf(\"Các kí tự viết thường trong chuỗi:\\n\");\nfor (i = 0; inputString[i] != '\\0'; i++) {\nif (islower(inputString[i])) {\nprintf(\"%c \", inputString[i]);\n}\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_96",
@@ -8169,8 +8074,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h> // Để sử dụng hàm tolower\nint main() {\nchar inputString[100]; // Khai báo mảng kí tự để lưu chuỗi\nprintf(\"Nhập một chuỗi kí tự: \");\nfgets(inputString, sizeof(inputString), stdin); // Nhận chuỗi từ người dùng\nprintf(\"Chuỗi sau khi chuyển thành chữ in thường: \");\nfor (int i = 0; inputString[i] != '\\0'; i++) {\nchar lowercaseChar = tolower(inputString[i]);\nprintf(\"%c\", lowercaseChar);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_97",
@@ -8254,8 +8158,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h> // Để sử dụng hàm toupper\nint main() {\nchar inputString[100]; // Khai báo mảng kí tự để lưu chuỗi\nprintf(\"Nhập một chuỗi kí tự: \");\nfgets(inputString, sizeof(inputString), stdin); // Nhận chuỗi từ người dùng\nprintf(\"Chuỗi sau khi chuyển thành chữ in hoa: \");\nfor (int i = 0; inputString[i] != '\\0'; i++) {\nchar uppercaseChar = toupper(inputString[i]);\nprintf(\"%c\", uppercaseChar);\n}\nprintf(\"\\n\");\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_98",
@@ -8339,8 +8242,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n// Hàm tìm số chẵn lớn nhất trong mảng\nint findMaxEven(int arr[], int n) {\nint i;\nint maxEven = -1; // Giả sử không có số chẵn trong mảng\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0 && (maxEven == -1 || arr[i] > maxEven)) {\nmaxEven = arr[i];\n}\n}\nreturn maxEven;\n}\n// Hàm tìm số chẵn nhỏ nhất trong mảng\nint findMinEven(int arr[], int n) {\nint i;\nint minEven = -1; // Giả sử không có số chẵn trong mảng\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0 && (minEven == -1 || arr[i] < minEven)) {\nminEven = arr[i];\n}\n}\nreturn minEven;\n}\nint main() {\nint n, i;\nprintf(\"Nhập số lượng phần tử trong mảng: \");\nscanf(\"%d\", &n);\nint arr[100];\nprintf(\"Nhập các phần tử của mảng:\\n\");\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint maxEven = findMaxEven(arr, n);\nint minEven = findMinEven(arr, n);\nif (maxEven != -1 && minEven != -1) {\nfor (i = 0; i < n; i++) {\nif (arr[i] == maxEven) {\narr[i] = minEven;\n} else if (arr[i] == minEven) {\narr[i] = maxEven;\n}\n}\nprintf(\"Mảng sau khi hoán đổi số chẵn lớn nhất và nhỏ nhất:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\n} else {\nprintf(\"Không tìm thấy số chẵn trong mảng.\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_99",
@@ -8424,8 +8326,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <ctype.h> // Để sử dụng hàm toupper\nvoid capitalizeFirstTwo(char str[]) {\nint i = 0;\nwhile (str[i] != '\\0') {\n// Bắt đầu một từ mới\nwhile (str[i] != '\\0' && !isalpha(str[i])) {\nputchar(str[i]);\ni++;\n}\n// Viết hoa kí tự đầu tiên nếu là chữ\nif (isalpha(str[i])) {\nputchar(toupper(str[i]));\ni++;\n// Viết hoa kí tự thứ hai nếu có\nif (isalpha(str[i])) {\nputchar(toupper(str[i]));\ni++;\n}\n}\n// Copy phần còn lại của từ\nwhile (str[i] != '\\0' && !isspace(str[i])) {\nputchar(str[i]);\ni++;\n}\n}\n}\nint main() {\nchar inputString[100]; // Khai báo mảng kí tự để lưu chuỗi\nprintf(\"Nhập một chuỗi: \");\nfgets(inputString, sizeof(inputString), stdin); // Nhận chuỗi từ người dùng\nprintf(\"Chuỗi sau khi viết hoa hai ký tự đầu của mỗi từ: \");\ncapitalizeFirstTwo(inputString);\nreturn 0;\n}\nSource 96 : in ra các phần tử bị lặp lại trong mảng.\n#include <stdio.h>\nvoid findDuplicates(int arr[], int n) {\nprintf(\"Các phần tử bị lặp lại trong mảng: \");\nfor (int i = 0; i < n; i++) {\nfor (int j = i + 1; j < n; j++) {\nif (arr[i] == arr[j]) {\nprintf(\"%d \", arr[i]);\nbreak; // Để tránh in phần tử bị lặp lại nhiều lần\n}\n}\n}\nprintf(\"\\n\");\n}\nint main() {\nint n;\nprintf(\"Nhập số lượng phần tử trong mảng: \");\nscanf(\"%d\", &n);\nint arr[100];\nprintf(\"Nhập các phần tử của mảng:\\n\");\nfor (int i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nfindDuplicates(arr, n); // In ra các phần tử bị lặp lại trong mảng\nreturn 0;\n}\nSource 97 : Đếm có bao nhiêu ký tự nhập vào trong srting\n#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint countSubstring(char str[], char sub[]) {\nint count = 0;\nint i;\nint len1 = strlen(str);\nint len2 = strlen(sub);\nfor (i = 0; i <= len1 - len2; i++) {\nint j;\nfor (j = 0; j < len2; j++) {\nif (tolower(str[i+j]) != tolower(sub[j]))\nbreak;\n}\nif (j == len2) {\ncount++;\nj = 0;\n}\n}\nreturn count;\n}\nint main() {\nchar input[100];\nprintf(\"Please enter strings: \");\nfgets(input, sizeof(input), stdin);\ninput[strcspn(input, \"\\n\")] = '\\0'; // remove trailing newline\nchar k[100];\nprintf(\"Please enter string k: \");\nfgets(k, sizeof(k), stdin);\nk[strcspn(k, \"\\n\")] = '\\0'; // remove trailing newline\nint count = countSubstring(input, k);\nprintf(\"%d\", count);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_100",
@@ -8509,8 +8410,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_shape_matrix",
-    "code": "#include <stdio.h>\nint main() {\nint row;\nprintf(\"Enter the number of rows: \");\nscanf(\"%d\", &row);\nint i,j,k;\nfor (i = 1; i <= row; i++) {\nfor ( j = 1; j <=i; j++) {\nprintf(\"%c\", 'A' + j - 1);\n}\nfor ( k = i - 1; k >= 1; k--) {\nprintf(\"%c\", 'A' + k - 1);\n}\nprintf(\"\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_shape_matrix"
   },
   {
     "id": "prf192_src_101",
@@ -8594,8 +8494,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\nint main() {\nint n;\nscanf(\"%d\", &n);\nfloat a[n];\nint i;\nfor(i=0; i<n; i++) scanf(\"%f\", &a[i]);\nfor (i = 0; i < n - 1; i++) {\nint j;\nfor (j = 0; j < n - 1 - i; j++) {\nif (a[j] > a[j+1]) {\nint temp = a[j];\na[j] = a[j+1];\na[j+1] = temp;\n}\n}\n}\nprintf(\"OUTPUT:\\n\");\nfor (i = 0; i < n; i++) {\nprintf(\"%.3f \", a[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_102",
@@ -8679,8 +8578,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid swap(int *a, int *b); // function prototype\nint main() {\nint n,i,j;\nprintf(\"Please enter the size of the array: \");\nscanf(\"%d\", &n);\nint arr[n];\nprintf(\"Please enter %d integers separated by spaces: \", n);\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\n// Sort the array in ascending order with odd numbers first, even numbers later\nfor ( i = 0; i < n - 1; i++) {\nfor ( j = i+1; j < n; j++) {\nif ((arr[i] % 2 != 0 && arr[j] % 2 != 0 && arr[i] > arr[j]) || (arr[i] % 2 != 0 && arr[j] % 2 == 0)) {\nswap(&arr[i], &arr[j]);\n}\n}\n}\nprintf(\"Sorted array with odd numbers first and even numbers later: \");\nfor ( i = 0; i < n; i++) {\nprintf(\"%d \", arr[i]);\n}\nprintf(\"\\n\");\nreturn 0;\n}\nvoid swap(int *a, int *b) {\nint temp = *a;\n*a = *b;\n*b = temp;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_103",
@@ -8764,8 +8662,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\nint main() {\nint number;\nprintf(\"Enter an integer: \");\nscanf(\"%d\", &number);\nprintf(\"ASCII code of %d is %c\\n\", number, number);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_104",
@@ -8849,8 +8746,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\nint main() {\nchar character;\nprintf(\"Enter an ASCII code: \");\nscanf(\"%c\", &character);\nprintf(\"Character of ASCII code %c is %d\\n\", character, character);\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_105",
@@ -8934,8 +8830,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar str[100];\nprintf(\"Enter a string: \");\nscanf(\"%s\", str);\nprintf(\"ASCII codes of characters in the string:\\n\");\nfor (int i = 0; i < strlen(str); i++) {\nprintf(\"%c: %d\\n\", str[i], str[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_106",
@@ -9019,8 +8914,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar str[100];\nprintf(\"Enter a string: \");\nscanf(\"%s\", str);\nprintf(\"ASCII codes of characters in the string:\\n\");\nfor (int i = 0; i < strlen(str); i++) {\nprintf(\"%c: %d\\n\", str[i], str[i]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_107",
@@ -9104,8 +8998,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint main(){\nint n;\nprintf(\"Nhap so nguyen duong n:\");\nscanf(\"%d\",&n);\nint sum = 0;\nwhile(n>0){\nsum+=n%10;\nn=n/10;\n}\nprintf(\"sum=%d\",sum);\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_108",
@@ -9189,8 +9082,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_string_mastery",
-    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar input[100]; // Giả sử độ dài tối đa của chuỗi là 100 ký tự\nchar output[7]; // Độ dài tối đa của chuỗi kết quả là 5 ký tự + 1 ký tự kết thúc chuỗi (\\0)\nint length;\nprintf(\"Nhập chuỗi (độ dài từ 5 đến 20 ký tự): \");\nfgets(input, sizeof(input), stdin);\nlength = strlen(input);\n// Xóa ký tự newline nếu tồn tại\nif (input[length - 1] == '\\n') {\ninput[length - 1] = '\\0';\nlength--;\n}\nif (length >= 5 && length <= 20) {\nint start = (length - 5) / 2;\nstrncpy(output, input + start, 5);\noutput[5] = '\\0'; // Đảm bảo kết thúc chuỗi\nprintf(\"Chuỗi sau khi chỉ giữ lại 5 ký tự ở giữa: %s\\n\", output);\n} else {\nprintf(\"Độ dài của chuỗi không thỏa mãn yêu cầu.\\n\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_string_mastery"
   },
   {
     "id": "prf192_src_109",
@@ -9274,8 +9166,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <string.h>\nint main() {\nchar str[100];\nint len, i, is_symmetric = 1;\nint n;\nscanf(\"%d\\n\",&n); // Chú ý \\n ở đây để tiêu trừ ký tự newline sau khi nhập n.\nfor(i = 0; i < n; i++) {\nscanf(\" %c\", &str[i]); // Đọc từng ký tự và lưu vào mảng str.\n}\nstr[n] = '\\0'; // Kết thúc chuỗi bằng ký tự null.\nlen = strlen(str);\nfor (i = 0; i < len/2; i++) {\nif (str[i] != str[len-i-1]) {\nis_symmetric = 0;\nbreak;\n}\n}\nif (is_symmetric) {\nprintf(\"The string is symmetric\");\n}\nelse {\nprintf(\"The string is not symmetric\");\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_110",
@@ -9359,8 +9250,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] < a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2; // Vị trí số lẻ chỉ đổi cho số lẻ\nright -= 2; // Vị trí số chẵn chỉ đổi cho số chẵn\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_111",
@@ -9444,8 +9334,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nvoid sap_xep(int a[], int n) {\nint i, j;\nfor (i = 0; i < n; i++) {\nint m = i;\nfor (j = i + 1; j < n; j++) {\nif (a[j] > a[m])\nm = j;\n}\nint c = a[m];\na[m] = a[i];\na[i] = c;\n}\n}\nvoid dao_vi_tri(int a[], int n) {\nint left = 0, right = n - 1;\nwhile (left < right) {\nint temp = a[left];\na[left] = a[right];\na[right] = temp;\nleft += 2;  // Vị trí số lẻ chỉ đổi cho số lẻ\nright -= 2; // Vị trí số chẵn chỉ đổi cho số chẵn\n}\n}\nint main() {\nint n, i;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint chan[n], le[n];\nint c = 0, l = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nchan[c++] = arr[i];\nelse\nle[l++] = arr[i];\n}\nsap_xep(chan, c);\nsap_xep(le, l);\ndao_vi_tri(le, l);\ndao_vi_tri(chan, c);\nint idx_le = 0, idx_chan = 0;\nfor (i = 0; i < n; i++) {\nif (arr[i] % 2 == 0)\nprintf(\"%d \", chan[c - 1 - idx_chan++]);\nelse\nprintf(\"%d \", le[idx_le++]);\n}\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_112",
@@ -9529,8 +9418,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\nint main() {\nint n, i, t = 0;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nfor (i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nfor (i = n - 3; i < n; i++) {\nt = t + arr[i];\n}\nprintf(\"Tong cua ba so cuoi la: %d\\n\", t);\nreturn 0;\n}"
+    "collectionId": "prf192_array_sorting"
   },
   {
     "id": "prf192_src_113",
@@ -9614,8 +9502,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\nint main() {\n// [Sanitized]:  removed\n\nint i,m=0,n=0;\nint a[5];\nfor(i=0;i<5;i++){\nscanf(\"%d\",&a[i]);\nif(a[i]%2==0)\nm++;\nelse\nn++;\n}\n\n\n\nprintf(\"%d\\n\", m);\nprintf(\"%d\\n\", n);\n\nprintf(\"\\n\");\n// [Sanitized]:  removed\nreturn(0);\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_114",
@@ -9699,8 +9586,7 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_math_algorithms",
-    "code": "#include <stdio.h>\n#include <math.h>\nint main() {\nint num;\nprintf(\"Nhap mot so nguyen: \");\nscanf(\"%d\", &num);\nint sqrt_num = sqrt(num);\nif (sqrt_num * sqrt_num == num) {\nprintf(\"%d la so chinh phuong.\\n\", num);\n} else {\nprintf(\"%d khong phai la so chinh phuong.\\n\", num);\n}\nreturn 0;\n}\nSource 91 : In ra các số chính phương trong khoảng từ a->b\n#include <stdio.h>\n#include <math.h>\nint main() {\nint A, B;\nprintf(\"Nhap khoang A den B: \");\nscanf(\"%d %d\", &A, &B);\nprintf(\"Cac so chinh phuong tu %d den %d la:\\n\", A, B);\nfor (int num = A; num <= B; num++) {\nint sqrt_num = sqrt(num);\nif (sqrt_num * sqrt_num == num) {\nprintf(\"%d \", num);\n}\n}\nreturn 0;\n}"
+    "collectionId": "prf192_math_algorithms"
   },
   {
     "id": "prf192_src_115",
@@ -9784,7 +9670,6 @@ export const PRF192_MASTER_PROBLEMS: (Problem & { code?: string })[] = [
     "source": "1_TỔNG-HỢP-CÁC-SOURCE-MÔN-PRF192.docx",
     "createdAt": "2026-11-01",
     "isCustom": false,
-    "collectionId": "prf192_array_sorting",
-    "code": "#include <stdio.h>\n#include <math.h>\nint main() {\nint n;\nprintf(\"Nhap so phan tu cua mang: \");\nscanf(\"%d\", &n);\nint arr[n];\nprintf(\"Nhap cac phan tu cua mang:\\n\");\nfor (int i = 0; i < n; i++) {\nscanf(\"%d\", &arr[i]);\n}\nint sum = 0;\nfor (int i = 0; i < n; i++) {\nint sqrt_num = sqrt(arr[i]);\nif (sqrt_num * sqrt_num == arr[i]) {\nsum += arr[i];\n}\n}\nprintf(\"Tong cac so chinh phuong trong mang la: %d\\n\", sum);\nreturn 0;\n}\n1. (bai tap 8): nhap vao so giay, in ra so nam,thang, ngay, gio,phut, giay (2)\n2. nhap so tien ( nghin dong) co cac menh gia  thong dung 500k, 200k, 100k....1k. in ra so tien theo menh gia sao cho so to tien it nhat(khong dung array) (2)\n3. Lam cac bai tap tu a....g, h, i, j ( tương tự với các bài đã chữa của SNT) đối với các số Fibonacy, Palindrome, Armstrong, số may mắn, số hạnh phúc (1.5*4)\n(//1. nhap so nguyen n,\n// a. kiem tra xem co phai so nguyen to ko?\n//neu phai, in ra no la SNT;\n//b. neu khong phai snt, in ra cac uoc so cua no.\n// c. in ra tong tat ca cac uoc so cua n\n// d. in ra so luong cac cac uoc so cua n\n// e. nhap n, in ra cac SNT tu 1 den n\n// f. in ra n SNT dau tien\n// g. in ra 3 SNT lon hon n\n// h. in ra 2 SNT, mot so lon hon va mot so nho hon n  (gan n nhat)\n// i. in ra 4 SNT, 2 so lon hon va 2 so nho hon n\n// j. nhap n,p, q, in ra p SNT nho hon n va q SNT lon hon n.\n// k. in ra cac SNT (co 3, hoac co 4 chu so) ma co tong cac chu so\n//chia het cho 5\n//  l. nhập n, tìm các số vừa là SNT vừa là Fibonacy nhỏ hơn n\n1. Tính các tổng (4)\na. //Tinh S=1^2+2^2+3^2+...+n^2\nb.  33: Tinh S4=1^2+2^3+3^4+...+n^(n+1)\nc. Nhap x, n. Tinh S=x^1+x^2+...+x^n\nd. Tinh S=1/1+1/1(1+2)+1/(1+2+3)+...+1/(1+2+...+n)\ne. Tinh S= 1/1!+1/(2!)+1/(3!)+...+1/(n!)\nf.  Tinh S=1-1/2+1/3-1/4+1/5-...+(/-)1/n\ng. Nhap n,x. Tinh S=1+x^2/2!+x^4/4!+...+x^(2n)/(2n!)\n1. mo rong: nhap mang n phan tu,  sap xep cac phan tu i o vi tri chan ( hoacco gia tri chan a[i])\n2.  //a. Sap xep  cac phan tu o vi tri chan tang dan, phan tu o vi tri le giam dan-OK\n//b. Sap xep cac phan tu  co gia tri chan tang dan, gia tri le giam dan-OK\n3. // BT20: cach 1 Nhap va sap xep  mang n phan tu,\n//dung thuat toan interchange\n// sap xep tang dan cac so floating point co 3 chu so thap phan,\n// cach nhau boi dau -\n4.  BTVN 24. mo rong 2: nhap array n phan tu,va cac gia tri b,e\n//sap xep gia tri tu phan tu b den phan tu e bat ky trong mang theo thu tu tang dan (ke ca dau mut)\nWorkshop 4:\n1. Sua : // nhap mang n phan tu, nhap a va b,  thay the cac  so truoc va sau snt nam trong khoang a[a] va a[b] bang so 99\n2. them\na. Bai 36. Nhap vao mot mang co n phan tu,  them vao phia truoc tat ca  SNT bang so 0 (ok)\nb. Them so 99 vao dang truoc 2 phan tu (phan tu can thay k=-2) so voi phan tu thu 3 la   SNT (phan tu goc p=3)\nc. //Bai 36-37. Nhap vao mot mang co n phan tu, them vao phia truoc tat ca cac phan tu la SNT bang so 99 (ok)\nWorkshop 5:\na. bai 40 : xoa tat ca cac SNT\nb.  xóa bo phan tu chan thu 2 (  hoac phan tu NT thu 2)\nc. Xoa bo 2 (hoac 3)  phan tu dung sau phan tu chan  (hoac phan tu NT) thu 2 (k=1)\nSource 93 : Nguyen am thanh chu hoa phu am thanh chu thuong\n#include <stdio.h>\nint main() {\nchar s[1000];\ngets(s);\nint i;\nfor (i = 0; i < strlen(s); i++) {\nif (isupper(s[i])) {\ns[i] +=32;\n}if (s[i] == 'a' || s[i] == 'e' || s[i] == 'i' || s[i] == 'o' || s[i] == 'u') {\ns[i] -= 32;\n}\n}\nputs(s);\n}\nSource 93 : Kiem tra co la pow cua 2\n#include <stdio.h>\nint power(int n) {\nif (n == 0) return 0;\nint i,count = 0;\nfor (i = 1; i > 0;i = i<<1) {\nif (i == n) {\nreturn count;\n}\nif (i > n) {\nreturn 0;\n}\ncount++;\n}\nreturn 0;\n}\nint main() {\nint n;\nscanf(\"%d\", &n);\nif (power(n) != 0) {\nprintf(\"%d\", power(n));\n} else {\nprintf(\"%d is not a power of 2\",n);\n}\n}"
+    "collectionId": "prf192_array_sorting"
   }
 ];
