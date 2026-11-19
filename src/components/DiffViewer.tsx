@@ -23,6 +23,7 @@ interface DiffViewerProps {
   className?: string;
   verdict?: 'AC' | 'WA' | 'PE' | 'CE' | 'RTE' | 'TLE' | string;
   isPassed?: boolean;
+  isVerdictAC?: boolean;
 }
 
 interface DiagnosisResult {

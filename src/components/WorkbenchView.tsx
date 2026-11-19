@@ -1,51 +1,33 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import confetti from 'canvas-confetti';
-import { 
-  Play, 
-  Send, 
-  RotateCcw, 
-  Copy, 
-  Check, 
-  Sparkles, 
-  FileText, 
-  Clock, 
-  MessageSquare, 
-  Lightbulb, 
-  ChevronDown, 
-  ChevronUp,
-  Terminal, 
-  Lock, 
-  Save,
-  PanelLeftClose,
-  PanelLeft,
-  Maximize2,
-  Minimize2,
-  Trash2,
-  FlaskConical,
-  CheckCircle2,
-  AlertCircle,
-  Star,
-  ArrowRight,
-  ArrowLeft,
-  ShieldAlert,
-  BookOpen,
-  Code2
-} from 'lucide-react';
-import type { Problem, Verdict, TestResult, LocalSubmissionRecord } from '../types';
-import { KaTeXRenderer } from './KaTeXRenderer';
-import { DiffViewer } from './DiffViewer';
-import { 
-  executeCodeAsync, 
-  ExecutionResult, 
-  PedagogicalDiagnosis, 
-  generatePedagogicalDiagnosis 
-} from '../services/executionManager';
-import { resolveProgressiveHints } from '../services/progressiveHintService';
-import { ProblemSpecificationView } from './ProblemSpecificationView';
-import { CodeEditor } from './CodeEditor';
-import { recordStreakActivity } from '../services/streakService';
-import { PedagogicalDiagnosisCard } from './workbench/PedagogicalDiagnosisCard';
-import { showToast } from '../services/uiFeedback';
+import React, { useState, useEffect, useRef } from 'react';
+import type { Problem, Verdict, TestResult } from '../types/index.ts';
+import {
+  executeCodeAsync,
+  type PedagogicalDiagnosis,
+  LANGUAGE_LABELS,
+} from '../services/executionManager.ts';
+import { resolveProgressiveHints } from '../services/progressiveHintService.ts';
+import { CodeEditor } from './CodeEditor.tsx';
+import { recordStreakActivity } from '../services/streakService.ts';
+import { showToast } from '../services/uiFeedback.ts';
+import { useCodeDraft } from '../hooks/useCodeDraft.ts';
+import { useResizablePanels } from '../hooks/useResizablePanels.ts';
+import { useBreakpointLg } from '../hooks/useBreakpointLg.ts';
+import { EditorCharGauge } from './shared/IDEPrimitives.tsx';
+import {
+  DEFAULT_CODES,
+  getWorkbenchDraftKey,
+  isLeakedWorkbenchDraft,
+  loadCleanWorkbenchDraft,
+  loadLocalSubmissions,
+  saveLocalSubmission,
+  loadLocalNotes,
+  saveLocalNotes,
+  type LocalProblemNote,
+} from '../services/workbenchStorage.ts';
+import { WorkbenchHeader } from './workbench/WorkbenchHeader.tsx';
+import { WorkbenchLeftPane } from './workbench/WorkbenchLeftPane.tsx';
+import { WorkbenchConsoleDrawer } from './workbench/WorkbenchConsoleDrawer.tsx';
+import { submitSolution } from '../services/repositories/submissionRepository.ts';
 
 interface WorkbenchViewProps {
   problem: Problem;
@@ -57,199 +39,44 @@ interface WorkbenchViewProps {
   collectionTitle?: string;
 }
 
-interface LocalProblemNote {
-  id: string;
-  author: string;
-  text: string;
-  createdAt: string;
-}
-
-const DEFAULT_CODES: Record<string, string> = {
-  c17: `#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-
-int main() {
-    return 0;
-}`,
-  cpp20: `#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <cmath>
-
-using namespace std;
-
-int main() {
-    return 0;
-}`,
-  cpp17: `#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <cmath>
-
-using namespace std;
-
-int main() {
-    return 0;
-}`,
-  py3: `import sys
-import math
-
-def solve():
-    pass
-
-if __name__ == '__main__':
-    solve()`,
-  java: `import java.util.*;
-import java.io.*;
-
-public class Main {
-    public static void main(String[] args) {
-        
-    }
-}`,
-  rust: `use std::io::{self, BufRead};
-
-fn main() {
-    
-}`,
-  sql: `-- Hệ quản trị cơ sở dữ liệu mẫu sẵn có: students, courses
-SELECT id, name, major, gpa
-FROM students
-WHERE gpa >= 3.5
-ORDER BY gpa DESC;`
-};
-
-function getWorkbenchDraftKey(probId: string, lang: string): string {
-  return `ahtest_draft_workbench_${probId}_${lang}`;
-}
-
-function loadCleanWorkbenchDraft(probId: string, lang: string): { code: string; saved: boolean } {
-  const key = getWorkbenchDraftKey(probId, lang);
-  try {
-    const saved = localStorage.getItem(key);
-    if (saved !== null) {
-      const isLeaked =
-        saved.includes('// [Sanitized]') ||
-        saved.includes('Dynamically allocate') ||
-        saved.includes('min_odd') ||
-        saved.includes('max_odd') ||
-        saved.includes('veTamGiac') ||
-        saved.includes('PRF192 Master') ||
-        (probId.startsWith('prf192_') && (
-          saved.includes('void swap') ||
-          saved.includes('scanf(') ||
-          saved.length > 250
-        ));
-      if (isLeaked) {
-        localStorage.removeItem(key);
-        return { code: DEFAULT_CODES[lang] || '', saved: false };
-      }
-      return { code: saved, saved: true };
-    }
-  } catch {
-    // ignore
-  }
-  return { code: DEFAULT_CODES[lang] || '', saved: false };
-}
-
-function loadLocalSubmissions(probId: string): LocalSubmissionRecord[] {
-  try {
-    const raw = localStorage.getItem(`ahtest_submissions_${probId}`);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalSubmission(probId: string, record: LocalSubmissionRecord): LocalSubmissionRecord[] {
-  const existing = loadLocalSubmissions(probId);
-  const updated = [record, ...existing].slice(0, 20);
-  try {
-    localStorage.setItem(`ahtest_submissions_${probId}`, JSON.stringify(updated));
-  } catch {
-    // ignore
-  }
-  return updated;
-}
-
-function loadLocalNotes(probId: string): LocalProblemNote[] {
-  try {
-    const raw = localStorage.getItem(`ahtest_notes_${probId}`);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function getVerdictMeta(verdict: Verdict | null): { label: string; badgeClass: string; shortClass: string } {
-  switch (verdict) {
-    case 'AC':
-      return {
-        label: 'ACCEPTED (100/100)',
-        badgeClass: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40',
-        shortClass: 'bg-emerald-500/20 text-emerald-400',
-      };
-    case 'CE':
-      return {
-        label: 'COMPILE ERROR (CE)',
-        badgeClass: 'bg-rose-500/20 text-rose-400 border border-rose-500/40',
-        shortClass: 'bg-rose-500/20 text-rose-400',
-      };
-    case 'TLE':
-      return {
-        label: 'TIME LIMIT EXCEEDED (TLE)',
-        badgeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
-        shortClass: 'bg-amber-500/20 text-amber-400',
-      };
-    case 'RTE':
-      return {
-        label: 'RUNTIME ERROR (RTE)',
-        badgeClass: 'bg-purple-500/20 text-purple-400 border border-purple-500/40',
-        shortClass: 'bg-purple-500/20 text-purple-400',
-      };
-    case 'MLE':
-      return {
-        label: 'MEMORY LIMIT EXCEEDED (MLE)',
-        badgeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
-        shortClass: 'bg-amber-500/20 text-amber-400',
-      };
-    default:
-      return {
-        label: 'WRONG ANSWER (WA)',
-        badgeClass: 'bg-rose-500/20 text-rose-400 border border-rose-500/40',
-        shortClass: 'bg-rose-500/20 text-rose-400',
-      };
-  }
-}
-
-export const WorkbenchView: React.FC<WorkbenchViewProps> = ({ 
-  problem, 
+export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
+  problem,
   onBack,
   onNextProblem,
-  hasNextProblem = false,
+  hasNextProblem,
   onPrevProblem,
-  hasPrevProblem = false,
-  collectionTitle
+  hasPrevProblem,
+  collectionTitle,
 }) => {
+  const isLg = useBreakpointLg();
+  const [mobileActiveTab, setMobileActiveTab] = useState<'statement' | 'editor'>('statement');
+  const [selectedLang, setSelectedLang] = useState<string>('cpp20');
+  const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'statement' | 'editorial' | 'submissions' | 'comments'>('statement');
-  const [language, setLanguage] = useState<'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'sql' | 'rust'>('cpp20');
-  const [copiedSample, setCopiedSample] = useState<number | null>(null);
+  const [consoleTab, setConsoleTab] = useState<'samples' | 'custom' | 'results'>('samples');
 
-  // Bilingual state (VI / EN)
+  // Progressive Hints State
+  const progressiveHints = resolveProgressiveHints(problem);
+  const [unlockedHintTier, setUnlockedHintTier] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(`ahtest_hint_tier_${problem.id}`);
+      return saved ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [isHintDrawerOpen, setIsHintDrawerOpen] = useState<boolean>(false);
+
+  // Bilingual Statement
   const [docLang, setDocLang] = useState<'vi' | 'en'>(() => {
-    return (localStorage.getItem('ahtest_doc_lang') as 'vi' | 'en') || 'vi';
+    try {
+      return (localStorage.getItem('ahtest_doc_lang') as 'vi' | 'en') || 'vi';
+    } catch {
+      return 'vi';
+    }
   });
 
-  const handleToggleLang = (lang: 'vi' | 'en') => {
+  const handleToggleDocLang = (lang: 'vi' | 'en') => {
     setDocLang(lang);
     try {
       localStorage.setItem('ahtest_doc_lang', lang);
@@ -258,1970 +85,455 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     }
   };
 
-  const [code, setCode] = useState<string>(() => loadCleanWorkbenchDraft(problem.id, 'cpp20').code);
-  const [draftSaved, setDraftSaved] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(getWorkbenchDraftKey(problem.id, 'cpp20')) !== null;
-    } catch {
-      return false;
-    }
+  // Code Draft Hook
+  const draftKey = getWorkbenchDraftKey(problem.id, selectedLang);
+  const {
+    code,
+    setCode,
+    draftSaved,
+    handleCodeChange,
+    resetDraft,
+    flushPendingDraft,
+  } = useCodeDraft({
+    draftKey,
+    defaultCode: DEFAULT_CODES[selectedLang] || '',
+    isLeakedCheck: (saved) => isLeakedWorkbenchDraft(problem.id, saved),
+    debounceMs: 600,
   });
-  const [customInput, setCustomInput] = useState<string>(problem.samples[0]?.input || '');
-  const [customOutput, setCustomOutput] = useState<string>('');
-  const [customExpected, setCustomExpected] = useState<string>('');
-  const [isZenMode, setIsZenMode] = useState<boolean>(false);
-  const [splitPercent, setSplitPercent] = useState<number>(() => {
-    return Number(localStorage.getItem('ahtest_workbench_split')) || 50;
-  });
-  const [isLgScreen, setIsLgScreen] = useState<boolean>(() => {
-    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
-  });
-  const [mobileActiveTab, setMobileActiveTab] = useState<'statement' | 'editor'>('statement');
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsLgScreen(window.innerWidth >= 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
-  const [consoleHeight, setConsoleHeight] = useState<number>(() => {
-    const saved = localStorage.getItem('ahtest_workbench_console_height');
-    return saved ? Math.max(36, Math.min(650, Number(saved))) : 260;
+  // When language switches, re-initialize code draft
+  const handleSelectLang = (newLang: string) => {
+    flushPendingDraft();
+    setSelectedLang(newLang);
+    const loaded = loadCleanWorkbenchDraft(problem.id, newLang);
+    setCode(loaded.code);
+  };
+
+  const handleResetCode = () => {
+    resetDraft(DEFAULT_CODES[selectedLang] || '');
+    showToast('Đã khôi phục mã nguồn mẫu ban đầu.', 'info');
+  };
+
+  // Resizable Panels Hook
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const editorColumnRef = useRef<HTMLDivElement | null>(null);
+  const {
+    leftPaneWidth: splitPercent,
+    setLeftPaneWidth: setSplitPercent,
+    consoleHeight,
+    setConsoleHeight,
+    isDraggingSplitter,
+    setIsDraggingSplitter,
+    isDraggingConsole,
+    setIsDraggingConsole,
+    showConsole,
+    setShowConsole,
+    isConsoleMaximized,
+    setIsConsoleMaximized,
+  } = useResizablePanels({
+    storagePrefix: 'ahtest_workbench',
+    defaultLeftWidth: 50,
+    defaultConsoleHeight: 260,
+    minLeftWidth: 25,
+    maxLeftWidth: 75,
+    containerRef,
+    editorColumnRef,
   });
-  const [showConsole, setShowConsole] = useState<boolean>(true);
-  const [consoleTab, setConsoleTab] = useState<'testcase' | 'custom' | 'result'>('testcase');
-  const [isDraggingConsole, setIsDraggingConsole] = useState<boolean>(false);
-  const [isConsoleMaximized, setIsConsoleMaximized] = useState<boolean>(false);
-  const [customExecResult, setCustomExecResult] = useState<ExecutionResult | null>(null);
+
+  // Editor Ref for Jump to Line
+  const editorComponentRef = useRef<{ jumpToLine: (line: number, col?: number) => void } | null>(null);
+  const handleJumpToLine = (line: number, col: number = 1) => {
+    editorComponentRef.current?.jumpToLine(line, col);
+  };
+
+  // Execution & Grading States
+  const [isGrading, setIsGrading] = useState<boolean>(false);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
   const [pedagogicalDiagnosis, setPedagogicalDiagnosis] = useState<PedagogicalDiagnosis | null>(null);
-  const workspaceContainerRef = useRef<HTMLDivElement>(null);
-  const editorColumnRef = useRef<HTMLDivElement>(null);
-  const monacoEditorRef = useRef<any>(null);
 
-  // Jump to specific line and column in Monaco Editor
-  const jumpToLine = (line: number, col: number = 1) => {
-    if (monacoEditorRef.current) {
-      monacoEditorRef.current.revealLineInCenter(line);
-      monacoEditorRef.current.setPosition({ lineNumber: line, column: col });
-      monacoEditorRef.current.focus();
-    }
+  // Custom Test Inputs
+  const [customInput, setCustomInput] = useState<string>(problem.samples[0]?.input || '');
+  const [customExpected, setCustomExpected] = useState<string>(problem.samples[0]?.output || '');
+  const [customOutput, setCustomOutput] = useState<string>('');
+
+  // Local Submissions & Notes
+  const [submissions, setSubmissions] = useState(() => loadLocalSubmissions(problem.id));
+  const [notes, setNotes] = useState(() => loadLocalNotes(problem.id));
+
+  const handleAddNote = (text: string) => {
+    const newNote: LocalProblemNote = {
+      id: `note_${Date.now()}`,
+      author: 'Ghi chú cá nhân',
+      text,
+      createdAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+    };
+    const updated = [newNote, ...notes];
+    setNotes(updated);
+    saveLocalNotes(problem.id, updated);
+    showToast('Đã lưu ghi chú thành công.', 'success');
   };
 
-  // Helper to extract diagnostic line/column from compiler error message
-  const parseDiagnosticError = (output: string) => {
-    if (!output) return null;
-    const match = output.match(/(?:solution\.c)?:?(\d+):(\d+):\s*(error|warning)/i) || output.match(/:(\d+):(\d+):/);
-    if (match) {
-      return {
-        line: parseInt(match[1], 10),
-        col: parseInt(match[2], 10),
-      };
-    }
-    const lineMatch = output.match(/dòng\s*(\d+)/i) || output.match(/line\s*(\d+)/i);
-    if (lineMatch) {
-      return {
-        line: parseInt(lineMatch[1], 10),
-        col: 1,
-      };
-    }
-    return null;
+  const handleRestoreSubmissionCode = (subCode: string, submittedAt: string) => {
+    handleCodeChange(subCode);
+    showToast(`Đã nạp lại mã nguồn lần nộp lúc ${submittedAt}.`, 'info');
   };
 
-  // Dragging handler for smooth 2-panel splitter and vertical console splitter
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      // 1. Horizontal Left/Right Workspace Splitter
-      if (isDraggingSplitter && workspaceContainerRef.current) {
-        const rect = workspaceContainerRef.current.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const newPercent = Math.min(Math.max((offsetX / rect.width) * 100, 20), 80);
-        setSplitPercent(Math.round(newPercent));
-        localStorage.setItem('ahtest_workbench_split', String(Math.round(newPercent)));
-      }
-
-      // 2. Vertical Up/Down Console Splitter
-      if (isDraggingConsole && editorColumnRef.current) {
-        const rect = editorColumnRef.current.getBoundingClientRect();
-        const newHeight = rect.bottom - e.clientY;
-        const maxHeight = Math.max(100, rect.height - 100);
-        const clamped = Math.max(36, Math.min(maxHeight, newHeight));
-        setConsoleHeight(Math.round(clamped));
-        if (clamped > 36 && !showConsole) {
-          setShowConsole(true);
-        }
-        if (isConsoleMaximized) {
-          setIsConsoleMaximized(false);
-        }
-        localStorage.setItem('ahtest_workbench_console_height', Math.round(clamped).toString());
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isDraggingSplitter) setIsDraggingSplitter(false);
-      if (isDraggingConsole) setIsDraggingConsole(false);
-    };
-
-    if (isDraggingSplitter || isDraggingConsole) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDraggingSplitter, isDraggingConsole, showConsole, isConsoleMaximized]);
-
-  const timerStateRef = useRef({
-    grading: null as ReturnType<typeof setInterval> | null,
-    sample: null as ReturnType<typeof setTimeout> | null,
-    debounce: null as ReturnType<typeof setTimeout> | null,
-    activeRunId: 0,
-  });
-
-  // Helper to immediately flush any pending draft to localStorage
-  const flushPendingDraft = (curCode?: string, targetLang?: string) => {
-    if (timerStateRef.current.debounce) {
-      clearTimeout(timerStateRef.current.debounce);
-      timerStateRef.current.debounce = null;
-    }
-    const targetCode = curCode !== undefined ? curCode : code;
-    const key = getWorkbenchDraftKey(problem.id, targetLang || language);
+  const handleUnlockHintTier = (tier: 1 | 2 | 3) => {
+    setUnlockedHintTier(tier);
     try {
-      localStorage.setItem(key, targetCode);
-      setDraftSaved(true);
+      localStorage.setItem(`ahtest_hint_tier_${problem.id}`, String(tier));
     } catch {
       // ignore
     }
   };
 
-  // Cleanup timers on unmount to eliminate memory leaks and race conditions
-  useEffect(() => {
-    const timers = timerStateRef.current;
-    return () => {
-      timers.activeRunId = 0;
-      if (timers.grading) {
-        clearInterval(timers.grading);
-        timers.grading = null;
+  // Run Custom Test
+  const handleRunCustomTest = async () => {
+    if (isGrading) return;
+    setIsGrading(true);
+    setCustomOutput('Đang biên dịch và thực thi trên sandbox...');
+    try {
+      const res = await executeCodeAsync(selectedLang, code, customInput, { timeoutMs: 2500 });
+      setCustomOutput(res.stderr ? `${res.stderr}\n${res.stdout}` : res.stdout);
+      if (res.pedagogicalDiagnosis) {
+        setPedagogicalDiagnosis(res.pedagogicalDiagnosis);
       }
-      if (timers.sample) {
-        clearTimeout(timers.sample);
-        timers.sample = null;
+    } catch (err: any) {
+      setCustomOutput(`Lỗi thực thi: ${err?.message || err}`);
+    } finally {
+      setIsGrading(false);
+    }
+  };
+
+  // Run Samples (F9)
+  const handleRunSample = async () => {
+    if (isGrading || code.length > 65536) return;
+    setIsGrading(true);
+    setConsoleTab('results');
+    setShowConsole(true);
+    setPedagogicalDiagnosis(null);
+
+    const sampleDefinitions = problem.samples || [];
+    const results: TestResult[] = [];
+
+    for (let i = 0; i < sampleDefinitions.length; i++) {
+      const s = sampleDefinitions[i];
+      const res = await executeCodeAsync(selectedLang, code, s.input, { timeoutMs: 2000 });
+      const passed = (res.stdout || '').trim() === (s.output || '').trim();
+      results.push({
+        id: i + 1,
+        name: `Sample #${i + 1}`,
+        passed,
+        timeMs: res.executionTimeMs,
+        memoryKb: res.memoryKb,
+        actualOutput: res.stderr ? `${res.stderr}\n${res.stdout}` : res.stdout,
+        expectedOutput: s.output,
+        points: Math.round(100 / sampleDefinitions.length),
+      });
+
+      if (!passed && res.pedagogicalDiagnosis && !pedagogicalDiagnosis) {
+        setPedagogicalDiagnosis(res.pedagogicalDiagnosis);
       }
-      if (timers.debounce) {
-        clearTimeout(timers.debounce);
-        timers.debounce = null;
+    }
+
+    setTestResults(results);
+    const allPassed = results.length > 0 && results.every((r) => r.passed);
+    setFinalVerdict(allPassed ? 'AC' : 'WA');
+    setIsGrading(false);
+  };
+
+  // Submit Solution (Ctrl + Enter)
+  const handleSubmitSolution = async () => {
+    if (isGrading || code.length > 65536) return;
+    flushPendingDraft();
+    setIsGrading(true);
+    setConsoleTab('results');
+    setShowConsole(true);
+    setPedagogicalDiagnosis(null);
+
+    // Dynamic Testcases: If problem.testcases exists, use them.
+    // If empty, fall back strictly to problem.samples.
+    // Never fall back to another problem's testcases!
+    const testDefinitions =
+      problem.testcases && problem.testcases.length > 0
+        ? problem.testcases.map((tc, idx) => ({
+            id: tc.id || idx + 1,
+            testName: tc.isHidden
+              ? `Test ẩn #${idx + 1}`
+              : `Test #${idx + 1}${idx < problem.samples.length ? ' (Mẫu)' : ''}`,
+            input: tc.input,
+            expectedOutput: tc.expectedOutput,
+            isHidden: !!tc.isHidden,
+            weight: tc.weight || Math.max(1, Math.round(100 / problem.testcases!.length)),
+          }))
+        : problem.samples && problem.samples.length > 0
+        ? problem.samples.map((s, idx) => ({
+            id: idx + 1,
+            testName: `Test mẫu #${idx + 1}`,
+            input: s.input,
+            expectedOutput: s.output,
+            isHidden: false,
+            weight: Math.round(100 / problem.samples.length),
+          }))
+        : [];
+
+    if (testDefinitions.length === 0) {
+      setIsGrading(false);
+      showToast('Bài tập này chưa có bộ testcase chấm điểm. Vui lòng dùng tab Custom Test.', 'warning');
+      return;
+    }
+
+    const results: TestResult[] = [];
+    let firstFailDiag: PedagogicalDiagnosis | null = null;
+    let earnedPoints = 0;
+    let computedVerdict: Verdict = 'AC';
+
+    for (let i = 0; i < testDefinitions.length; i++) {
+      const t = testDefinitions[i];
+      const res = await executeCodeAsync(selectedLang, code, t.input, { timeoutMs: 2000 });
+      const passed = (res.stdout || '').trim() === (t.expectedOutput || '').trim();
+
+      if (passed) {
+        earnedPoints += t.weight;
+      } else {
+        if (computedVerdict === 'AC') {
+          if (res.status === 'TLE') computedVerdict = 'TLE';
+          else if (res.status === 'CE') computedVerdict = 'CE';
+          else if (res.status === 'RTE') computedVerdict = 'RTE';
+          else computedVerdict = 'WA';
+        }
+        if (!firstFailDiag && res.pedagogicalDiagnosis) {
+          firstFailDiag = res.pedagogicalDiagnosis;
+        }
       }
+
+      results.push({
+        id: t.id,
+        name: t.testName,
+        passed,
+        timeMs: res.executionTimeMs,
+        memoryKb: res.memoryKb,
+        actualOutput: res.stderr ? `${res.stderr}\n${res.stdout}` : res.stdout,
+        expectedOutput: t.expectedOutput,
+        points: passed ? t.weight : 0,
+      });
+    }
+
+    setTestResults(results);
+    setFinalVerdict(computedVerdict);
+    if (firstFailDiag) {
+      setPedagogicalDiagnosis(firstFailDiag);
+    }
+
+    // Record streak activity if AC
+    if (computedVerdict === 'AC') {
+      recordStreakActivity();
+    }
+
+    // Save Submission Record with human-readable language label
+    const langLabel = LANGUAGE_LABELS[selectedLang] || selectedLang.toUpperCase();
+    const submissionRecord = {
+      id: `sub_${Date.now()}`,
+      problemId: problem.id,
+      code,
+      language: langLabel,
+      verdict: computedVerdict,
+      score: earnedPoints,
+      maxScore: 100,
+      timeMs: Math.max(...results.map((r) => r.timeMs || 0), 1),
+      memoryKb: Math.max(...results.map((r) => r.memoryKb || 0), 512),
+      submittedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
     };
-  }, []);
 
-  // Debounced auto-save (400ms) for smooth 60fps typing without disk thrashing
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setDraftSaved(false);
+    const updatedSubs = saveLocalSubmission(problem.id, submissionRecord);
+    setSubmissions(updatedSubs);
 
-    if (timerStateRef.current.debounce) {
-      clearTimeout(timerStateRef.current.debounce);
+    // Sync to Supabase DB asynchronously without blocking UI
+    submitSolution({
+      problemId: problem.id,
+      language: selectedLang,
+      code,
+      verdict: computedVerdict,
+      score: earnedPoints,
+      maxScore: 100,
+      timeMs: submissionRecord.timeMs,
+      memoryKb: submissionRecord.memoryKb,
+      passedTests: results.filter((r) => r.passed).length,
+      totalTests: results.length,
+    }).catch(() => {});
+
+    if (computedVerdict === 'AC') {
+      showToast('Chúc mừng! Bạn đã hoàn thành chính xác 100% testcase.', 'success');
+    } else {
+      showToast(`Kết quả: ${computedVerdict} (${earnedPoints}/100 điểm)`, 'warning');
     }
-    timerStateRef.current.debounce = setTimeout(() => {
-      const key = getWorkbenchDraftKey(problem.id, language);
-      try {
-        localStorage.setItem(key, newCode);
-        setDraftSaved(true);
-      } catch {
-        // ignore
-      }
-      timerStateRef.current.debounce = null;
-    }, 400);
+
+    setIsGrading(false);
   };
 
-  const handleResetCode = () => {
-    if (timerStateRef.current.debounce) {
-      clearTimeout(timerStateRef.current.debounce);
-      timerStateRef.current.debounce = null;
-    }
-    const key = getWorkbenchDraftKey(problem.id, language);
-    localStorage.removeItem(key);
-    setCode(DEFAULT_CODES[language] || '');
-    setDraftSaved(false);
-    showToast('Đã khôi phục mã nguồn mẫu ban đầu.', 'info');
-  };
-  
-  // Grading & Execution State
-  const [isGrading, setIsGrading] = useState<boolean>(false);
-  const [gradingProgress, setGradingProgress] = useState<number>(0);
-  const [testResults, setTestResults] = useState<TestResult[] | null>(null);
-  const [selectedTestResult, setSelectedTestResult] = useState<TestResult | null>(null);
-  const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
-  const [submissions, setSubmissions] = useState<LocalSubmissionRecord[]>(() => loadLocalSubmissions(problem.id));
-  const [notes, setNotes] = useState<LocalProblemNote[]>(() => loadLocalNotes(problem.id));
-  const [noteInput, setNoteInput] = useState<string>('');
+  const runSampleRef = useRef(handleRunSample);
+  const submitSolutionRef = useRef(handleSubmitSolution);
+  const onNextProblemRef = useRef(onNextProblem);
 
-  // Progressive Hints & Mastery Star System (Deep Practice Mode)
-  const progressiveHints = useMemo(() => resolveProgressiveHints(problem), [problem]);
-  const [isHintDrawerOpen, setIsHintDrawerOpen] = useState<boolean>(false);
-  const [unlockedHintTier, setUnlockedHintTier] = useState<number>(() => {
-    const saved = localStorage.getItem(`ahtest_hint_tier_${problem.id}`);
-    return saved ? Number(saved) : 0;
+  useEffect(() => {
+    runSampleRef.current = handleRunSample;
+    submitSolutionRef.current = handleSubmitSolution;
+    onNextProblemRef.current = onNextProblem;
   });
-  const [copiedTier3Code, setCopiedTier3Code] = useState<boolean>(false);
 
-  // Keyboard shortcut: Shift + Enter to go to next problem when AC
+  // Keyboard Shortcuts: F9 to run sample, Ctrl+Enter to submit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'Enter' && finalVerdict === 'AC' && hasNextProblem && onNextProblem) {
+      if (e.key === 'F9') {
         e.preventDefault();
-        onNextProblem();
+        runSampleRef.current();
+      } else if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        submitSolutionRef.current();
+      } else if (e.shiftKey && e.key === 'Enter' && finalVerdict === 'AC' && hasNextProblem) {
+        e.preventDefault();
+        onNextProblemRef.current?.();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [finalVerdict, hasNextProblem, onNextProblem]);
-
-  const handleUnlockHintTier = (tier: number) => {
-    if (tier > unlockedHintTier) {
-      setUnlockedHintTier(tier);
-      localStorage.setItem(`ahtest_hint_tier_${problem.id}`, String(tier));
-    }
-  };
-
-  const getMasteryRating = (tier: number) => {
-    if (tier === 0) {
-      return {
-        stars: 3,
-        badge: '⭐⭐⭐ Tự Lực 100%',
-        title: 'Bậc Thầy Thuật Toán (Tự Lực Đỉnh Cao)',
-        description: 'Bạn đã độc lập giải quyết bài toán và vượt qua 100% test cases mà không cần bất kỳ gợi ý nào!',
-        textColor: 'text-amber-400',
-        borderColor: 'border-amber-500/30',
-        bgColor: 'bg-amber-500/10'
-      };
-    }
-    if (tier === 1 || tier === 2) {
-      return {
-        stars: 2,
-        badge: '⭐⭐ Khá Giỏi (Gợi Ý Tư Duy)',
-        title: 'Hiểu Sâu Bản Chất (Tiếp Thu Nhanh)',
-        description: 'Bạn đã tận dụng tốt gợi ý thuật toán / cảnh báo bẫy ngầm và tự tay cài đặt thuật toán chuẩn xác.',
-        textColor: 'text-emerald-400',
-        borderColor: 'border-emerald-500/30',
-        bgColor: 'bg-emerald-500/10'
-      };
-    }
-    return {
-      stars: 1,
-      badge: '⭐ Đã Thông Suốt',
-      title: 'Học Qua Khung Mã Giả (Xây Dựng Nền Móng)',
-      description: 'Bạn đã tham khảo khung mã giả để vượt qua bế tắc cú pháp. Hãy thử làm thêm bài tương tự tự lực nhé!',
-      textColor: 'text-blue-400',
-      borderColor: 'border-blue-500/30',
-      bgColor: 'bg-blue-500/10'
-    };
-  };
-
-  const handleCopyTier3Code = (scaffoldText: string) => {
-    navigator.clipboard.writeText(scaffoldText);
-    setCopiedTier3Code(true);
-    setTimeout(() => setCopiedTier3Code(false), 2000);
-  };
-
-  const handleCopySample = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedSample(index);
-    setTimeout(() => setCopiedSample(null), 2000);
-  };
-
-  const handleRunSample = () => {
-    if (isGrading) return; // Prevent spam clicks
-    flushPendingDraft();
-    if (!isLgScreen) setMobileActiveTab('editor');
-    if (timerStateRef.current.sample) clearTimeout(timerStateRef.current.sample);
-    if (timerStateRef.current.grading) clearInterval(timerStateRef.current.grading);
-
-    const runId = ++timerStateRef.current.activeRunId;
-
-    setConsoleTab('result');
-    setShowConsole(true);
-    setIsGrading(true);
-    setFinalVerdict(null);
-    setTestResults(null);
-    setSelectedTestResult(null);
-    setPedagogicalDiagnosis(null);
-
-    // Enforce 65,536 character limit (64 KB)
-    if (code.length > 65536) {
-      setIsGrading(false);
-      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
-      setPedagogicalDiagnosis(diag || null);
-      const ceResult: TestResult = {
-        testId: 1,
-        testName: 'Giới hạn kích thước mã nguồn',
-        verdict: 'CE',
-        time: 0,
-        memory: 0,
-        score: 0,
-        maxScore: problem.points,
-        isHidden: false,
-        input: 'Kiểm tra độ dài code',
-        actualOutput: `[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`,
-        expectedOutput: 'Dưới 65,536 ký tự'
-      };
-      setCustomOutput(ceResult.actualOutput || '');
-      setTestResults([ceResult]);
-      setSelectedTestResult(ceResult);
-      setFinalVerdict('CE');
-      return;
-    }
-
-    timerStateRef.current.sample = setTimeout(async () => {
-      timerStateRef.current.sample = null;
-      const sampleInput = problem.samples[0]?.input ?? (problem.testcases?.[0]?.input || '');
-      const sampleOutput = problem.samples[0]?.output ?? (problem.testcases?.[0]?.expectedOutput || '');
-      const exec = await executeCodeAsync(language, code, sampleInput);
-      if (timerStateRef.current.activeRunId !== runId) return;
-
-      setIsGrading(false);
-      setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
-
-      let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
-      if (exec.status === 'CE') verdict = 'CE';
-      else if (exec.status === 'RTE') verdict = 'RTE';
-      else if (exec.status === 'TLE') verdict = 'TLE';
-      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === sampleOutput.replace(/\r\n/g, '\n').trim()) {
-        verdict = 'AC';
-      }
-
-      if (verdict === 'WA' && !exec.pedagogicalDiagnosis) {
-        setPedagogicalDiagnosis({
-          category: 'LOGIC',
-          badge: 'Chưa đạt (Wrong Answer)',
-          title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
-          explanation: 'Chương trình chạy hoàn tất không bị crash, nhưng nội dung in ra màn hình khác với kết quả mong đợi của ví dụ.',
-          suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc định dạng số.'
-        });
-      }
-
-      const singleResult: TestResult = {
-        testId: 1,
-        testName: 'Sample Case #1 (Ví dụ đề bài)',
-        verdict,
-        time: exec.executionTimeMs,
-        memory: exec.memoryKb,
-        score: verdict === 'AC' ? problem.points : 0,
-        maxScore: problem.points,
-        isHidden: false,
-        input: sampleInput,
-        actualOutput: exec.status === 'CE' ? exec.stderr : (exec.stdout || '(Không có output ra stdout)'),
-        expectedOutput: sampleOutput || '3'
-      };
-
-      setCustomOutput(exec.status === 'CE' ? exec.stderr : (exec.stdout || 'Chương trình thực thi không có output.'));
-      setTestResults([singleResult]);
-      setSelectedTestResult(singleResult);
-      setFinalVerdict(verdict);
-    }, 350);
-  };
-
-  const handleRunSpecificSample = (index: number) => {
-    if (isGrading) return; // Prevent spam clicks
-    flushPendingDraft();
-    if (!isLgScreen) setMobileActiveTab('editor');
-    if (timerStateRef.current.sample) clearTimeout(timerStateRef.current.sample);
-    if (timerStateRef.current.grading) clearInterval(timerStateRef.current.grading);
-
-    const runId = ++timerStateRef.current.activeRunId;
-
-    setConsoleTab('result');
-    setShowConsole(true);
-    setIsGrading(true);
-    setFinalVerdict(null);
-    setTestResults(null);
-    setSelectedTestResult(null);
-    setPedagogicalDiagnosis(null);
-
-    // Enforce 65,536 character limit
-    if (code.length > 65536) {
-      setIsGrading(false);
-      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
-      setPedagogicalDiagnosis(diag || null);
-      const ceResult: TestResult = {
-        testId: index + 1,
-        testName: `Kiểm tra dung lượng code`,
-        verdict: 'CE',
-        time: 0,
-        memory: 0,
-        score: 0,
-        maxScore: problem.points,
-        isHidden: false,
-        input: 'Kiểm tra độ dài code',
-        actualOutput: `[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`,
-        expectedOutput: 'Dưới 65,536 ký tự'
-      };
-      setCustomOutput(ceResult.actualOutput || '');
-      setTestResults([ceResult]);
-      setSelectedTestResult(ceResult);
-      setFinalVerdict('CE');
-      return;
-    }
-
-    timerStateRef.current.sample = setTimeout(async () => {
-      timerStateRef.current.sample = null;
-      const sample = problem.samples[index] || (problem.testcases?.[index] ? { input: problem.testcases[index].input, output: problem.testcases[index].expectedOutput } : problem.samples[0]);
-      const sampleInput = sample?.input ?? (problem.testcases?.[index]?.input || '');
-      const sampleOutput = sample?.output ?? (problem.testcases?.[index]?.expectedOutput || '');
-      const exec = await executeCodeAsync(language, code, sampleInput);
-      if (timerStateRef.current.activeRunId !== runId) return;
-
-      setIsGrading(false);
-      setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
-
-      let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
-      if (exec.status === 'CE') verdict = 'CE';
-      else if (exec.status === 'RTE') verdict = 'RTE';
-      else if (exec.status === 'TLE') verdict = 'TLE';
-      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === sampleOutput.replace(/\r\n/g, '\n').trim()) {
-        verdict = 'AC';
-      }
-
-      if (verdict === 'WA' && !exec.pedagogicalDiagnosis) {
-        setPedagogicalDiagnosis({
-          category: 'LOGIC',
-          badge: 'Chưa đạt (Wrong Answer)',
-          title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
-          explanation: 'Chương trình chạy hoàn tất không bị crash, nhưng nội dung in ra màn hình khác với kết quả mong đợi của ví dụ.',
-          suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc định dạng số.'
-        });
-      }
-
-      const singleResult: TestResult = {
-        testId: index + 1,
-        testName: `Sample Case #${index + 1} (Ví dụ đề bài)`,
-        verdict,
-        time: exec.executionTimeMs,
-        memory: exec.memoryKb,
-        score: verdict === 'AC' ? problem.points : 0,
-        maxScore: problem.points,
-        isHidden: false,
-        input: sample?.input || '',
-        actualOutput: exec.status === 'CE' ? exec.stderr : (exec.stdout || '(Không có output ra stdout)'),
-        expectedOutput: sample?.output || ''
-      };
-
-      setCustomOutput(exec.status === 'CE' ? exec.stderr : (exec.stdout || 'Chương trình thực thi không có output.'));
-      setTestResults([singleResult]);
-      setSelectedTestResult(singleResult);
-      setFinalVerdict(verdict);
-    }, 350);
-  };
-
-  const handleRunCustomTest = async () => {
-    if (isGrading) return; // Prevent spam clicks
-    flushPendingDraft();
-    if (!isLgScreen) setMobileActiveTab('editor');
-    setShowConsole(true);
-    setConsoleTab('custom');
-    setPedagogicalDiagnosis(null);
-
-    // Enforce 65,536 character limit
-    if (code.length > 65536) {
-      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
-      setPedagogicalDiagnosis(diag || null);
-      setCustomOutput(`[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn 65,536 ký tự.`);
-      return;
-    }
-
-    const runId = ++timerStateRef.current.activeRunId;
-    setIsGrading(true);
-    setCustomOutput(`Đang biên dịch & thực thi (${language.toUpperCase()}) trong Sandbox an toàn...`);
-
-    const exec = await executeCodeAsync(language, code, customInput);
-    if (timerStateRef.current.activeRunId !== runId) return;
-
-    setIsGrading(false);
-    setCustomExecResult(exec);
-    setPedagogicalDiagnosis(exec.pedagogicalDiagnosis || null);
-
-    if (exec.status === 'CE') {
-      setCustomOutput(exec.stderr);
-    } else if (exec.status === 'RTE') {
-      setCustomOutput(exec.stderr || exec.stdout || 'Runtime error: Chương trình dừng bất thường');
-    } else if (exec.status === 'TLE') {
-      setCustomOutput('Time Limit Exceeded: Vượt quá thời gian thực thi cho phép (vòng lặp vô hạn)');
-    } else {
-      setCustomOutput(exec.stdout || '(Chương trình thực thi thành công nhưng không in gì ra stdout)');
-    }
-  };
-
-  const handleSubmitSolution = async () => {
-    if (isGrading) return; // Prevent spam submit clicks
-    flushPendingDraft();
-    if (!isLgScreen) setMobileActiveTab('editor');
-    if (timerStateRef.current.grading) {
-      clearInterval(timerStateRef.current.grading);
-      timerStateRef.current.grading = null;
-    }
-    if (timerStateRef.current.sample) {
-      clearTimeout(timerStateRef.current.sample);
-      timerStateRef.current.sample = null;
-    }
-
-    const runId = ++timerStateRef.current.activeRunId;
-
-    setShowConsole(true);
-    setConsoleTab('result');
-    setIsGrading(true);
-    setGradingProgress(0);
-    setFinalVerdict(null);
-    setTestResults(null);
-    setSelectedTestResult(null);
-    setPedagogicalDiagnosis(null);
-
-    // Enforce 65,536 character limit
-    if (code.length > 65536) {
-      setIsGrading(false);
-      const diag = generatePedagogicalDiagnosis('CE', 'MAX_CODE_LENGTH_EXCEEDED', code);
-      setPedagogicalDiagnosis(diag || null);
-      const ceResult: TestResult = {
-        testId: 1,
-        testName: 'Giới hạn kích thước mã nguồn',
-        verdict: 'CE',
-        time: 0,
-        memory: 0,
-        score: 0,
-        maxScore: 100,
-        isHidden: false,
-        input: 'Kích thước mã nguồn',
-        actualOutput: `[Lỗi dung lượng: TỐI ĐA 65,536 KÝ TỰ]\nMã nguồn hiện tại chứa ${code.length.toLocaleString('vi-VN')} ký tự, vượt quá giới hạn tối đa 65,536 ký tự.`,
-        expectedOutput: 'Tối đa 65,536 ký tự'
-      };
-      setTestResults([ceResult]);
-      setSelectedTestResult(ceResult);
-      setFinalVerdict('CE');
-      return;
-    }
-
-    // Check for Compile Error once first
-    const syntaxCheck = await executeCodeAsync(language, code, '');
-    if (timerStateRef.current.activeRunId !== runId) return;
-
-    if (syntaxCheck.status === 'CE') {
-      setIsGrading(false);
-      setPedagogicalDiagnosis(syntaxCheck.pedagogicalDiagnosis || null);
-      const ceResult: TestResult = {
-        testId: 1,
-        testName: 'Compilation Check',
-        verdict: 'CE',
-        time: 0,
-        memory: 0,
-        score: 0,
-        maxScore: 100,
-        isHidden: false,
-        input: 'gcc solution.c',
-        actualOutput: syntaxCheck.stderr,
-        expectedOutput: 'Biên dịch không lỗi'
-      };
-      setTestResults([ceResult]);
-      setSelectedTestResult(ceResult);
-      setFinalVerdict('CE');
-      return;
-    }
-
-    // Dynamic Testcases: Custom imported testcases OR Default 2-Tier Testcases
-    const testDefinitions = (problem.testcases && problem.testcases.length > 0)
-      ? problem.testcases.map((tc, idx) => ({
-          id: tc.id || (idx + 1),
-          testName: tc.isHidden ? `Test ẩn #${idx + 1}` : `Test #${idx + 1}${idx < problem.samples.length ? ' (Mẫu)' : ''}`,
-          input: tc.input,
-          expectedOutput: tc.expectedOutput,
-          isHidden: !!tc.isHidden,
-          weight: tc.weight || Math.max(1, Math.round(100 / problem.testcases!.length))
-        }))
-      : [
-          {
-            id: 1,
-            testName: 'Sample 1',
-            input: problem.samples[0]?.input || '5 3\n4 2 1 5 3',
-            expectedOutput: problem.samples[0]?.output || '3',
-            isHidden: false,
-            weight: 20
-          },
-          {
-            id: 2,
-            testName: 'Sample 2',
-            input: problem.samples[1]?.input || '3 1\n10 1 5',
-            expectedOutput: problem.samples[1]?.output || '-1',
-            isHidden: false,
-            weight: 20
-          },
-          {
-            id: 3,
-            testName: 'Hidden Case 3 (Ràng buộc biên K = 0)',
-            input: '4 0\n2 2 2 2',
-            expectedOutput: '0',
-            isHidden: true,
-            weight: 20
-          },
-          {
-            id: 4,
-            testName: 'Hidden Case 4 (Số âm & Nghịch thế)',
-            input: '5 5\n10 8 6 4 2',
-            expectedOutput: '10',
-            isHidden: true,
-            weight: 20
-          },
-          {
-            id: 5,
-            testName: 'Hidden Case 5 (Stress Test quy mô lớn)',
-            input: '5 2\n1 2 3 4 5',
-            expectedOutput: '2',
-            isHidden: true,
-            weight: 20
-          }
-        ];
-
-    const mockTotalTests = testDefinitions.length;
-    const simulatedTests: TestResult[] = [];
-    let firstFailDiagnosis: PedagogicalDiagnosis | null = null;
-
-    for (let i = 0; i < mockTotalTests; i++) {
-      if (timerStateRef.current.activeRunId !== runId) return;
-
-      const tDef = testDefinitions[i];
-      const exec = await executeCodeAsync(language, code, tDef.input, { timeoutMs: 2000 });
-      if (timerStateRef.current.activeRunId !== runId) return;
-
-      let verdict: 'AC' | 'WA' | 'TLE' | 'RTE' | 'CE' = 'WA';
-      if (exec.status === 'CE') verdict = 'CE';
-      else if (exec.status === 'RTE') verdict = 'RTE';
-      else if (exec.status === 'TLE') verdict = 'TLE';
-      else if (exec.stdout.replace(/\r\n/g, '\n').trim() === tDef.expectedOutput.replace(/\r\n/g, '\n').trim()) {
-        verdict = 'AC';
-      }
-
-      if (verdict !== 'AC' && !firstFailDiagnosis && exec.pedagogicalDiagnosis) {
-        firstFailDiagnosis = exec.pedagogicalDiagnosis;
-      }
-
-      const mockResult: TestResult = {
-        testId: tDef.id,
-        testName: tDef.testName,
-        verdict,
-        time: exec.executionTimeMs,
-        memory: exec.memoryKb,
-        score: verdict === 'AC' ? tDef.weight : 0,
-        maxScore: tDef.weight,
-        isHidden: tDef.isHidden,
-        input: tDef.isHidden ? '[Test ẩn được bảo vệ]' : tDef.input,
-        actualOutput: exec.stdout || exec.stderr,
-        // SECURITY: Do not leak hidden testcase expectedOutput to client diff viewer if hidden
-        expectedOutput: tDef.isHidden ? (verdict === 'AC' ? tDef.expectedOutput : '[Đáp án được bảo vệ - Test ẩn]') : tDef.expectedOutput
-      };
-
-      simulatedTests.push(mockResult);
-      setTestResults([...simulatedTests]);
-      setGradingProgress(((i + 1) / mockTotalTests) * 100);
-
-      // Brief yield so the UI renders smoothly between testcases
-      await new Promise(res => setTimeout(res, 60));
-    }
-
-    if (timerStateRef.current.activeRunId !== runId) return;
-    setIsGrading(false);
-
-    const allAC = simulatedTests.every(t => t.verdict === 'AC');
-    const hasCE = simulatedTests.some(t => t.verdict === 'CE');
-    const hasRTE = simulatedTests.some(t => t.verdict === 'RTE');
-    const hasTLE = simulatedTests.some(t => t.verdict === 'TLE');
-    
-    let finalV: Verdict = 'WA';
-    if (allAC) finalV = 'AC';
-    else if (hasCE) finalV = 'CE';
-    else if (hasTLE) finalV = 'TLE';
-    else if (hasRTE) finalV = 'RTE';
-
-    setFinalVerdict(finalV);
-
-    // Record submission into local history
-    const totalScore = simulatedTests.reduce((acc, t) => acc + t.score, 0);
-    const maxScoreTotal = simulatedTests.reduce((acc, t) => acc + t.maxScore, 0) || 100;
-    const maxTimeMs = Math.max(0, ...simulatedTests.map((t) => t.time));
-    const maxMemKb = Math.max(0, ...simulatedTests.map((t) => t.memory));
-    const newSubmission: LocalSubmissionRecord = {
-      id: `sub_${Date.now()}`,
-      problemId: problem.id,
-      language: language === 'c17' ? 'C17 Sandbox' : language === 'cpp17' ? 'C++17 Sandbox' : 'C/C++ Sandbox',
-      verdict: finalV,
-      score: totalScore,
-      maxScore: maxScoreTotal,
-      timeMs: maxTimeMs,
-      memoryKb: maxMemKb,
-      submittedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      code,
-    };
-    setSubmissions(saveLocalSubmission(problem.id, newSubmission));
-    
-    // Auto-select first failing test, or test 1
-    const firstFail = simulatedTests.find(t => t.verdict !== 'AC');
-    setSelectedTestResult(firstFail || simulatedTests[0]);
-
-    if (firstFail) {
-      if (firstFailDiagnosis) {
-        setPedagogicalDiagnosis(firstFailDiagnosis);
-      } else {
-        setPedagogicalDiagnosis({
-          category: 'LOGIC',
-          badge: 'Chưa đạt (Wrong Answer)',
-          title: 'Kết quả in ra (Stdout) chưa khớp với đáp án mẫu',
-          explanation: 'Chương trình biên dịch và chạy thành công mà không bị crash, nhưng dữ liệu in ra màn hình khác với kết quả mong đợi của bộ test.',
-          suggestion: 'Hãy quan sát Bảng So Sánh Output (Diff Inspector) bên dưới. Chú ý các khoảng trắng thừa, dấu xuống dòng \\n hoặc trường hợp biên.'
-        });
-      }
-    } else {
-      setPedagogicalDiagnosis(null);
-    }
-
-    if (allAC) {
-      recordStreakActivity();
-      const rating = getMasteryRating(unlockedHintTier);
-      try {
-        localStorage.setItem(`ahtest_star_${problem.id}`, String(rating.stars));
-      } catch {
-        // ignore
-      }
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-    }
-  };
+  }, [finalVerdict, hasNextProblem]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.5rem)] w-full bg-slate-50 dark:bg-slate-950">
-      {/* Top Workbench Action Bar */}
-      <div className="h-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onBack}
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-1 cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            ← Danh sách bài
-          </button>
-          {collectionTitle && (
-            <span
-              className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 truncate max-w-[200px]"
-              title={collectionTitle}
-            >
-              {collectionTitle}
-            </span>
-          )}
-          <div className="flex items-center gap-1.5 ml-1">
-            <button
-              onClick={onPrevProblem}
-              disabled={!hasPrevProblem || !onPrevProblem}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
-              title="Xem lại bài tập trước đó"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Bài trước</span>
-            </button>
-            <button
-              onClick={onNextProblem}
-              disabled={!hasNextProblem || !onNextProblem}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
-              title="Chuyển sang bài tập tiếp theo"
-            >
-              <span>Bài sau</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+    <div className="h-screen flex flex-col bg-slate-900 text-slate-100 overflow-hidden font-sans">
+      {/* Top Header */}
+      <WorkbenchHeader
+        problem={problem}
+        collectionTitle={collectionTitle}
+        onBack={onBack}
+        hasPrevProblem={hasPrevProblem}
+        onPrevProblem={onPrevProblem}
+        hasNextProblem={hasNextProblem}
+        onNextProblem={onNextProblem}
+        selectedLang={selectedLang}
+        onSelectLang={handleSelectLang}
+        docLang={docLang}
+        onToggleDocLang={handleToggleDocLang}
+        isZenMode={isZenMode}
+        onToggleZenMode={() => setIsZenMode(!isZenMode)}
+        splitPercent={splitPercent}
+        onSetSplitPercent={setSplitPercent}
+        isHintDrawerOpen={isHintDrawerOpen}
+        onToggleHintDrawer={() => setIsHintDrawerOpen(!isHintDrawerOpen)}
+        unlockedHintTier={unlockedHintTier}
+        isGrading={isGrading}
+        codeLength={code.length}
+        onRunSample={handleRunSample}
+        onSubmitSolution={handleSubmitSolution}
+        mobileActiveTab={mobileActiveTab}
+        onSetMobileActiveTab={setMobileActiveTab}
+      />
 
-        <div className="flex items-center gap-2">
-          {/* Bilingual Switcher (VI / EN) */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
-            <button
-              onClick={() => handleToggleLang('vi')}
-              className={`px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer flex items-center gap-1 text-[10px] ${
-                docLang === 'vi'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-              title="Đề bài Tiếng Việt"
-            >
-              <span>🇻🇳</span>
-              <span>VI</span>
-            </button>
-            <button
-              onClick={() => handleToggleLang('en')}
-              className={`px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer flex items-center gap-1 text-[10px] ${
-                docLang === 'en'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-              title="English Statement"
-            >
-              <span>🇬🇧</span>
-              <span>EN</span>
-            </button>
-          </div>
-
-          {/* Zen Mode Toggle */}
-          <button
-            onClick={() => setIsZenMode(!isZenMode)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-              isZenMode
-                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
-            title={isZenMode ? "Thoát chế độ Zen (Mở lại cửa sổ đề bài)" : "Bật chế độ Zen Code (Mở rộng 100% khung gõ)"}
-          >
-            {isZenMode ? <PanelLeft className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isZenMode ? 'Hiện Đề' : 'Zen Mode'}</span>
-          </button>
-
-          {/* Quick Split Ratio Selector */}
-          {!isZenMode && (
-            <div className="hidden xl:flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-200 dark:border-slate-700">
-              <button
-                onClick={() => setSplitPercent(40)}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 40 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
-                title="Tỷ lệ: Đề bài 40% - Code 60%"
-              >
-                4:6
-              </button>
-              <button
-                onClick={() => setSplitPercent(50)}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 50 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
-                title="Tỷ lệ: Đề bài 50% - Code 50%"
-              >
-                5:5
-              </button>
-              <button
-                onClick={() => setSplitPercent(60)}
-                className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${splitPercent === 60 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
-                title="Tỷ lệ: Đề bài 60% - Code 40%"
-              >
-                6:4
-              </button>
-            </div>
-          )}
-
-          {/* Progressive 3-Tier Hint Trigger */}
-          <button
-            onClick={() => {
-              const willOpen = !isHintDrawerOpen;
-              setIsHintDrawerOpen(willOpen);
-              if (willOpen && unlockedHintTier === 0) {
-                setUnlockedHintTier(1);
-                localStorage.setItem(`ahtest_hint_tier_${problem.id}`, '1');
-              }
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-              isHintDrawerOpen
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-xs'
-                : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
-            }`}
-            title="Mở Ngăn Kéo Gợi Ý 3 Tầng (Chống Mất Gốc Ngầm)"
-          >
-            <Lightbulb className={`w-3.5 h-3.5 ${unlockedHintTier > 0 ? 'text-amber-400' : 'text-indigo-400'}`} />
-            <span className="hidden sm:inline">Gợi Ý 3 Tầng</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${
-              unlockedHintTier > 0 
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' 
-                : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-            }`}>
-              {unlockedHintTier === 0 ? 'Mở' : `T${unlockedHintTier}/3`}
-            </span>
-          </button>
-
-
-          {/* Run & Submit CTAs with Keyboard Shortcut Badges */}
-          <button
-            onClick={handleRunSample}
-            disabled={isGrading || code.length > 65536}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-              code.length > 65536 
-                ? 'bg-rose-950/80 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed' 
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 cursor-pointer'
-            }`}
-            title={code.length > 65536 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 65,536 ký tự!` : "Phím tắt: F9"}
-          >
-            <Play className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500" />
-            <span>{code.length > 65536 ? 'Quá 65,536 ký tự' : 'Chạy thử'}</span>
-            {code.length <= 65536 && (
-              <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">
-                F9
-              </kbd>
-            )}
-          </button>
-
-          <button
-            onClick={handleSubmitSolution}
-            disabled={isGrading || code.length > 65536}
-            className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              code.length > 65536
-                ? 'bg-rose-950 text-rose-300 border border-rose-800 opacity-80 cursor-not-allowed'
-                : 'bg-rose-600 hover:bg-rose-500 text-white shadow-xs shadow-rose-600/30 disabled:opacity-50 cursor-pointer'
-            }`}
-            title={code.length > 65536 ? `Mã nguồn (${code.length.toLocaleString('vi-VN')} ký tự) vượt quá 65,536 ký tự!` : "Phím tắt: Ctrl + Enter"}
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>{code.length > 65536 ? 'Quá giới hạn' : 'Nộp bài'}</span>
-            {code.length <= 65536 && (
-              <kbd className="hidden sm:inline-block text-[10px] ml-0.5 px-1.5 py-0.2 rounded bg-rose-700 text-rose-200 border border-rose-500/40 font-mono">
-                Ctrl+↵
-              </kbd>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile/Tablet Dual-Tab Switcher (Viewport < 1024px) */}
-      <div className="lg:hidden flex items-center bg-slate-100 dark:bg-slate-800 p-1 border-b border-slate-200 dark:border-slate-700 shrink-0">
-        <button
-          onClick={() => setMobileActiveTab('statement')}
-          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            mobileActiveTab === 'statement'
-              ? 'bg-white dark:bg-slate-900 shadow-xs text-rose-600 dark:text-rose-400'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>📖 Đề bài & Mô tả</span>
-        </button>
-        <button
-          onClick={() => setMobileActiveTab('editor')}
-          className={`flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            mobileActiveTab === 'editor'
-              ? 'bg-white dark:bg-slate-900 shadow-xs text-rose-600 dark:text-rose-400'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5" />
-          <span>💻 Trình soạn thảo & Chấm</span>
-        </button>
-      </div>
-
-      {/* Main Split-Screen Workspace with Real Draggable Splitter */}
-      <div 
-        ref={workspaceContainerRef}
-        className={`flex-1 flex flex-col lg:flex-row overflow-hidden relative ${isDraggingSplitter ? 'cursor-col-resize select-none' : ''}`}
-      >
-        {/* LEFT COLUMN: Problem Statement & Documentation (Collapsible in Zen Mode) */}
-        {!isZenMode && (
-          <div 
-            style={{ width: isLgScreen ? `${splitPercent}%` : '100%' }}
-            className={`w-full flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden ${
-              !isLgScreen && mobileActiveTab !== 'statement' ? 'hidden' : 'flex'
-            }`}
-          >
-          {/* Tabs */}
-          <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 bg-slate-50/50 dark:bg-slate-800/40">
-            <button
-              onClick={() => setActiveTab('statement')}
-              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
-                activeTab === 'statement'
-                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" /> Đề bài
-            </button>
-            <button
-              onClick={() => setActiveTab('editorial')}
-              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
-                activeTab === 'editorial'
-                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Lightbulb className="w-3.5 h-3.5" /> Lời giải (Editorial)
-            </button>
-            <button
-              onClick={() => setActiveTab('submissions')}
-              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
-                activeTab === 'submissions'
-                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" /> Lịch sử nộp
-            </button>
-            <button
-              onClick={() => setActiveTab('comments')}
-              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
-                activeTab === 'comments'
-                  ? 'border-rose-600 text-rose-600 dark:text-rose-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" /> Thảo luận
-            </button>
-          </div>
-
-          {/* Content Area with smooth scrolling */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Deep Practice Solved Banner (Mastery Star Rating & Next Problem CTA) */}
-            {finalVerdict === 'AC' && (() => {
-              const rating = getMasteryRating(unlockedHintTier);
-              return (
-                <div className={`p-5 rounded-2xl border ${rating.borderColor} ${rating.bgColor} space-y-3 shadow-lg animate-fadeIn relative overflow-hidden`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-xl">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-6 h-6 ${
-                              i < rating.stars
-                                ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
-                                : 'text-slate-600 dark:text-slate-700'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${rating.borderColor} ${rating.textColor}`}>
-                            {rating.badge}
-                          </span>
-                          <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100">
-                            {rating.title}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                          {rating.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {hasNextProblem && onNextProblem && (
-                      <button
-                        onClick={onNextProblem}
-                        className="px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105 shrink-0"
-                      >
-                        <span>Luyện Tập Bài Tiếp Theo →</span>
-                        <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.2 rounded bg-emerald-800/80 border border-emerald-500/40 text-emerald-200 font-mono">
-                          Shift+↵
-                        </kbd>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Progressive 3-Tier Hint Drawer (Chống Mất Gốc Ngầm) */}
-            {isHintDrawerOpen && (
-              <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-amber-500/30 text-white space-y-4 shadow-xl animate-fadeIn relative">
-                {/* Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                      <Lightbulb className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>Trợ Lý Gợi Ý 3 Tầng</span>
-                        <span className="text-[10px] text-slate-400 font-normal">| Học sâu • Tránh mất gốc</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        {unlockedHintTier === 0 
-                          ? 'Đang giữ: ⭐⭐⭐ Tự Lực (100% sao)' 
-                          : unlockedHintTier <= 2 
-                            ? 'Đang nhận: ⭐⭐ Khá Giỏi (Gợi ý tư duy)' 
-                            : 'Đang nhận: ⭐ Đã Thông Suốt (Dùng mã giả)'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setIsHintDrawerOpen(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-xs flex items-center gap-1"
-                  >
-                    <span>Thu gọn</span>
-                    <ChevronUp className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* 3 Tiers Stack */}
-                <div className="space-y-3">
-                  {/* TIER 1: CONCEPTUAL (Always unlocked when drawer is open) */}
-                  <div className="p-3.5 rounded-xl bg-slate-800/80 border border-emerald-500/30 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" /> Tầng 1: Tư Duy Thuật Toán Cốt Lõi
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-400">Đã mở khóa</span>
-                    </div>
-                    <h5 className="text-xs font-bold text-slate-200">
-                      {progressiveHints[0]?.title}
-                    </h5>
-                    <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/60 font-sans">
-                      <KaTeXRenderer content={progressiveHints[0]?.content || ''} />
-                    </div>
-                  </div>
-
-                  {/* TIER 2: TRAP & MEMORY PITFALL WARNING */}
-                  <div className={`p-3.5 rounded-xl border transition-all ${
-                    unlockedHintTier >= 2 
-                      ? 'bg-slate-800/80 border-amber-500/40' 
-                      : 'bg-slate-950/60 border-slate-800'
-                  } space-y-2`}>
-                    <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                        <ShieldAlert className="w-3 h-3" /> Tầng 2: Cảnh Báo Bẫy Ngầm & Bộ Nhớ C
-                      </span>
-                      {unlockedHintTier >= 2 ? (
-                        <span className="text-[10px] font-bold text-amber-400">Đã mở khóa</span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                          <Lock className="w-3 h-3" /> Đang khóa (⭐ Giữ 3 Sao)
-                        </span>
-                      )}
-                    </div>
-
-                    {unlockedHintTier >= 2 ? (
-                      <>
-                        <h5 className="text-xs font-bold text-slate-200">
-                          {progressiveHints[1]?.title}
-                        </h5>
-                        <div className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/60 font-sans">
-                          <KaTeXRenderer content={(progressiveHints[1]?.content || '').replace(/\\`/g, '`')} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex items-center justify-between gap-3 pt-1">
-                        <p className="text-[11px] text-slate-400 line-clamp-1 italic">
-                          Cảnh báo bẫy khoảng trắng scanf, null-terminator '\0', tràn mảng char, và lỗi rác bộ nhớ...
-                        </p>
-                        <button
-                          onClick={() => handleUnlockHintTier(2)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shrink-0 shadow-xs cursor-pointer transition-colors"
-                        >
-                          Mở Khóa Tầng 2
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* TIER 3: PSEUDOCODE SCAFFOLD */}
-                  <div className={`p-3.5 rounded-xl border transition-all ${
-                    unlockedHintTier >= 3 
-                      ? 'bg-slate-800/80 border-blue-500/40' 
-                      : 'bg-slate-950/60 border-slate-800'
-                  } space-y-2`}>
-                    <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" /> Tầng 3: Khung Mã Giả Định Hướng (Pseudocode)
-                      </span>
-                      {unlockedHintTier >= 3 ? (
-                        <span className="text-[10px] font-bold text-blue-400">Đã mở khóa</span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                          <Lock className="w-3 h-3" /> Đang khóa (⭐ Giữ 2 Sao)
-                        </span>
-                      )}
-                    </div>
-
-                    {unlockedHintTier >= 3 ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h5 className="text-xs font-bold text-slate-200">
-                            {progressiveHints[2]?.title}
-                          </h5>
-                          <button
-                            onClick={() => handleCopyTier3Code((progressiveHints[2]?.content || '').replace(/\\`/g, '`'))}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/40 flex items-center gap-1 cursor-pointer transition-colors"
-                          >
-                            {copiedTier3Code ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                            <span>{copiedTier3Code ? 'Đã chép khung' : 'Sao chép khung code'}</span>
-                          </button>
-                        </div>
-                        <pre className="text-[11px] font-mono text-blue-100 bg-slate-950 p-3 rounded-lg border border-slate-800 overflow-x-auto leading-relaxed">
-                          {(progressiveHints[2]?.content || '').replace(/\\`/g, '`')}
-                        </pre>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-3 pt-1">
-                        <p className="text-[11px] text-slate-400 line-clamp-1 italic">
-                          Cung cấp sườn code chuẩn C từ khai báo, xử lý chuỗi đến in kết quả để người học điền vào...
-                        </p>
-                        <button
-                          onClick={() => handleUnlockHintTier(3)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shrink-0 shadow-xs cursor-pointer transition-colors"
-                        >
-                          Mở Khóa Mã Giả
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'statement' && (
-              <div className="space-y-4">
-                <ProblemSpecificationView
-                  problem={problem}
-                  lang={docLang}
-                  onToggleLang={handleToggleLang}
-                  showLangToggle={false}
-                  scoreWeight={`${problem.points}đ`}
-                  isExamMode={false}
-                />
-              </div>
-            )}
-
-            {activeTab === 'editorial' && (
-              <div className="space-y-4">
-                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
-                  💡 Hướng dẫn giải chi tiết được kiểm duyệt bởi ban chuyên môn AHtest.code.
-                </div>
-                <KaTeXRenderer content={problem.editorial || 'Lời giải chi tiết đang được cập nhật.'} />
-              </div>
-            )}
-
-            {activeTab === 'submissions' && (
-              <div className="space-y-3 text-xs">
-                {submissions.length === 0 ? (
-                  <div className="p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1.5">
-                    <p className="font-bold text-slate-600 dark:text-slate-300">Chưa có bài nộp nào cho bài toán này</p>
-                    <p className="text-[11px] text-slate-400">
-                      Hãy bấm &quot;Nộp bài&quot; (Ctrl + Enter) để lưu lịch sử nộp và so sánh các phiên bản mã nguồn của bạn.
-                    </p>
-                  </div>
-                ) : (
-                  submissions.map((sub) => {
-                    const meta = getVerdictMeta(sub.verdict);
-                    return (
-                      <div
-                        key={sub.id}
-                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-950/40"
-                      >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-black ${meta.shortClass}`}>
-                              {sub.verdict}
-                            </span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                              {sub.score}/{sub.maxScore} điểm
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-400 font-mono">
-                            {sub.language} • {sub.timeMs}ms • {sub.memoryKb}KB • {sub.submittedAt}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleCodeChange(sub.code);
-                            showToast(`Đã nạp lại mã nguồn lần nộp lúc ${sub.submittedAt}.`, 'info');
-                          }}
-                          className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors cursor-pointer shrink-0"
-                        >
-                          Nạp lại code
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
-
-            {activeTab === 'comments' && (
-              <div className="space-y-4 text-xs">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const trimmed = noteInput.trim();
-                    if (!trimmed) return;
-                    const newNote: LocalProblemNote = {
-                      id: `note_${Date.now()}`,
-                      author: 'Ghi chú cá nhân',
-                      text: trimmed,
-                      createdAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                    };
-                    const updated = [newNote, ...notes];
-                    setNotes(updated);
-                    setNoteInput('');
-                    try {
-                      localStorage.setItem(`ahtest_notes_${problem.id}`, JSON.stringify(updated));
-                    } catch {
-                      // ignore
-                    }
-                    showToast('Đã lưu ghi chú thuật toán cho bài toán này.', 'success');
-                  }}
-                  className="flex gap-2"
-                >
-                  <input
-                    type="text"
-                    value={noteInput}
-                    onChange={(e) => setNoteInput(e.target.value)}
-                    placeholder="Ghi chú ý tưởng thuật toán hoặc câu hỏi ôn tập..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl cursor-pointer transition-colors"
-                  >
-                    Lưu ghi chú
-                  </button>
-                </form>
-
-                {notes.map((n) => (
-                  <div key={n.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-1">
-                    <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
-                      <span>{n.author}</span>
-                      <span className="text-[10px] text-slate-400 font-normal">{n.createdAt}</span>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{n.text}</p>
-                  </div>
-                ))}
-
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-1">
-                  <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
-                    <span>Gợi ý Thảo luận Mẫu (Ban chuyên môn)</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Ghim</span>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-300">
-                    Chú ý kiểm tra trường hợp biên ($N = 1$, số âm, hoặc khoảng trắng cuối dòng) bằng tab Custom Test trước khi nộp bài.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
-
-        {/* DRAGGABLE SPLITTER HANDLE (Desktop Only) */}
-        {!isZenMode && (
+      {/* Main Dual-Pane Workspace */}
+      <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
+        {/* Left Pane (Statement / Editorial / Submissions / Notes) */}
+        {(!isZenMode && (isLg || mobileActiveTab === 'statement')) && (
           <div
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setIsDraggingSplitter(true);
-            }}
-            className="hidden lg:flex items-center justify-center w-2 hover:w-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 dark:hover:bg-rose-500 transition-colors cursor-col-resize group shrink-0 relative z-20 select-none"
-            title="Kéo sang trái hoặc phải để điều chỉnh tỷ lệ khung làm việc (20% - 80%)"
+            style={{ width: isLg && !isZenMode ? `${splitPercent}%` : '100%' }}
+            className="h-full flex flex-col shrink-0 overflow-hidden"
           >
-            <div className="w-0.5 h-8 rounded-full bg-slate-400 dark:bg-slate-600 group-hover:bg-white" />
-          </div>
-        )}
-
-        {/* RIGHT COLUMN: Professional Monaco Code Editor & Execution Console */}
-        <div 
-          ref={editorColumnRef}
-          style={{ width: isLgScreen ? (isZenMode ? '100%' : `${100 - splitPercent}%`) : '100%' }}
-          className={`flex-1 flex flex-col bg-slate-900 text-white overflow-hidden transition-[width] duration-75 relative ${
-            isDraggingConsole ? 'select-none cursor-row-resize' : ''
-          } ${!isLgScreen && mobileActiveTab !== 'editor' ? 'hidden' : 'flex'}`}
-        >
-          {/* Editor Controls Bar */}
-          <div className="h-10 border-b border-slate-800 bg-slate-950 px-4 flex items-center justify-between shrink-0 text-xs">
-            <div className="flex items-center gap-3">
-              <label htmlFor="lang-select" className="text-slate-400 font-semibold">Ngôn ngữ:</label>
-              <select
-                id="lang-select"
-                value={language}
-                onChange={(e) => {
-                  const newLang = e.target.value as 'c17' | 'cpp20' | 'cpp17' | 'py3' | 'java' | 'sql' | 'rust';
-                  flushPendingDraft(code, language);
-                  setLanguage(newLang);
-                  const nextDraft = loadCleanWorkbenchDraft(problem.id, newLang);
-                  setCode(nextDraft.code);
-                  setDraftSaved(nextDraft.saved);
-                }}
-                className="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none cursor-pointer"
-              >
-                <option value="cpp20">C++20 (FastIO & STL Sandbox) • Khuyên dùng</option>
-                <option value="c17">C17 Chuẩn (Client Sandbox) • Sẵn sàng</option>
-                <option value="cpp17">C++17 (Client Sandbox) • Sẵn sàng</option>
-                <option value="py3">Python 3.12 (Client Sandbox) • Sẵn sàng</option>
-                <option value="java">Java 21 LTS (Client Sandbox) • Sẵn sàng</option>
-                <option value="sql">SQL PostgreSQL/SQLite (Sandbox) • Sẵn sàng</option>
-                <option value="rust" disabled className="text-slate-500">Rust 1.82 (Chờ Judge VPS Backend)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              {/* 65,536-character limit counter */}
-              <div 
-                className={`text-[11px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1.5 transition-colors ${
-                  code.length > 65536 
-                    ? 'text-rose-400 bg-rose-950/80 border-rose-600 font-bold animate-pulse'
-                    : code.length > 58000
-                    ? 'text-amber-300 bg-amber-950/60 border-amber-600 font-semibold'
-                    : 'text-slate-400 bg-slate-900 border-slate-800'
-                }`}
-                title={`Dung lượng code: ${code.length.toLocaleString('vi-VN')} / 65,536 ký tự tối đa`}
-              >
-                <span>{code.length.toLocaleString('vi-VN')}/65,536</span>
-                <span className="hidden md:inline text-[10px] text-slate-500">ký tự</span>
-              </div>
-
-              {draftSaved && (
-                <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
-                  <Save className="w-3 h-3 text-emerald-400" />
-                  <span>Đã lưu nháp</span>
-                </span>
-              )}
-
-              <button
-                onClick={handleResetCode}
-                title="Khôi phục code mẫu ban đầu (Xóa bản nháp đã lưu)"
-                className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Professional Monaco Code Editor (Responsive min-height) */}
-          <div className="flex-1 relative overflow-hidden bg-slate-950 min-h-[100px]">
-            <CodeEditor
-              value={code}
-              onChange={handleCodeChange}
-              language={language}
-              onRun={handleRunSample}
-              onSubmit={handleSubmitSolution}
-              onMount={(editor) => {
-                monacoEditorRef.current = editor;
-              }}
+            <WorkbenchLeftPane
+              problem={problem}
+              docLang={docLang}
+              onToggleDocLang={handleToggleDocLang}
+              activeTab={activeTab}
+              onSetActiveTab={setActiveTab}
+              finalVerdict={finalVerdict}
+              unlockedHintTier={unlockedHintTier}
+              isHintDrawerOpen={isHintDrawerOpen}
+              onCloseHintDrawer={() => setIsHintDrawerOpen(false)}
+              onUnlockHintTier={handleUnlockHintTier}
+              progressiveHints={progressiveHints}
+              submissions={submissions}
+              onRestoreSubmissionCode={handleRestoreSubmissionCode}
+              notes={notes}
+              onAddNote={handleAddNote}
+              hasNextProblem={hasNextProblem}
+              onNextProblem={onNextProblem}
             />
           </div>
+        )}
 
-          {/* DRAGGABLE CONSOLE SPLITTER (Resize Console Up/Down) */}
+        {/* Resizer Splitter (Desktop Only) */}
+        {isLg && !isZenMode && (
           <div
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setIsDraggingConsole(true);
-            }}
-            className={`h-2 hover:h-2.5 bg-slate-800 hover:bg-rose-500 transition-colors cursor-row-resize flex items-center justify-center shrink-0 group relative z-20 select-none ${
-              isDraggingConsole ? 'bg-rose-500' : ''
+            onMouseDown={() => setIsDraggingSplitter(true)}
+            className={`w-1.5 hover:w-2 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 cursor-col-resize transition-all shrink-0 z-30 ${
+              isDraggingSplitter ? 'bg-rose-500 w-2' : ''
             }`}
-            title="Kéo lên / kéo xuống để điều chỉnh độ cao khung Console & Test Cases"
+            title="Kéo sang trái/phải để điều chỉnh độ rộng màn hình"
+          />
+        )}
+
+        {/* Right Pane (Code Editor & Console Drawer) */}
+        {(isLg || mobileActiveTab === 'editor') && (
+          <div
+            ref={editorColumnRef}
+            style={{ width: isLg && !isZenMode ? `${100 - splitPercent}%` : '100%' }}
+            className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden relative"
           >
-            <div className="w-12 h-1 rounded-full bg-slate-600 group-hover:bg-white transition-colors" />
-          </div>
-
-          {/* Bottom Terminal / Drawer */}
-          <div 
-            style={{
-              height: !showConsole 
-                ? '36px' 
-                : isConsoleMaximized 
-                ? 'calc(100% - 40px)' 
-                : `${consoleHeight}px`,
-              maxHeight: !showConsole ? '36px' : 'calc(100% - 90px)'
-            }}
-            className="border-t border-slate-800 bg-slate-900 flex flex-col shrink-0 overflow-hidden transition-all duration-75"
-          >
-            {/* Drawer Header */}
-            <div className="h-9 px-4 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between text-xs shrink-0 select-none">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setConsoleTab('testcase');
-                    setShowConsole(true);
-                  }}
-                  className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors ${
-                    consoleTab === 'testcase' 
-                      ? 'text-rose-400 border-rose-500 font-bold' 
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Sample Input ({problem.samples.length})
-                </button>
-                <button
-                  onClick={() => {
-                    setConsoleTab('custom');
-                    setShowConsole(true);
-                  }}
-                  className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors ${
-                    consoleTab === 'custom' 
-                      ? 'text-rose-400 border-rose-500 font-bold' 
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Custom Test
-                </button>
-                <button
-                  onClick={() => {
-                    setConsoleTab('result');
-                    setShowConsole(true);
-                  }}
-                  className={`font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors flex items-center gap-1.5 ${
-                    consoleTab === 'result' 
-                      ? 'text-rose-400 border-rose-500 font-bold' 
-                      : 'border-transparent text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <span>Kết quả chấm</span>
-                  {finalVerdict && (
-                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${getVerdictMeta(finalVerdict).shortClass}`}>
-                      {finalVerdict}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Right controls: Presets, Maximize, Collapse/Expand */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {/* Presets */}
-                <div className="hidden sm:flex items-center bg-slate-800 rounded-md p-0.5 text-[10px] font-mono text-slate-400">
-                  <button
-                    onClick={() => {
-                      setShowConsole(true);
-                      setIsConsoleMaximized(false);
-                      setConsoleHeight(160);
-                      localStorage.setItem('ahtest_workbench_console_height', '160');
-                    }}
-                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                      showConsole && !isConsoleMaximized && consoleHeight === 160 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
-                    }`}
-                    title="Thu gọn vừa phải (160px)"
-                  >
-                    Nhỏ
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowConsole(true);
-                      setIsConsoleMaximized(false);
-                      setConsoleHeight(260);
-                      localStorage.setItem('ahtest_workbench_console_height', '260');
-                    }}
-                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                      showConsole && !isConsoleMaximized && consoleHeight === 260 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
-                    }`}
-                    title="Chiều cao chuẩn (260px)"
-                  >
-                    Vừa
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowConsole(true);
-                      setIsConsoleMaximized(false);
-                      setConsoleHeight(380);
-                      localStorage.setItem('ahtest_workbench_console_height', '380');
-                    }}
-                    className={`px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                      showConsole && !isConsoleMaximized && consoleHeight === 380 ? 'bg-slate-700 text-white font-bold' : 'hover:text-slate-200'
-                    }`}
-                    title="Mở rộng lớn (380px - xem trọn vẹn Testcase & Diff)"
-                  >
-                    Lớn
-                  </button>
-                </div>
-
-                {/* Maximize / Restore Console */}
-                <button
-                  onClick={() => {
-                    setShowConsole(true);
-                    setIsConsoleMaximized(!isConsoleMaximized);
-                  }}
-                  className={`p-1 rounded transition-colors cursor-pointer ${
-                    isConsoleMaximized 
-                      ? 'bg-rose-600 text-white' 
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                  title={isConsoleMaximized ? "Thu nhỏ về kích thước cũ" : "Phóng to Console toàn màn hình"}
-                >
-                  {isConsoleMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                </button>
-
-                {/* Collapse / Expand Toggle */}
-                <button
-                  onClick={() => {
-                    if (showConsole) {
-                      setShowConsole(false);
-                      setIsConsoleMaximized(false);
-                    } else {
-                      setShowConsole(true);
-                    }
-                  }}
-                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                  title={showConsole ? "Thu gọn Console" : "Mở rộng Console"}
-                >
-                  {showConsole ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-                </button>
-              </div>
+            {/* Editor Sub-Header (Char Gauge, Draft Saved, Reset) */}
+            <div className="h-9 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+              <span className="text-xs font-mono text-slate-400 font-semibold flex items-center gap-2">
+                <span>main.{selectedLang.startsWith('py') ? 'py' : selectedLang.startsWith('sql') ? 'sql' : selectedLang.startsWith('java') ? 'java' : 'cpp'}</span>
+              </span>
+              <EditorCharGauge
+                charCount={code.length}
+                draftSaved={draftSaved}
+                onResetCode={handleResetCode}
+              />
             </div>
 
-            {/* Drawer Content */}
-            {showConsole && (
-              <div className="p-4 flex-1 min-h-0 overflow-y-auto font-mono-code text-xs space-y-4">
-                {consoleTab === 'testcase' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-300 font-sans">
-                      <div className="flex items-center gap-2">
-                        <Terminal className="w-4 h-4 text-rose-500" />
-                        <span className="font-bold">Bảng Kiểm Thử 2 Tầng: Công khai & Test Ẩn</span>
-                      </div>
-                      <span className="text-xs text-slate-400">
-                        {problem.testcases 
-                          ? `${problem.testcases.filter(t => !t.isHidden).length} Test mẫu • ${problem.testcases.filter(t => t.isHidden).length} Test ẩn`
-                          : `${problem.samples.length} Test mẫu • 3 Test ẩn của hệ thống`}
-                      </span>
-                    </div>
+            {/* Monaco Code Editor */}
+            <div className="flex-1 overflow-hidden relative">
+              <CodeEditor
+                ref={editorComponentRef}
+                value={code}
+                onChange={handleCodeChange}
+                language={selectedLang.startsWith('py') ? 'python' : selectedLang.startsWith('java') ? 'java' : selectedLang.startsWith('sql') ? 'sql' : 'cpp'}
+              />
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {problem.samples.map((sample, idx) => (
-                        <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 flex flex-col justify-between">
-                          <div className="flex items-center justify-between flex-wrap gap-1">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                              Test #{idx + 1} (Công khai)
-                            </span>
-                            <div className="flex items-center gap-1.5 text-[11px]">
-                              <button
-                                onClick={() => handleCopySample(sample.input, idx)}
-                                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
-                                title="Sao chép Input test này"
-                              >
-                                {copiedSample === idx ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                                <span>{copiedSample === idx ? 'Đã chép' : 'Sao chép'}</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setCustomInput(sample.input);
-                                  setCustomExpected(sample.output);
-                                  setConsoleTab('custom');
-                                  setShowConsole(true);
-                                }}
-                                className="px-2 py-0.5 rounded bg-indigo-950/70 hover:bg-indigo-900/80 border border-indigo-700/60 text-indigo-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
-                                title="Chuyển test này sang Custom Test để chỉnh sửa hoặc chạy thử riêng"
-                              >
-                                <FlaskConical className="w-3 h-3" />
-                                <span>Vào Custom Test</span>
-                              </button>
-                              <button
-                                onClick={() => handleRunSpecificSample(idx)}
-                                className="px-2 py-0.5 rounded bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-700/60 text-emerald-300 hover:text-white flex items-center gap-1 transition-colors cursor-pointer font-bold"
-                                title="Chạy thử ngay giải thuật của bạn với test này"
-                              >
-                                <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
-                                <span>Chạy</span>
-                              </button>
-                            </div>
-                          </div>
+            {/* Console Resizer Bar (Vertical) */}
+            <div
+              onMouseDown={() => setIsDraggingConsole(true)}
+              className={`h-1.5 hover:h-2 bg-slate-800 hover:bg-rose-500 cursor-row-resize transition-all shrink-0 z-30 ${
+                isDraggingConsole ? 'bg-rose-500 h-2' : ''
+              }`}
+              title="Kéo lên/xuống để điều chỉnh chiều cao Console"
+            />
 
-                          <div className="space-y-1">
-                            <span className="text-[10px] text-slate-400 uppercase font-semibold block">Input (Đầu vào):</span>
-                            <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800/80 max-h-32 overflow-y-auto">
-                              <pre className="text-slate-200 whitespace-pre-wrap select-all font-mono leading-relaxed">{sample.input}</pre>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <span className="text-[10px] text-emerald-400 uppercase font-semibold block">Expected Output (Đầu ra chuẩn):</span>
-                            <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-900/40 max-h-32 overflow-y-auto">
-                              <pre className="text-emerald-300 whitespace-pre-wrap select-all font-mono leading-relaxed">{sample.output}</pre>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 border-dashed space-y-2 flex flex-col justify-center text-center">
-                        <Lock className="w-6 h-6 text-amber-500/70 mx-auto" />
-                        <span className="font-bold text-slate-300 text-xs">3 Testcases Ẩn (Hidden System Cases)</span>
-                        <p className="text-[11px] text-slate-500">
-                          Bao gồm các ca kiểm tra biên ranh giới (K=0), số âm và Stress Test N = 200,000. Chỉ được chấm khi bạn bấm "Nộp bài".
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {consoleTab === 'custom' && (
-                  <div className="space-y-3 font-sans">
-                    {/* Toolbar */}
-                    <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-800">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs text-slate-400 font-semibold mr-1">Mẫu nhanh:</span>
-                        <button
-                          onClick={() => {
-                            setCustomInput(problem.samples[0]?.input || '');
-                            setCustomExpected(problem.samples[0]?.output || '');
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors cursor-pointer flex items-center gap-1"
-                        >
-                          <span>📥 Nạp Test #1</span>
-                        </button>
-                        {problem.samples.length > 1 && (
-                          <button
-                            onClick={() => {
-                              setCustomInput(problem.samples[1]?.input || '');
-                              setCustomExpected(problem.samples[1]?.output || '');
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors cursor-pointer flex items-center gap-1"
-                          >
-                            <span>📥 Nạp Test #2</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setCustomInput('');
-                            setCustomExpected('');
-                            setCustomOutput('');
-                            setCustomExecResult(null);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400 text-xs transition-colors cursor-pointer flex items-center gap-1"
-                          title="Xóa trắng input & output"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Xóa trắng</span>
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={handleRunCustomTest}
-                        className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm shadow-rose-600/30 cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-white" />
-                        <span>Chạy thử Custom Test</span>
-                      </button>
-                    </div>
-
-                    {/* Inputs */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Custom Input (Dữ liệu vào / stdin):
-                        </span>
-                        <textarea
-                          value={customInput}
-                          onChange={(e) => setCustomInput(e.target.value)}
-                          rows={4}
-                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none focus:border-rose-500 transition-colors"
-                          placeholder="Nhập input tùy ý của bạn..."
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Expected Output (Tùy chọn - Dữ liệu ra mong đợi để so sánh Diff):
-                        </span>
-                        <textarea
-                          value={customExpected}
-                          onChange={(e) => setCustomExpected(e.target.value)}
-                          rows={4}
-                          className="w-full p-2.5 bg-slate-950 text-slate-200 rounded-xl border border-slate-800 text-xs font-mono-code focus:outline-none focus:border-rose-500 transition-colors"
-                          placeholder="Nhập output chuẩn bạn mong đợi (để hệ thống tạo bảng so sánh Diff)..."
-                        />
-                      </div>
-                    </div>
-
-                    {/* Output Section */}
-                    {customOutput && (
-                      <div className="pt-2 space-y-2">
-                        {/* Pedagogical Diagnosis Explainer Card in Custom tab */}
-                        {pedagogicalDiagnosis && (
-                          <PedagogicalDiagnosisCard diagnosis={pedagogicalDiagnosis} />
-                        )}
-
-                        {/* Status bar */}
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono">
-                          <div className="flex items-center gap-2">
-                            {customExecResult?.status === 'SUCCESS' ? (
-                              <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Thực thi thành công
-                              </span>
-                            ) : (
-                              <span className="text-rose-400 font-bold flex items-center gap-1">
-                                <AlertCircle className="w-3.5 h-3.5" /> {customExecResult?.status || 'LỖI'}
-                              </span>
-                            )}
-                            {customExecResult && (
-                              <span className="text-slate-400 text-[11px]">
-                                • {customExecResult.executionTimeMs}ms • {customExecResult.memoryKb}KB
-                              </span>
-                            )}
-                          </div>
-                          
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(customOutput);
-                            }}
-                            className="text-slate-400 hover:text-white text-[11px] flex items-center gap-1 cursor-pointer"
-                          >
-                            <Copy className="w-3 h-3" />
-                            <span>Sao chép Output</span>
-                          </button>
-                        </div>
-
-                        {/* Compiler / Runtime Diagnostic Jump if error */}
-                        {(() => {
-                          const err = parseDiagnosticError(customOutput);
-                          if (err) {
-                            return (
-                              <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-xs">
-                                <span className="text-rose-200 text-xs font-mono">
-                                  Lỗi cú pháp tại <strong className="text-rose-400 font-bold">Dòng {err.line}</strong>, Cột <strong className="text-rose-400 font-bold">{err.col}</strong>
-                                </span>
-                                <button
-                                  onClick={() => jumpToLine(err.line, err.col)}
-                                  className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
-                                >
-                                  <span>👉 Nhảy đến dòng lỗi</span>
-                                </button>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-
-                        {/* If customExpected is provided, show DiffViewer! Otherwise show clean Output block */}
-                        {customExpected.trim() ? (
-                          <DiffViewer
-                            actual={customOutput}
-                            expected={customExpected}
-                            title="Bảng So Sánh Custom Test vs Expected"
-                            input={customInput}
-                            isPassed={customOutput.trim() === customExpected.trim()}
-                            verdict={customOutput.trim() === customExpected.trim() ? 'AC' : 'WA'}
-                          />
-                        ) : (
-                          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">
-                              Chương trình in ra (stdout):
-                            </span>
-                            <pre className="text-slate-200 whitespace-pre-wrap font-mono text-xs leading-relaxed max-h-48 overflow-y-auto">
-                              {customOutput}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {consoleTab === 'result' && (
-                  <div className="space-y-4">
-                    {isGrading ? (
-                      <div className="flex flex-col items-center justify-center py-8 space-y-3">
-                        <div className="w-8 h-8 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-slate-300 font-semibold animate-pulse text-xs">
-                          Đang biên dịch và thực thi trên cụm Judge Sandbox... ({Math.round(gradingProgress)}%)
-                        </span>
-                        <div className="w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-linear-to-r from-rose-500 to-amber-500 transition-all duration-200"
-                            style={{ width: `${gradingProgress}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : testResults ? (
-                      <div className="space-y-4 font-sans">
-                        {/* Pedagogical Diagnosis Explainer Card in Result tab */}
-                        {pedagogicalDiagnosis && (
-                          <PedagogicalDiagnosisCard diagnosis={pedagogicalDiagnosis} />
-                        )}
-
-                        {/* Overall Verdict Banner */}
-                        <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${getVerdictMeta(finalVerdict).badgeClass}`}>
-                              {getVerdictMeta(finalVerdict).label}
-                            </span>
-                            <span className="text-slate-300 text-xs font-bold">
-                              {testResults.filter(t => t.verdict === 'AC').length}/{testResults.length} Test cases đạt yêu cầu
-                            </span>
-                          </div>
-                          <span className="text-xs text-slate-400">
-                            Bấm vào từng testcase bên dưới để xem so sánh Diff chi tiết
-                          </span>
-                        </div>
-
-                        {/* Interactive Test Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                          {testResults.map((tr) => {
-                            const isSelected = selectedTestResult?.testId === tr.testId;
-                            return (
-                              <button
-                                key={tr.testId}
-                                onClick={() => setSelectedTestResult(tr)}
-                                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 ${
-                                  isSelected
-                                    ? 'bg-slate-800/90 border-indigo-500 ring-2 ring-indigo-500/40 shadow-md'
-                                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between text-[11px] font-bold">
-                                  <span className="flex items-center gap-1 text-slate-300">
-                                    {tr.isHidden && <Lock className="w-3 h-3 text-amber-400" />}
-                                    Test #{tr.testId}
-                                  </span>
-                                  <span className={tr.verdict === 'AC' ? 'text-emerald-400' : 'text-rose-400'}>
-                                    {tr.verdict}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between text-[10px] text-slate-500">
-                                  <span>{tr.score}/{tr.maxScore}đ</span>
-                                  <span>{tr.time}ms</span>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* Diff Inspector for the Selected Testcase */}
-                        {selectedTestResult && (
-                          <div className="pt-2 animate-fadeIn space-y-2">
-                            {(() => {
-                              const err = parseDiagnosticError(selectedTestResult.actualOutput || '');
-                              if (err) {
-                                return (
-                                  <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/80 flex items-center justify-between shadow-xs">
-                                    <span className="text-rose-200 text-xs font-mono">
-                                      Phát hiện lỗi cú pháp tại <strong className="text-rose-400 font-bold">Dòng {err.line}</strong>, Cột <strong className="text-rose-400 font-bold">{err.col}</strong>
-                                    </span>
-                                    <button
-                                      onClick={() => jumpToLine(err.line, err.col)}
-                                      className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
-                                    >
-                                      <span>👉 Nhảy đến dòng lỗi</span>
-                                    </button>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-
-                            <DiffViewer
-                              actual={selectedTestResult.actualOutput || ''}
-                              expected={selectedTestResult.expectedOutput || ''}
-                              title={`Chi tiết: ${selectedTestResult.testName || `Test #${selectedTestResult.testId}`}`}
-                              testId={selectedTestResult.testId}
-                              input={selectedTestResult.input}
-                              verdict={selectedTestResult.verdict}
-                              isPassed={selectedTestResult.verdict === 'AC'}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ) : customOutput ? (
-                      <div className="space-y-3">
-                        <DiffViewer
-                          actual={customOutput}
-                          expected={problem.samples[0]?.output || ''}
-                          title="Kết quả chạy thử mẫu (Sample Output)"
-                          testId={1}
-                          input={problem.samples[0]?.input}
-                          isPassed={customOutput.trim() === (problem.samples[0]?.output || '').trim()}
-                          verdict={customOutput.trim() === (problem.samples[0]?.output || '').trim() ? 'AC' : 'WA'}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-slate-500 text-center py-10 font-sans">
-                        Chưa có kết quả. Bấm "Chạy thử" hoặc "Nộp bài" để kiểm tra nghiệm với bộ Diff Inspector.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Bottom Console Drawer */}
+            <WorkbenchConsoleDrawer
+              showConsole={showConsole}
+              setShowConsole={setShowConsole}
+              consoleHeight={consoleHeight}
+              setConsoleHeight={setConsoleHeight}
+              isConsoleMaximized={isConsoleMaximized}
+              setIsConsoleMaximized={setIsConsoleMaximized}
+              consoleTab={consoleTab}
+              setConsoleTab={setConsoleTab}
+              isGrading={isGrading}
+              finalVerdict={finalVerdict}
+              testResults={testResults}
+              samples={problem.samples || []}
+              customInput={customInput}
+              setCustomInput={setCustomInput}
+              customOutput={customOutput}
+              customExpected={customExpected}
+              setCustomExpected={setCustomExpected}
+              onRunCustomTest={handleRunCustomTest}
+              onJumpToLine={handleJumpToLine}
+              pedagogicalDiagnosis={pedagogicalDiagnosis}
+            />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

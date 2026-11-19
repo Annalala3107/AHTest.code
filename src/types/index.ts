@@ -71,6 +71,7 @@ export interface ProblemCollection {
   color: 'rose' | 'amber' | 'emerald' | 'blue' | 'purple' | 'cyan';
   difficultySummary: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
   isSystem?: boolean;
+  isCustom?: boolean;
   problems: Problem[];
   createdAt?: string;
   updatedAt?: string;
@@ -85,13 +86,31 @@ export interface ExamSessionConfig {
 }
 
 export interface ExamQuestionState {
-  problemId: string;
+  problemId?: string;
+  questionIndex?: number;
   code: string;
-  status: 'unattempted' | 'in_progress' | 'passed' | 'failed';
-  score: number; // 0 to 100
-  testResults: TestResult[];
+  status?: 'unattempted' | 'in_progress' | 'passed' | 'failed';
+  score?: number; // 0 to 100
+  testResults?: TestResult[];
   lastRunStdout?: string;
   lastRunStderr?: string;
+  isAttempted?: boolean;
+  isSolved?: boolean;
+}
+
+export interface ExamScorecardDetail {
+  questionIndex: number;
+  title: string;
+  difficulty?: Difficulty;
+  status?: 'passed' | 'failed' | 'unattempted';
+  score?: number;
+  passedTests?: number;
+  totalTests?: number;
+  problemId?: string;
+  earnedScore?: number;
+  maxScore?: number;
+  verdict?: Verdict;
+  timeMs?: number;
 }
 
 export interface ExamScorecard {
@@ -103,32 +122,30 @@ export interface ExamScorecard {
   timeSpentSeconds: number;
   timeLimitSeconds: number;
   submittedAt: string;
-  questionDetails: {
-    questionIndex: number;
-    title: string;
-    difficulty: Difficulty;
-    status: 'passed' | 'failed' | 'unattempted';
-    score: number;
-    passedTests: number;
-    totalTests: number;
-  }[];
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
+  questionDetails: ExamScorecardDetail[];
+  strengths?: string[];
+  weaknesses?: string[];
+  recommendations?: string[];
 }
 
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RTE' | 'CE' | 'PENDING' | 'GRADING';
 
 export interface TestResult {
-  testId: number;
-  verdict: Verdict;
-  time: number; // in ms
-  memory: number; // in KB
-  score: number;
-  maxScore: number;
+  testId?: number;
+  id?: number;
+  verdict?: Verdict;
+  time?: number; // in ms
+  timeMs?: number;
+  memory?: number; // in KB
+  memoryKb?: number;
+  score?: number;
+  points?: number;
+  maxScore?: number;
+  passed?: boolean;
+  name?: string;
+  testName?: string;
   message?: string;
   isHidden?: boolean;
-  testName?: string;
   input?: string;
   actualOutput?: string;
   expectedOutput?: string;

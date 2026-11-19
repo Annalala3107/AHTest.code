@@ -53,7 +53,14 @@ Hãy tính số lần đổi chỗ ít nhất để đưa dãy về trạng thá
 4. Dùng thuật toán nén tọa độ và Fenwick Tree (Binary Indexed Tree) để tính số nghịch thế trong từng thành phần liên thông với độ phức tạp $O(N \\log N)$.`,
     author: 'AH ICPC Setter Team',
     source: 'ICPC 2026 Southern Vietnam Regional Contest',
-    createdAt: '2026-10-18'
+    createdAt: '2026-10-18',
+    testcases: [
+      { id: 1, input: '5 3\n4 2 1 5 3', expectedOutput: '3', isHidden: false, weight: 20 },
+      { id: 2, input: '3 1\n10 1 5', expectedOutput: '-1', isHidden: false, weight: 20 },
+      { id: 3, input: '4 0\n2 2 2 2', expectedOutput: '0', isHidden: true, explanation: 'Ràng buộc biên K = 0 (tất cả phần tử bằng nhau)', weight: 20 },
+      { id: 4, input: '5 5\n10 8 6 4 2', expectedOutput: '10', isHidden: true, explanation: 'Mảng giảm dần hoàn toàn', weight: 20 },
+      { id: 5, input: '5 2\n1 2 3 4 5', expectedOutput: '0', isHidden: true, explanation: 'Mảng đã được sắp xếp sẵn', weight: 20 }
+    ]
   },
   {
     id: '2',
@@ -91,7 +98,13 @@ Tìm số lần chuyển đuốc ít nhất để đưa ngọn đuốc từ ngư
     editorial: `Sử dụng quy hoạch động $DP[i]$ là số bước ít nhất đến người thứ $i$. Có thể tối ưu bằng Breadth-First Search (BFS) hoặc Segment Tree / Monotonic Queue để đạt $O(N \\log N)$.`,
     author: 'Bedao Team',
     source: 'Bedao Grand Contest',
-    createdAt: '2026-08-20'
+    createdAt: '2026-08-20',
+    testcases: [
+      { id: 1, input: '4\n0 4\n3 2\n5 3\n8 1', expectedOutput: '2', isHidden: false, weight: 25 },
+      { id: 2, input: '3\n0 2\n3 2\n6 2', expectedOutput: '-1', isHidden: false, explanation: 'Không thể tiếp cận điểm tiếp theo', weight: 25 },
+      { id: 3, input: '2\n0 10\n10 1', expectedOutput: '1', isHidden: true, explanation: 'Truyền thẳng trực tiếp tới đích', weight: 25 },
+      { id: 4, input: '5\n0 5\n2 3\n4 2\n7 4\n11 1', expectedOutput: '2', isHidden: true, explanation: 'Lộ trình tối ưu 1 -> 4 -> 5', weight: 25 }
+    ]
   },
   {
     id: '3',
@@ -131,7 +144,12 @@ Hãy tìm cây con thỏa mãn điều kiện có tổng giá trị thẩm mỹ 
     editorial: `Bài toán phân rã cây bằng Centroid Decomposition kết hợp cấu trúc dữ liệu Persistent Segment Tree để đếm màu.`,
     author: 'AH VOI Prep',
     source: 'Kỳ thi Học sinh giỏi Quốc gia (VOI 2026)',
-    createdAt: '2026-01-12'
+    createdAt: '2026-01-12',
+    testcases: [
+      { id: 1, input: '3\n1 2 1\n5 -2 10\n1 2\n2 3', expectedOutput: '15', isHidden: false, weight: 30 },
+      { id: 2, input: '1\n1\n100', expectedOutput: '100', isHidden: false, explanation: 'Cây chỉ có đúng 1 đỉnh', weight: 30 },
+      { id: 3, input: '2\n1 1\n5 5\n1 2', expectedOutput: '10', isHidden: true, explanation: 'Hai đỉnh cùng màu trên nhánh', weight: 40 }
+    ]
   },
   {
     id: '4',
@@ -162,7 +180,13 @@ Hãy tìm cây con thỏa mãn điều kiện có tổng giá trị thẩm mỹ 
     editorial: `Nhận xét: $\\gcd(a, b) = a \\oplus b$. Đặt $c = a \\oplus b = \\gcd(a, b)$. Khi đó $b - a \\ge a \\oplus b = c$. Vì $c$ là ước của $a$ và $b$, nên $c$ cũng là ước của $b - a$. Do đó $b - a = c$. Thay $b = a + c$ vào $a \\oplus (a+c) = c$, ta duyệt theo $c$ tương tự sàng Eratosthenes.`,
     author: 'Hội Tin học Việt Nam',
     source: 'Kỳ thi Olympic Tin học Sinh viên Toàn quốc 2025',
-    createdAt: '2025-12-10'
+    createdAt: '2025-12-10',
+    testcases: [
+      { id: 1, input: '1 10', expectedOutput: '4', isHidden: false, weight: 25 },
+      { id: 2, input: '1 5', expectedOutput: '2', isHidden: false, explanation: 'Các cặp (2, 3), (4, 5)', weight: 25 },
+      { id: 3, input: '3 6', expectedOutput: '1', isHidden: true, explanation: 'Cặp (4, 5)', weight: 25 },
+      { id: 4, input: '10 20', expectedOutput: '5', isHidden: true, explanation: 'Các cặp (10, 11), (12, 13), (14, 15), (16, 17), (18, 19)', weight: 25 }
+    ]
   },
   // ==========================================
   // CHUYÊN ĐỀ CHUỖI & KÝ TỰ (STRING MASTERY)

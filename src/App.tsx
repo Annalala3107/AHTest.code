@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation, Navi
 import { Navbar, NavTab } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
-import { ProblemsView } from './components/ProblemsView';
 import { ViewLoadingFallback } from './components/ViewLoadingFallback';
 import { VnoiAuthModal } from './components/VnoiAuthModal';
 import { StreakModal } from './components/StreakModal';
@@ -16,6 +15,9 @@ import { setupSupabaseAuthListener, signOutSupabase } from './services/supabaseA
 import { mockProblems } from './data/mockProblems';
 
 // Lazy-loaded heavy views for on-demand code-splitting
+const ProblemsView = lazy(() =>
+  import('./components/ProblemsView').then((m) => ({ default: m.ProblemsView }))
+);
 const WorkbenchView = lazy(() =>
   import('./components/WorkbenchView').then((m) => ({ default: m.WorkbenchView }))
 );
@@ -275,11 +277,23 @@ function AppContent() {
           />
           <Route
             path="/problems"
-            element={<ProblemsView onSelectProblem={handleSelectProblem} />}
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <ProblemsView onSelectProblem={handleSelectProblem} />
+              </Suspense>
+            }
           />
           <Route path="/problems/:problemId" element={<WorkbenchRouteWrapper />} />
           <Route
             path="/contests"
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <ContestsView />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/contests/:contestSlug"
             element={
               <Suspense fallback={<ViewLoadingFallback />}>
                 <ContestsView />
@@ -296,6 +310,22 @@ function AppContent() {
           />
           <Route
             path="/academy"
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <AcademyView />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/academy/:courseSlug"
+            element={
+              <Suspense fallback={<ViewLoadingFallback />}>
+                <AcademyView />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/academy/:courseSlug/:lessonId"
             element={
               <Suspense fallback={<ViewLoadingFallback />}>
                 <AcademyView />

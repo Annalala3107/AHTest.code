@@ -18,7 +18,9 @@ export interface ConfirmOptions {
   title: string;
   message: string;
   confirmLabel?: string;
+  confirmText?: string;
   cancelLabel?: string;
+  cancelText?: string;
   variant?: 'danger' | 'warning' | 'primary';
 }
 

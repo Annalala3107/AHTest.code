@@ -4,6 +4,7 @@ export interface UseResizablePanelsOptions {
   storagePrefix: string;
   defaultLeftWidth?: number; // percentage (e.g. 45)
   defaultConsoleHeight?: number; // px (e.g. 260)
+  defaultShowConsole?: boolean;
   minLeftWidth?: number;
   maxLeftWidth?: number;
   minConsoleHeight?: number;
@@ -15,6 +16,7 @@ export function useResizablePanels({
   storagePrefix,
   defaultLeftWidth = 45,
   defaultConsoleHeight = 260,
+  defaultShowConsole = true,
   minLeftWidth = 20,
   maxLeftWidth = 80,
   minConsoleHeight = 36,
@@ -41,7 +43,7 @@ export function useResizablePanels({
 
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
   const [isDraggingConsole, setIsDraggingConsole] = useState<boolean>(false);
-  const [showConsole, setShowConsole] = useState<boolean>(true);
+  const [showConsole, setShowConsole] = useState<boolean>(defaultShowConsole);
   const [isConsoleMaximized, setIsConsoleMaximized] = useState<boolean>(false);
 
   useEffect(() => {

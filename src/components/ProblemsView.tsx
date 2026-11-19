@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, CheckCircle2, ChevronRight, Layers } from 'lucide-react';
 import type { Problem, Difficulty } from '../types';
 import { mockProblems } from '../data/mockProblems';
 import { loadCollections } from '../services/collectionStorage';
+import { fetchUserProgress, type UserProgressRecord } from '../services/repositories/problemRepository';
 
 interface ProblemsViewProps {
   onSelectProblem: (problem: Problem, list?: Problem[], collectionTitle?: string) => void;
@@ -54,8 +55,21 @@ export const ProblemsView: React.FC<ProblemsViewProps> = ({ onSelectProblem }) =
     return items;
   }, []);
 
+  const [userProgress, setUserProgress] = useState<Record<string, UserProgressRecord>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    fetchUserProgress().then((prog) => {
+      if (mounted) setUserProgress(prog);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Check if a problem is officially solved by the student (stored rating / stars > 0)
   const isProblemSolved = (problemId: string): boolean => {
+    if (userProgress[problemId]?.status === 'solved') return true;
     try {
       const star = localStorage.getItem(`ahtest_star_${problemId}`);
       return star !== null && Number(star) > 0;

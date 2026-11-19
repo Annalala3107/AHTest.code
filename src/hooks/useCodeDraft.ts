@@ -104,6 +104,21 @@ export function useCodeDraft({
     }, debounceMs);
   }, [draftKey, debounceMs]);
 
+  const resetDraft = useCallback((overrideCode?: string) => {
+    if (debounceSaveRef.current) {
+      clearTimeout(debounceSaveRef.current);
+      debounceSaveRef.current = null;
+    }
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
+    const nextCode = overrideCode !== undefined ? overrideCode : defaultCode;
+    setCode(nextCode);
+    setDraftSaved(false);
+  }, [draftKey, defaultCode]);
+
   return {
     code,
     setCode,
@@ -111,5 +126,6 @@ export function useCodeDraft({
     setDraftSaved,
     flushPendingDraft,
     handleCodeChange,
+    resetDraft,
   };
 }

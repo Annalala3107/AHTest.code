@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Building2, TrendingUp } from 'lucide-react';
-import { mockUsers, UserItem } from '../data/mockUsers';
+import { mockUsers, type UserItem } from '../data/mockUsers';
+import { fetchLeaderboard } from '../services/repositories/leaderboardRepository';
 
 export const LeaderboardView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'individual' | 'organizations'>('individual');
+  const [userList, setUserList] = useState<UserItem[]>(mockUsers);
   const [selectedUser, setSelectedUser] = useState<UserItem>(mockUsers[0]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchLeaderboard().then((data) => {
+      if (mounted && data.length > 0) {
+        setUserList(data);
+        setSelectedUser(data[0]);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const organizations = [
     { rank: 1, name: 'Trường THPT chuyên Khoa học Tự nhiên - ĐHQG Hà Nội', members: 420, avgRating: 2450, totalAC: 14200 },
@@ -70,7 +85,7 @@ export const LeaderboardView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {mockUsers.map((user, idx) => (
+                  {userList.map((user, idx) => (
                     <tr
                       key={user.id}
                       onClick={() => setSelectedUser(user)}

@@ -1,4 +1,4 @@
-import { Contest } from '../types';
+import type { Contest } from '../types/index.ts';
 
 export const mockContests: Contest[] = [
   {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Trophy, 
   Calendar, 
@@ -12,9 +12,9 @@ import {
 import type { Problem } from '../types';
 import { mockProblems } from '../data/mockProblems';
 import { mockContests } from '../data/mockContests';
-import { mockSubmissions } from '../data/mockSubmissions';
 import { InlineMath } from './InlineMath';
 import { getStreakState } from '../services/streakService';
+import { fetchRecentSubmissions, type PublicSubmissionItem } from '../services/repositories/submissionRepository';
 
 interface HomeViewProps {
   onSelectProblem: (problem: Problem, problemList?: Problem[], collectionTitle?: string) => void;
@@ -59,6 +59,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const featuredContest = mockContests[0]; // AH Cup Final
   const streakState = getStreakState();
   const heatmapWeeks = buildHeatmapWeeks(streakState.activeDates);
+  const [submissions, setSubmissions] = useState<PublicSubmissionItem[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchRecentSubmissions(5).then((data) => {
+      if (mounted) setSubmissions(data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-8 py-6">
@@ -288,19 +299,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {mockSubmissions.map((sub) => {
+          {submissions.map((sub) => {
             const isAC = sub.verdict === 'AC';
             const isTLE = sub.verdict === 'TLE';
             return (
               <div key={sub.id} className="py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className={`px-2 py-1 rounded text-xs font-black tracking-wider ${
-                    isAC 
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-                      : isTLE
-                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                      : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-black tracking-wider ${
+                      isAC
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                        : isTLE
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+                    }`}
+                  >
                     {sub.verdict}
                   </span>
                   <div className="min-w-0">
@@ -309,22 +322,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     </p>
                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                       <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        {sub.user.username}
+                        {sub.username}
                       </span>
                       <span>•</span>
                       <span>{sub.language}</span>
                       <span>•</span>
-                      <span>{sub.submittedAt}</span>
+                      <span>{sub.createdAt}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
                   <span className="text-sm font-bold text-slate-900 dark:text-white">
-                    {sub.score}/{sub.maxScore}
+                    {sub.score}/100
                   </span>
                   <p className="text-[11px] text-slate-500 font-mono">
-                    {sub.time}s • {sub.memory}MB
+                    {sub.timeMs}ms • {(sub.memoryKb / 1024).toFixed(1)}MB
                   </p>
                 </div>
               </div>

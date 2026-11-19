@@ -1,24 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  User,
-  Lock,
   Mail,
-  School,
-  Eye,
-  EyeOff,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
   ArrowLeft,
-  Shield,
-  Award,
   Settings,
-  KeyRound,
-  RefreshCw,
-  ShieldCheck,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import type { AuthUser } from '../types';
 import {
@@ -33,6 +20,10 @@ import {
   DEFAULT_SUPABASE_ANON_KEY,
 } from '../services/supabaseAuth';
 import { showToast } from '../services/uiFeedback';
+import { evaluatePasswordStrength, POPULAR_ORGANIZATIONS } from './auth/passwordStrength.ts';
+import { AuthLoginForm } from './auth/AuthLoginForm.tsx';
+import { AuthRegisterForm } from './auth/AuthRegisterForm.tsx';
+import { SupabaseConfigDrawer } from './auth/SupabaseConfigDrawer.tsx';
 
 interface VnoiAuthModalProps {
   isOpen: boolean;
@@ -42,46 +33,6 @@ interface VnoiAuthModalProps {
 }
 
 type AuthModalView = 'login' | 'register' | 'forgot_password' | 'verify_email';
-
-const POPULAR_ORGANIZATIONS = [
-  'Trường THPT Chuyên Khoa học Tự nhiên - ĐHQG HN',
-  'Trường Phổ thông Năng khiếu - ĐHQG TP.HCM',
-  'Trường THPT Chuyên Sư Phạm Hà Nội',
-  'Trường THPT Chuyên Lê Hồng Phong - TP.HCM',
-  'Trường THPT Chuyên Lương Văn Chánh - Phú Yên',
-  'Trường Đại học Công nghệ - ĐHQG Hà Nội (UET)',
-  'Trường Đại học Bách Khoa Hà Nội (HUST)',
-  'Trường Đại học Bách Khoa - ĐHQG TP.HCM (HCMUT)',
-  'Trường Đại học FPT (FPT University)',
-  'Tự do / Khác',
-];
-
-function evaluatePasswordStrength(pwd: string): {
-  score: 0 | 1 | 2 | 3 | 4;
-  label: string;
-  barColor: string;
-  textColor: string;
-} {
-  if (!pwd) {
-    return { score: 0, label: 'Chưa nhập', barColor: 'bg-slate-200 dark:bg-slate-700', textColor: 'text-slate-400' };
-  }
-  let points = 0;
-  if (pwd.length >= 8) points += 1;
-  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) points += 1;
-  if (/\d/.test(pwd)) points += 1;
-  if (/[^a-zA-Z0-9]/.test(pwd)) points += 1;
-
-  if (pwd.length < 8) {
-    return { score: 1, label: 'Yếu (cần tối thiểu 8 ký tự)', barColor: 'bg-rose-500', textColor: 'text-rose-500' };
-  }
-  if (points <= 2) {
-    return { score: 2, label: 'Trung bình (nên thêm chữ hoa, số hoặc ký tự đặc biệt)', barColor: 'bg-amber-500', textColor: 'text-amber-500' };
-  }
-  if (points === 3) {
-    return { score: 3, label: 'Khá tốt', barColor: 'bg-sky-500', textColor: 'text-sky-500' };
-  }
-  return { score: 4, label: 'Mạnh (Chuẩn bảo mật)', barColor: 'bg-emerald-500', textColor: 'text-emerald-500' };
-}
 
 export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
   isOpen,
@@ -345,7 +296,6 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
       return;
     }
 
-    // Generic message to prevent email enumeration
     setSuccessMsg(
       'Nếu địa chỉ Email tồn tại trong hệ thống, liên kết đặt lại mật khẩu đã được gửi vào hộp thư của bạn (kiểm tra cả mục Spam).'
     );
@@ -444,78 +394,18 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
         </div>
 
         {/* Inline Quick Supabase Config Drawer */}
-        {isConfigOpen && (
-          <form
-            onSubmit={handleSaveSupabaseConfig}
-            className="mx-6 mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-3 text-xs animate-slideUp"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-rose-500" />
-                <span>Cấu hình nhanh Supabase (localStorage)</span>
-              </span>
-              <button
-                type="button"
-                onClick={handleResetDefaultConfig}
-                className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Mặc định</span>
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                Supabase Project URL
-              </label>
-              <input
-                type="url"
-                value={configUrl}
-                onChange={(e) => setConfigUrl(e.target.value)}
-                placeholder="https://your-project.supabase.co"
-                className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-slate-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                Supabase Public Anon Key
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfigKey ? 'text' : 'password'}
-                  value={configAnonKey}
-                  onChange={(e) => setConfigAnonKey(e.target.value)}
-                  placeholder="sb_publishable_..."
-                  className="w-full pl-3 pr-9 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-slate-100"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfigKey((prev) => !prev)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
-                >
-                  {showConfigKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsConfigOpen(false)}
-                className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer"
-              >
-                Đóng
-              </button>
-              <button
-                type="submit"
-                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer"
-              >
-                Lưu cấu hình
-              </button>
-            </div>
-          </form>
-        )}
+        <SupabaseConfigDrawer
+          isOpen={isConfigOpen}
+          configUrl={configUrl}
+          onConfigUrlChange={setConfigUrl}
+          configAnonKey={configAnonKey}
+          onConfigAnonKeyChange={setConfigAnonKey}
+          showConfigKey={showConfigKey}
+          onToggleShowConfigKey={() => setShowConfigKey((prev) => !prev)}
+          onResetDefault={handleResetDefaultConfig}
+          onClose={() => setIsConfigOpen(false)}
+          onSubmit={handleSaveSupabaseConfig}
+        />
 
         {/* Tab Switcher (only shown for login/register views) */}
         {(activeView === 'login' || activeView === 'register') && (
@@ -568,356 +458,57 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
         {/* Content Body */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {activeView === 'login' && (
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Địa chỉ Email đăng nhập
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="ví dụ: sinhvien@gmail.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                    required
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Sử dụng Email đã đăng ký hoặc Google SSO để bảo vệ Handle công khai.
-                </p>
-              </div>
-
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Mật khẩu (Password)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResetEmail(loginEmail.includes('@') ? loginEmail : '');
-                      handleSwitchView('forgot_password');
-                    }}
-                    className="text-xs text-rose-600 dark:text-rose-400 hover:underline cursor-pointer font-semibold"
-                  >
-                    Quên mật khẩu?
-                  </button>
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    onKeyUp={handleCheckCapsLock}
-                    onKeyDown={handleCheckCapsLock}
-                    placeholder="Nhập mật khẩu tài khoản"
-                    className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                    required
-                  />
-                  <button
-                    type="button"
-                    aria-label={showLoginPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    onClick={() => setShowLoginPassword((prev) => !prev)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  >
-                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {capsLockOn && (
-                  <p className="text-[11px] text-amber-500 font-semibold mt-1">
-                    ⚠️ Đang bật phím Caps Lock — hãy chú ý chữ hoa/thường.
-                  </p>
-                )}
-              </div>
-
-              {/* Security Badge */}
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Phiên đăng nhập được xác thực bằng JWT PKCE từ Supabase Auth.</span>
-              </div>
-
-              {/* Login Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <span>{loading ? 'Đang xác thực...' : 'Đăng nhập AHtest'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              {/* Google SSO */}
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleGoogleLogin}
-                className="w-full py-2.5 rounded-xl font-medium text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-                <span>Tiếp tục với Google SSO</span>
-              </button>
-            </form>
+            <AuthLoginForm
+              loginEmail={loginEmail}
+              onLoginEmailChange={setLoginEmail}
+              loginPassword={loginPassword}
+              onLoginPasswordChange={setLoginPassword}
+              showLoginPassword={showLoginPassword}
+              onToggleShowLoginPassword={() => setShowLoginPassword((prev) => !prev)}
+              capsLockOn={capsLockOn}
+              onCheckCapsLock={handleCheckCapsLock}
+              loading={loading}
+              onSubmit={handleLoginSubmit}
+              onSwitchToForgotPassword={() => {
+                setResetEmail(loginEmail.includes('@') ? loginEmail : '');
+                handleSwitchView('forgot_password');
+              }}
+              onGoogleLogin={handleGoogleLogin}
+            />
           )}
 
           {activeView === 'register' && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              {/* Handle (Public) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Handle thi đấu <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-800">
-                    Công khai trên Bảng xếp hạng
-                  </span>
-                </div>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    autoComplete="username"
-                    value={regHandle}
-                    onChange={(e) => setRegHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    placeholder="ví dụ: coder_2026"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 font-mono"
-                    required
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Chỉ gồm chữ thường, chữ số và gạch dưới (_). Không chứa thông tin nhạy cảm.
-                </p>
-              </div>
-
-              {/* Full Name (Private) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Họ và tên thật <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
-                    🔒 Riêng tư
-                  </span>
-                </div>
-                <div className="relative">
-                  <Award className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    value={regFullName}
-                    onChange={(e) => setRegFullName(e.target.value)}
-                    placeholder="ví dụ: Nguyễn Văn A"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email (Private) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Địa chỉ Email cá nhân <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
-                    🔒 Ẩn tuyệt đối với người khác
-                  </span>
-                </div>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="user@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* School / Organization */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Trường học / Tổ chức thi đấu
-                </label>
-                <div className="relative">
-                  <School className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <select
-                    value={regOrg}
-                    onChange={(e) => setRegOrg(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 cursor-pointer"
-                  >
-                    {POPULAR_ORGANIZATIONS.map((org) => (
-                      <option key={org} value={org}>
-                        {org}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {regOrg === 'Tự do / Khác' && (
-                  <input
-                    type="text"
-                    value={regCustomOrg}
-                    onChange={(e) => setRegCustomOrg(e.target.value)}
-                    placeholder="Nhập tên trường học hoặc CLB của bạn..."
-                    className="w-full px-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                  />
-                )}
-                <label className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={showOrganization}
-                    onChange={(e) => setShowOrganization(e.target.checked)}
-                    className="w-3.5 h-3.5 text-rose-600 rounded-sm border-slate-300 focus:ring-rose-500 cursor-pointer"
-                  />
-                  <span>Cho phép hiển thị tên trường/tổ chức trên Bảng xếp hạng công khai</span>
-                </label>
-              </div>
-
-              {/* Passwords & Real-Time Strength Meter */}
-              <div className="space-y-2.5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Mật khẩu (tối thiểu 8 ký tự) <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showRegPassword ? 'text' : 'password'}
-                        autoComplete="new-password"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="Ví dụ: Ah2026@!"
-                        className="w-full pl-3.5 pr-9 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                        required
-                      />
-                      <button
-                        type="button"
-                        aria-label={showRegPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                        onClick={() => setShowRegPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                      >
-                        {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Nhập lại mật khẩu <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showRegConfirmPassword ? 'text' : 'password'}
-                        autoComplete="new-password"
-                        value={regConfirmPassword}
-                        onChange={(e) => setRegConfirmPassword(e.target.value)}
-                        placeholder="Khớp với mật khẩu"
-                        className="w-full pl-3.5 pr-9 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500"
-                        required
-                      />
-                      <button
-                        type="button"
-                        aria-label={showRegConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
-                        onClick={() => setShowRegConfirmPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                      >
-                        {showRegConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4-Bar Password Strength Meter */}
-                {regPassword.length > 0 && (
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {[1, 2, 3, 4].map((level) => (
-                        <div
-                          key={level}
-                          className={`h-1.5 rounded-full transition-colors ${
-                            passwordStrength.score >= level
-                              ? passwordStrength.barColor
-                              : 'bg-slate-200 dark:bg-slate-800'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className={`text-[11px] font-semibold ${passwordStrength.textColor}`}>
-                      Độ mạnh mật khẩu: {passwordStrength.label}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Explicit Academic & Personal Data Privacy Consents */}
-              <div className="space-y-2.5 pt-1 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
-                <div className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    id="agreeRules"
-                    checked={agreeRules}
-                    onChange={(e) => setAgreeRules(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 text-rose-600 rounded-sm border-slate-300 focus:ring-rose-500 cursor-pointer"
-                  />
-                  <label htmlFor="agreeRules" className="text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none leading-relaxed">
-                    Tôi đồng ý với <span className="text-rose-600 dark:text-rose-400 font-semibold">Quy chế Thi đấu & Liêm chính Học thuật AHtest.code</span>.
-                  </label>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    id="agreePrivacy"
-                    checked={agreePrivacy}
-                    onChange={(e) => setAgreePrivacy(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 text-rose-600 rounded-sm border-slate-300 focus:ring-rose-500 cursor-pointer"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <label htmlFor="agreePrivacy" className="text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none leading-relaxed block">
-                      Tôi đồng ý <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Chính sách Bảo vệ Dữ liệu Cá nhân</span> (tuân thủ Nghị định 13/2023/NĐ-CP).
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowPrivacySummary((prev) => !prev)}
-                      className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold inline-flex items-center gap-1 hover:underline cursor-pointer"
-                    >
-                      <span>{showPrivacySummary ? 'Thu gọn tóm tắt' : 'Xem chi tiết quyền riêng tư'}</span>
-                      {showPrivacySummary ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    </button>
-                    {showPrivacySummary && (
-                      <ul className="mt-1.5 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-400 space-y-1 list-disc pl-4">
-                        <li><strong>Mục đích thu thập:</strong> Xác thực tài khoản, lưu tiến độ bài tập và xếp hạng thi đấu.</li>
-                        <li><strong>Bảo vệ danh tính:</strong> Email và họ tên thật được khóa bởi Supabase RLS; không hiển thị công khai và không chia sẻ cho bên thứ ba.</li>
-                        <li><strong>Quyền kiểm soát:</strong> Bạn có thể ẩn tên trường trên bảng xếp hạng hoặc yêu cầu xuất/xóa dữ liệu cá nhân.</li>
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <span>{loading ? 'Đang khởi tạo tài khoản...' : 'Tạo tài khoản thí sinh AHtest'}</span>
-                <Shield className="w-4 h-4" />
-              </button>
-            </form>
+            <AuthRegisterForm
+              regHandle={regHandle}
+              onRegHandleChange={setRegHandle}
+              regFullName={regFullName}
+              onRegFullNameChange={setRegFullName}
+              regEmail={regEmail}
+              onRegEmailChange={setRegEmail}
+              regOrg={regOrg}
+              onRegOrgChange={setRegOrg}
+              regCustomOrg={regCustomOrg}
+              onRegCustomOrgChange={setRegCustomOrg}
+              showOrganization={showOrganization}
+              onToggleShowOrganization={setShowOrganization}
+              regPassword={regPassword}
+              onRegPasswordChange={setRegPassword}
+              regConfirmPassword={regConfirmPassword}
+              onRegConfirmPasswordChange={setRegConfirmPassword}
+              showRegPassword={showRegPassword}
+              onToggleShowRegPassword={() => setShowRegPassword((prev) => !prev)}
+              showRegConfirmPassword={showRegConfirmPassword}
+              onToggleShowRegConfirmPassword={() => setShowRegConfirmPassword((prev) => !prev)}
+              passwordStrength={passwordStrength}
+              agreeRules={agreeRules}
+              onAgreeRulesChange={setAgreeRules}
+              agreePrivacy={agreePrivacy}
+              onAgreePrivacyChange={setAgreePrivacy}
+              showPrivacySummary={showPrivacySummary}
+              onTogglePrivacySummary={() => setShowPrivacySummary((prev) => !prev)}
+              loading={loading}
+              onSubmit={handleRegisterSubmit}
+            />
           )}
 
           {activeView === 'forgot_password' && (
@@ -949,59 +540,61 @@ export const VnoiAuthModal: React.FC<VnoiAuthModalProps> = ({
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <span>{loading ? 'Đang gửi liên kết...' : 'Gửi liên kết đặt lại mật khẩu'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSwitchView('login')}
-                className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Quay lại Đăng nhập</span>
-              </button>
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchView('login')}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Quay lại đăng nhập</span>
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? 'Đang gửi...' : 'Gửi liên kết khôi phục'}
+                </button>
+              </div>
             </form>
           )}
 
           {activeView === 'verify_email' && (
             <div className="space-y-4 text-center py-2">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 mx-auto flex items-center justify-center">
-                <Mail className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
+                <Mail className="w-6 h-6" />
               </div>
               <div className="space-y-1.5">
-                <h4 className="text-base font-extrabold text-slate-900 dark:text-white">
-                  Kiểm tra hộp thư đến của bạn
+                <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                  Kiểm tra hộp thư xác nhận
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Chúng tôi đã gửi liên kết kích hoạt tài khoản tới{' '}
-                  <strong className="text-slate-800 dark:text-slate-200">{pendingVerifyEmail}</strong>.
-                  Hãy bấm vào liên kết trong email để hoàn tất đăng ký và bảo vệ tài khoản.
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
+                  Liên kết xác nhận tài khoản đã được gửi tới{' '}
+                  <strong className="text-slate-900 dark:text-slate-200 font-mono">
+                    {pendingVerifyEmail}
+                  </strong>
+                  . Vui lòng bấm vào liên kết trong email để kích hoạt tài khoản.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <div className="pt-2 flex flex-col gap-2">
                 <button
                   type="button"
                   disabled={loading || resendCooldown > 0}
                   onClick={handleResendVerification}
-                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {resendCooldown > 0
-                    ? `Gửi lại sau (${resendCooldown}s)`
-                    : 'Gửi lại email kích hoạt'}
+                    ? `Gửi lại email sau (${resendCooldown}s)`
+                    : 'Gửi lại email xác nhận'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSwitchView('login')}
-                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-xl font-semibold text-xs text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
                 >
-                  Đã xác nhận • Đăng nhập
+                  Đã xác nhận? Bấm vào đây để đăng nhập
                 </button>
               </div>
             </div>

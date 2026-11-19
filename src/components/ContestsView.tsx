@@ -3,6 +3,7 @@ import { Trophy, Clock, Users, Play } from 'lucide-react';
 import { mockContests } from '../data/mockContests';
 import type { Contest } from '../types';
 import { showToast } from '../services/uiFeedback';
+import { fetchContests, registerForContest } from '../services/repositories/contestRepository';
 
 function formatCountdown(totalSecs: number): string {
   const hrs = Math.floor(totalSecs / 3600);
@@ -13,9 +14,28 @@ function formatCountdown(totalSecs: number): string {
 
 export const ContestsView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'scoreboard'>('all');
-  const [selectedContest] = useState<Contest>(mockContests[0]);
+  const [contestsList, setContestsList] = useState<Contest[]>(mockContests);
+  const [selectedContest, setSelectedContest] = useState<Contest>(mockContests[0]);
   const [isVirtualRunning, setIsVirtualRunning] = useState<boolean>(false);
   const [virtualRemainingSeconds, setVirtualRemainingSeconds] = useState<number>(5 * 3600);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchContests().then((data) => {
+      if (mounted && data.length > 0) {
+        setContestsList(data);
+        setSelectedContest(data[0]);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleRegister = async (contest: Contest) => {
+    const res = await registerForContest(contest.id, '');
+    showToast(res.message, 'success');
+  };
 
   useEffect(() => {
     if (!isVirtualRunning) return;
@@ -102,7 +122,7 @@ export const ContestsView: React.FC = () => {
       {/* Contest List View */}
       {activeTab === 'all' && (
         <div className="space-y-4">
-          {mockContests.map((contest) => {
+          {contestsList.map((contest) => {
             const isUpcoming = contest.status === 'UPCOMING';
             const isRunning = contest.status === 'RUNNING';
 
@@ -161,7 +181,7 @@ export const ContestsView: React.FC = () => {
                       </button>
                     ) : isUpcoming ? (
                       <button
-                        onClick={() => showToast(`Đã ghi nhận đăng ký minh họa cho "${contest.title}".`, 'success')}
+                        onClick={() => handleRegister(contest)}
                         className="px-5 py-2.5 rounded-xl font-bold text-xs bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30 cursor-pointer"
                       >
                         Đăng ký tham gia

@@ -176,8 +176,23 @@ export async function executeCCodeAsync(
 }
 
 /**
- * Unified Multi-Language Sandbox Entry Point (Phase 2).
- * Dispatches C17, C++17/20, Python 3, Java 21 LTS, and SQL cleanly.
+ * Standard human-readable language labels for submissions and UI display
+ */
+export const LANGUAGE_LABELS: Record<string, string> = {
+  c: 'C (GCC 11.4)',
+  c17: 'C (GCC 11.4)',
+  cpp: 'C++20 (G++ 13)',
+  cpp17: 'C++17 (G++ 11)',
+  cpp20: 'C++20 (G++ 13)',
+  py3: 'Python 3.11',
+  python: 'Python 3.11',
+  java: 'Java 21 (OpenJDK)',
+  sql: 'PostgreSQL 16 Dialect'
+};
+
+/**
+ * Unified Multi-Language Sandbox Entry Point (Phase 2 & 3).
+ * Dispatches C17, C++17/20, Python 3, Java 21 LTS, and SQL cleanly in background workers.
  */
 export async function executeCodeAsync(
   language: string,
@@ -186,6 +201,10 @@ export async function executeCodeAsync(
   options: ExecutionOptions = {}
 ): Promise<ExecutionResult> {
   const normalized = (language || 'c17').toLowerCase().trim();
+  const timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
+  const startTime = performance.now();
+
+  // 1. C / C++ family routes to executeCCodeAsync
   if (
     normalized === 'c' ||
     normalized === 'c17' ||
@@ -195,6 +214,117 @@ export async function executeCodeAsync(
   ) {
     return executeCCodeAsync(code, stdin, options);
   }
+
+  // 2. Validate supported language
+  if (
+    normalized !== 'py3' &&
+    normalized !== 'python' &&
+    normalized !== 'java' &&
+    normalized !== 'sql'
+  ) {
+    return {
+      status: 'CE',
+      exitCode: 1,
+      stdout: '',
+      stderr: `Ngôn ngữ '${language}' chưa được kích hoạt trong Client Sandbox.`,
+      executionTimeMs: 1,
+      memoryKb: 0,
+      diagnostics: [`Unsupported language '${language}' in sandbox.`]
+    };
+  }
+
+  // 3. Browser Environment: Dispatch to Dedicated MultiLang Web Worker with Watchdog
+  if (isWebWorkerSupported()) {
+    return new Promise<ExecutionResult>((resolve) => {
+      let isSettled = false;
+      let worker: Worker | null = null;
+      const taskId = `ml_task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+      try {
+        worker = new Worker(new URL('../workers/multiLangExecution.worker.ts', import.meta.url), {
+          type: 'module'
+        });
+      } catch (workerInitErr) {
+        console.warn('MultiLang Worker init failed, falling back to synchronous runner:', workerInitErr);
+        if (normalized === 'py3' || normalized === 'python') {
+          resolve(executePythonCode(code, stdin, options));
+        } else if (normalized === 'java') {
+          resolve(executeJavaCode(code, stdin, options));
+        } else {
+          resolve(executeSqlQuery(code, stdin));
+        }
+        return;
+      }
+
+      const watchdog = setTimeout(() => {
+        if (!isSettled) {
+          isSettled = true;
+          try {
+            worker?.terminate();
+          } catch {
+            // ignore
+          }
+          const elapsed = Math.round(performance.now() - startTime);
+          const rawErr = `TIME_LIMIT_EXCEEDED: Vượt quá thời gian thực thi tối đa (${(timeoutMs / 1000).toFixed(2)}s). Vòng lặp vô tận đã bị ngắt bởi Watchdog.`;
+          resolve({
+            status: 'TLE',
+            exitCode: 124,
+            stdout: '',
+            stderr: rawErr,
+            executionTimeMs: Math.max(elapsed, timeoutMs),
+            memoryKb: 2048,
+            diagnostics: [rawErr]
+          });
+        }
+      }, timeoutMs);
+
+      worker.onmessage = (event: MessageEvent<WorkerExecutionResponse>) => {
+        if (event.data.id === taskId && !isSettled) {
+          isSettled = true;
+          clearTimeout(watchdog);
+          try {
+            worker?.terminate();
+          } catch {
+            // ignore
+          }
+          resolve(event.data.result);
+        }
+      };
+
+      worker.onerror = (errEvent) => {
+        if (!isSettled) {
+          isSettled = true;
+          clearTimeout(watchdog);
+          try {
+            worker?.terminate();
+          } catch {
+            // ignore
+          }
+          const elapsed = Math.round(performance.now() - startTime);
+          const rawErr = `RUNTIME_ERROR: Lỗi luồng thực thi trong MultiLang Worker: ${errEvent.message || 'Worker Crash'}`;
+          resolve({
+            status: 'RTE',
+            exitCode: 139,
+            stdout: '',
+            stderr: rawErr,
+            executionTimeMs: Math.max(elapsed, 1),
+            memoryKb: 2048,
+            diagnostics: [rawErr]
+          });
+        }
+      };
+
+      worker.postMessage({
+        id: taskId,
+        language: normalized,
+        code,
+        stdin,
+        timeLimitMs: timeoutMs
+      });
+    });
+  }
+
+  // 4. Non-Browser / Test Runner Fallback (Node.js)
   if (normalized === 'py3' || normalized === 'python') {
     return executePythonCode(code, stdin, options);
   }
@@ -204,14 +334,15 @@ export async function executeCodeAsync(
   if (normalized === 'sql') {
     return executeSqlQuery(code, stdin);
   }
+
   return {
     status: 'CE',
     exitCode: 1,
     stdout: '',
-    stderr: `Ngôn ngữ '${language}' chưa được kích hoạt trong Client Sandbox.`,
+    stderr: `Ngôn ngữ '${language}' không hợp lệ.`,
     executionTimeMs: 1,
     memoryKb: 0,
-    diagnostics: [`Unsupported language '${language}' in sandbox.`],
+    diagnostics: []
   };
 }
 

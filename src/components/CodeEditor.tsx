@@ -1,5 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import Editor, { OnMount } from '@monaco-editor/react';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import Editor, { type OnMount } from '@monaco-editor/react';
+
+export interface CodeEditorHandle {
+  jumpToLine: (line: number, col?: number) => void;
+}
 
 export interface CodeEditorProps {
   value: string;
@@ -17,7 +21,7 @@ export interface CodeEditorProps {
   showCharBadge?: boolean;
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({
+export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(({
   value,
   onChange,
   language = 'c',
@@ -30,11 +34,21 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   className = '',
   maxLength = 65536,
   showCharBadge = true,
-}) => {
+}, ref) => {
   const editorRef = useRef<any>(null);
   const onNextLessonRef = useRef(onNextLesson);
   const onRunRef = useRef(onRun);
   const onSubmitRef = useRef(onSubmit);
+
+  useImperativeHandle(ref, () => ({
+    jumpToLine: (line: number, col = 1) => {
+      if (editorRef.current) {
+        editorRef.current.revealPositionInCenter({ lineNumber: line, column: col });
+        editorRef.current.setPosition({ lineNumber: line, column: col });
+        editorRef.current.focus();
+      }
+    },
+  }));
 
   useEffect(() => {
     onNextLessonRef.current = onNextLesson;
@@ -175,4 +189,4 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       )}
     </div>
   );
-};
+});

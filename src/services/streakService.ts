@@ -41,24 +41,14 @@ export function getStreakState(): StreakState {
   try {
     const raw = localStorage.getItem(STREAK_STORAGE_KEY);
     if (!raw) {
-      // Default initial state: 7 days streak with today active
-      const pastDates: string[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        pastDates.push(`${y}-${m}-${day}`);
-      }
-
+      // Default initial state: honest 0-day streak until the user completes their first coding session
       const initialState: StreakState = {
-        currentStreak: 7,
-        longestStreak: 42,
-        lastActiveDate: today,
-        activeDates: pastDates,
-        freezeDays: 2,
-        completedToday: true
+        currentStreak: 0,
+        longestStreak: 0,
+        lastActiveDate: '',
+        activeDates: [],
+        freezeDays: 1,
+        completedToday: false
       };
       localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(initialState));
       return initialState;
@@ -69,7 +59,7 @@ export function getStreakState(): StreakState {
 
     // Check if streak was broken (last active date was before yesterday)
     let currentStreak = state.currentStreak;
-    if (state.lastActiveDate !== today && state.lastActiveDate !== yesterday) {
+    if (state.lastActiveDate && state.lastActiveDate !== today && state.lastActiveDate !== yesterday) {
       if (state.freezeDays > 0) {
         // Automatically consume a freeze day to preserve streak
         state.freezeDays -= 1;
@@ -86,12 +76,12 @@ export function getStreakState(): StreakState {
     };
   } catch {
     return {
-      currentStreak: 7,
-      longestStreak: 42,
-      lastActiveDate: today,
-      activeDates: [today],
-      freezeDays: 2,
-      completedToday: true
+      currentStreak: 0,
+      longestStreak: 0,
+      lastActiveDate: '',
+      activeDates: [],
+      freezeDays: 1,
+      completedToday: false
     };
   }
 }

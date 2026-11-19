@@ -4,6 +4,7 @@ import { PedagogicalDiagnosis } from '../../services/executionManager';
 
 interface PedagogicalDiagnosisCardProps {
   diagnosis: PedagogicalDiagnosis;
+  onJumpToLine?: (line: number, col?: number) => void;
 }
 
 export const PedagogicalDiagnosisCard: React.FC<PedagogicalDiagnosisCardProps> = ({ diagnosis }) => {
