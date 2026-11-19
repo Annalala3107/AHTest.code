@@ -27,6 +27,7 @@ import {
 import { WorkbenchHeader } from './workbench/WorkbenchHeader.tsx';
 import { WorkbenchLeftPane } from './workbench/WorkbenchLeftPane.tsx';
 import { WorkbenchConsoleDrawer } from './workbench/WorkbenchConsoleDrawer.tsx';
+import { ProgressiveHintDrawer } from './workbench/ProgressiveHintDrawer.tsx';
 import { submitSolution } from '../services/repositories/submissionRepository.ts';
 
 interface WorkbenchViewProps {
@@ -446,10 +447,6 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
               onSetActiveTab={setActiveTab}
               finalVerdict={finalVerdict}
               unlockedHintTier={unlockedHintTier}
-              isHintDrawerOpen={isHintDrawerOpen}
-              onCloseHintDrawer={() => setIsHintDrawerOpen(false)}
-              onUnlockHintTier={handleUnlockHintTier}
-              progressiveHints={progressiveHints}
               submissions={submissions}
               onRestoreSubmissionCode={handleRestoreSubmissionCode}
               notes={notes}
@@ -535,6 +532,26 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Right Slide-Over Progressive Hint Drawer */}
+      {isHintDrawerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-[2px] animate-fadeIn"
+          onClick={() => setIsHintDrawerOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg h-full bg-slate-900 border-l border-amber-500/30 shadow-2xl overflow-y-auto p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ProgressiveHintDrawer
+              hints={progressiveHints}
+              unlockedTier={unlockedHintTier}
+              onUnlockTier={handleUnlockHintTier}
+              onClose={() => setIsHintDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

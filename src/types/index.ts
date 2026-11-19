@@ -252,7 +252,7 @@ export interface AcademyCourse {
   title: string;
   titleEn?: string;
   slug: string;
-  language: 'c' | 'cpp' | 'python';
+  language: 'c' | 'cpp' | 'python' | 'java' | 'sql';
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   description: string;
   descriptionEn?: string;

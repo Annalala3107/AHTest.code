@@ -224,6 +224,8 @@ export const AcademyView: React.FC = () => {
   const resolveAcademyLang = (courseLang?: string) => {
     if (courseLang === 'cpp') return 'cpp20';
     if (courseLang === 'python') return 'py3';
+    if (courseLang === 'java') return 'java';
+    if (courseLang === 'sql') return 'sql';
     return 'c17';
   };
 
@@ -461,7 +463,17 @@ export const AcademyView: React.FC = () => {
             {/* Editor Subheader */}
             <div className="h-9 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
               <span className="text-xs font-mono text-slate-400 font-semibold">
-                main.{selectedCourse.language === 'cpp' ? 'cpp' : selectedCourse.language === 'python' ? 'py' : 'c'}
+                {selectedCourse.language === 'java'
+                  ? 'Main.java'
+                  : selectedCourse.language === 'sql'
+                  ? 'query.sql'
+                  : `main.${
+                      selectedCourse.language === 'cpp'
+                        ? 'cpp'
+                        : selectedCourse.language === 'python'
+                        ? 'py'
+                        : 'c'
+                    }`}
               </span>
               <EditorCharGauge
                 charCount={userCode.length}
@@ -476,7 +488,7 @@ export const AcademyView: React.FC = () => {
                 ref={editorRef}
                 value={userCode}
                 onChange={handleCodeChange}
-                language={selectedCourse.language === 'cpp' ? 'cpp' : selectedCourse.language === 'python' ? 'python' : 'c'}
+                language={selectedCourse.language}
               />
             </div>
 

@@ -7,10 +7,9 @@ import {
   Star,
   Send
 } from 'lucide-react';
-import type { Problem, Verdict, LocalSubmissionRecord, ProgressiveHint } from '../../types/index.ts';
+import type { Problem, Verdict, LocalSubmissionRecord } from '../../types/index.ts';
 import { KaTeXRenderer } from '../KaTeXRenderer.tsx';
 import { ProblemSpecificationView } from '../ProblemSpecificationView.tsx';
-import { ProgressiveHintDrawer } from './ProgressiveHintDrawer.tsx';
 import { getVerdictMeta, type LocalProblemNote } from '../../services/workbenchStorage.ts';
 
 export interface WorkbenchLeftPaneProps {
@@ -21,10 +20,6 @@ export interface WorkbenchLeftPaneProps {
   onSetActiveTab: (tab: 'statement' | 'editorial' | 'submissions' | 'comments') => void;
   finalVerdict: Verdict | null;
   unlockedHintTier: number;
-  isHintDrawerOpen: boolean;
-  onCloseHintDrawer: () => void;
-  onUnlockHintTier: (tier: 1 | 2 | 3) => void;
-  progressiveHints: ProgressiveHint[];
   submissions: LocalSubmissionRecord[];
   onRestoreSubmissionCode: (code: string, submittedAt: string) => void;
   notes: LocalProblemNote[];
@@ -75,10 +70,6 @@ export const WorkbenchLeftPane: React.FC<WorkbenchLeftPaneProps> = ({
   onSetActiveTab,
   finalVerdict,
   unlockedHintTier,
-  isHintDrawerOpen,
-  onCloseHintDrawer,
-  onUnlockHintTier,
-  progressiveHints,
   submissions,
   onRestoreSubmissionCode,
   notes,
@@ -189,16 +180,6 @@ export const WorkbenchLeftPane: React.FC<WorkbenchLeftPaneProps> = ({
             </div>
           );
         })()}
-
-        {/* Progressive Hint Drawer */}
-        {isHintDrawerOpen && (
-          <ProgressiveHintDrawer
-            hints={progressiveHints}
-            unlockedTier={unlockedHintTier}
-            onUnlockTier={onUnlockHintTier}
-            onClose={onCloseHintDrawer}
-          />
-        )}
 
         {/* Tab 1: Statement */}
         {activeTab === 'statement' && (

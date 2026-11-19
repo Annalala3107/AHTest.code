@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { LANGUAGE_LABELS } from '../src/services/executionManager.ts';
+import { LANGUAGE_LABELS, executeCodeAsync } from '../src/services/executionManager.ts';
+import { javaCourse } from '../src/data/academy/javaCourse.ts';
+import { sqlCourse } from '../src/data/academy/sqlCourse.ts';
 import { fetchProblems, fetchUserProgress } from '../src/services/repositories/problemRepository.ts';
 import { submitSolution, fetchRecentSubmissions } from '../src/services/repositories/submissionRepository.ts';
 import { fetchLeaderboard } from '../src/services/repositories/leaderboardRepository.ts';
@@ -187,4 +189,48 @@ test('8. Initial Seed Data contains core problems, contests, and official collec
   assert.ok(seedSql.includes('olp_ct25_lgsqr'), 'Must seed olp_ct25_lgsqr');
   assert.ok(seedSql.includes('icpc_national_2026'), 'Must seed icpc_national_2026 contest');
   assert.ok(seedSql.includes('col_national_olympiad'), 'Must seed col_national_olympiad collection');
+});
+
+test('9. Academy Java and SQL courses are unlocked and every lesson solution passes its testcases', async () => {
+  assert.equal(javaCourse.isComingSoon, false, 'javaCourse must be unlocked');
+  assert.equal(sqlCourse.isComingSoon, false, 'sqlCourse must be unlocked');
+
+  const academyIndexSrc = fs.readFileSync(path.resolve('src/data/academy/index.ts'), 'utf-8');
+  assert.ok(academyIndexSrc.includes('javaCourse') && academyIndexSrc.includes('sqlCourse'));
+
+  for (const mod of javaCourse.modules) {
+    for (const lesson of mod.lessons) {
+      for (const tc of lesson.testcases || []) {
+        const res = await executeCodeAsync('java', lesson.solutionCode, tc.input);
+        assert.equal(res.status, 'SUCCESS', `Java lesson ${lesson.id} failed: ${res.stderr}`);
+        assert.equal(
+          res.stdout.replace(/\r\n/g, '\n').trim(),
+          tc.expectedOutput.replace(/\r\n/g, '\n').trim(),
+          `Java lesson ${lesson.id} output mismatch`
+        );
+      }
+    }
+  }
+
+  for (const mod of sqlCourse.modules) {
+    for (const lesson of mod.lessons) {
+      for (const tc of lesson.testcases || []) {
+        const res = await executeCodeAsync('sql', lesson.solutionCode, tc.input);
+        assert.equal(res.status, 'SUCCESS', `SQL lesson ${lesson.id} failed: ${res.stderr}`);
+        assert.equal(
+          res.stdout.replace(/\r\n/g, '\n').trim(),
+          tc.expectedOutput.replace(/\r\n/g, '\n').trim(),
+          `SQL lesson ${lesson.id} output mismatch`
+        );
+      }
+    }
+  }
+});
+
+test('10. WorkbenchView renders ProgressiveHintDrawer as a visible right slide-over drawer', () => {
+  const workbenchSrc = fs.readFileSync(path.resolve('src/components/WorkbenchView.tsx'), 'utf-8');
+  assert.ok(
+    workbenchSrc.includes('<ProgressiveHintDrawer') && workbenchSrc.includes('justify-end'),
+    'WorkbenchView must render ProgressiveHintDrawer inside a right slide-over overlay drawer'
+  );
 });

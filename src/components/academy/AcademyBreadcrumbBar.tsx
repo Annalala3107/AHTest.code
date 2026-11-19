@@ -96,7 +96,11 @@ export const AcademyBreadcrumbBar: React.FC<AcademyBreadcrumbBarProps> = ({
                       ? 'C Track'
                       : c.language === 'cpp'
                       ? 'C++ Track'
-                      : 'Python'}
+                      : c.language === 'python'
+                      ? 'Python'
+                      : c.language === 'java'
+                      ? 'Java Track'
+                      : 'SQL Track'}
                   </span>
                   {c.isComingSoon && (
                     <span className="flex items-center gap-0.5 px-1 py-0.2 text-[8px] font-bold rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">

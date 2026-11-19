@@ -235,13 +235,13 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
             onClick={onToggleHintDrawer}
             className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
               isHintDrawerOpen
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-xs'
-                : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
+                : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/80 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
             }`}
-            title="Mở Ngăn Kéo Gợi Ý 3 Tầng"
+            title="Mở Trợ Lý Gợi Ý AI 3 Tầng"
           >
-            <Lightbulb className={`w-3.5 h-3.5 ${unlockedHintTier > 0 ? 'text-amber-400' : 'text-indigo-400'}`} />
-            <span className="hidden sm:inline">Gợi Ý 3 Tầng</span>
+            <Lightbulb className={`w-3.5 h-3.5 ${unlockedHintTier > 0 || isHintDrawerOpen ? 'text-amber-400' : 'text-indigo-400'}`} />
+            <span className="hidden sm:inline">Gợi Ý AI</span>
             <span
               className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${
                 unlockedHintTier > 0

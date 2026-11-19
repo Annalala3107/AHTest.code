@@ -3,6 +3,8 @@ import { cStage1Module } from './cStage1';
 import { cStage2Module } from './cStage2';
 import { cppCourse } from './cppCourse';
 import { pythonCourse } from './pythonCourse';
+import { javaCourse } from './javaCourse';
+import { sqlCourse } from './sqlCourse';
 import { academyEnTranslations } from '../academyTranslations';
 import { fptuAppliedExercises } from '../fptuAppliedExercises';
 
@@ -23,7 +25,9 @@ export const cCourse: AcademyCourse = {
 const rawCourses: AcademyCourse[] = [
   cCourse,
   cppCourse,
-  pythonCourse
+  pythonCourse,
+  javaCourse,
+  sqlCourse
 ];
 
 // Enrich curriculum lessons with English translations and FPTU Applied Exercises
