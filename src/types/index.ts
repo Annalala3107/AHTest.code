@@ -322,3 +322,66 @@ export interface LocalSubmissionRecord {
   code: string;
 }
 
+export type AIMentorMode = 'diagnose' | 'approaches' | 'ask' | 'verify_key';
+
+export const SUPPORTED_GEMINI_MODELS = [
+  'gemini-3.5-flash-lite',
+  'gemini-4-hydrogen',
+  'gemini-4-argon',
+] as const;
+
+export type SupportedGeminiModel = (typeof SUPPORTED_GEMINI_MODELS)[number];
+
+export interface AIMentorFailedCase {
+  input?: string;
+  actualOutput?: string;
+  expectedOutput?: string;
+}
+
+export interface AIMentorRequest {
+  problemId: string;
+  problemTitle: string;
+  problemStatement: string;
+  inputFormat?: string;
+  outputFormat?: string;
+  constraints?: string;
+  language: string;
+  code: string;
+  verdict?: Verdict | null;
+  failedCase?: AIMentorFailedCase;
+  mode: AIMentorMode;
+  userQuestion?: string;
+  model?: SupportedGeminiModel | string;
+  previousInteractionId?: string;
+}
+
+export interface AIMentorApproach {
+  approachName: string;
+  levelTag: string;
+  timeComplexity: string;
+  spaceComplexity: string;
+  explanation: string;
+  language: string;
+  code: string;
+}
+
+export interface AIMentorResponse {
+  verdictSummary: string;
+  rootCause: string;
+  suspectedLine?: number | null;
+  bugFixes: string[];
+  approaches: AIMentorApproach[];
+  followUpTip: string;
+  source?: 'gemini' | 'fallback';
+  modelUsed?: string;
+  fallbackReason?: string;
+  interactionId?: string;
+}
+
+export interface AIMentorVerifyKeyResponse {
+  status: 'ok' | 'error';
+  valid: boolean;
+  modelUsed?: string;
+  message?: string;
+}
+

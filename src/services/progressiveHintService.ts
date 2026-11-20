@@ -1,4 +1,4 @@
-import { Problem, ProgressiveHint } from '../types';
+import type { Problem, ProgressiveHint } from '../types/index.ts';
 
 /**
  * Resolves 3-tier progressive hints for any problem.

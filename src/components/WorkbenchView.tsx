@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Problem, Verdict, TestResult } from '../types/index.ts';
+import type {
+  Problem,
+  Verdict,
+  TestResult,
+  AIMentorMode,
+  AIMentorResponse,
+} from '../types/index.ts';
 import {
   executeCodeAsync,
   type PedagogicalDiagnosis,
   LANGUAGE_LABELS,
 } from '../services/executionManager.ts';
 import { resolveProgressiveHints } from '../services/progressiveHintService.ts';
+import {
+  buildMentorRequestFromContext,
+  requestAIMentor,
+} from '../services/aiMentorService.ts';
 import { CodeEditor } from './CodeEditor.tsx';
 import { recordStreakActivity } from '../services/streakService.ts';
 import { showToast } from '../services/uiFeedback.ts';
@@ -27,7 +37,7 @@ import {
 import { WorkbenchHeader } from './workbench/WorkbenchHeader.tsx';
 import { WorkbenchLeftPane } from './workbench/WorkbenchLeftPane.tsx';
 import { WorkbenchConsoleDrawer } from './workbench/WorkbenchConsoleDrawer.tsx';
-import { ProgressiveHintDrawer } from './workbench/ProgressiveHintDrawer.tsx';
+import { WorkbenchSlideOverDrawer } from './workbench/WorkbenchSlideOverDrawer.tsx';
 import { submitSolution } from '../services/repositories/submissionRepository.ts';
 
 interface WorkbenchViewProps {
@@ -67,6 +77,10 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     }
   });
   const [isHintDrawerOpen, setIsHintDrawerOpen] = useState<boolean>(false);
+  const [drawerTab, setDrawerTab] = useState<'mentor' | 'hints'>('mentor');
+  const [mentorResponse, setMentorResponse] = useState<AIMentorResponse | null>(null);
+  const [isMentorLoading, setIsMentorLoading] = useState<boolean>(false);
+  const [codeBackupBeforeAI, setCodeBackupBeforeAI] = useState<string | null>(null);
 
   // Bilingual Statement
   const [docLang, setDocLang] = useState<'vi' | 'en'>(() => {
@@ -108,6 +122,8 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     setSelectedLang(newLang);
     const loaded = loadCleanWorkbenchDraft(problem.id, newLang);
     setCode(loaded.code);
+    setMentorResponse(null);
+    setCodeBackupBeforeAI(null);
   };
 
   const handleResetCode = () => {
@@ -187,6 +203,49 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     } catch {
       // ignore
     }
+  };
+
+  // AI Mentor Handlers
+  const handleRunAIMentor = async (mode: AIMentorMode, userQuestion?: string) => {
+    if (isMentorLoading) return;
+    setIsMentorLoading(true);
+    try {
+      const reqPayload = buildMentorRequestFromContext({
+        problem,
+        selectedLang,
+        code,
+        verdict: finalVerdict,
+        testResults,
+        customInput,
+        customOutput,
+        customExpected,
+        mode,
+        userQuestion,
+      });
+      const res = await requestAIMentor(reqPayload, problem);
+      setMentorResponse(res);
+    } finally {
+      setIsMentorLoading(false);
+    }
+  };
+
+  const handleOpenMentorFromConsole = () => {
+    setDrawerTab('mentor');
+    setIsHintDrawerOpen(true);
+    handleRunAIMentor('diagnose');
+  };
+
+  const handleApplyAICode = (newCode: string, approachName: string) => {
+    setCodeBackupBeforeAI(code);
+    handleCodeChange(newCode);
+    showToast(`Đã nạp code "${approachName}" vào Editor. Bạn có thể bấm Hoàn tác bất cứ lúc nào.`, 'success');
+  };
+
+  const handleUndoAICode = () => {
+    if (codeBackupBeforeAI === null) return;
+    handleCodeChange(codeBackupBeforeAI);
+    setCodeBackupBeforeAI(null);
+    showToast('Đã khôi phục lại đoạn code trước đó của bạn.', 'info');
   };
 
   // Run Custom Test
@@ -386,7 +445,9 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
   // Keyboard Shortcuts: F9 to run sample, Ctrl+Enter to submit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F9') {
+      if (e.key === 'Escape' && isHintDrawerOpen) {
+        setIsHintDrawerOpen(false);
+      } else if (e.key === 'F9') {
         e.preventDefault();
         runSampleRef.current();
       } else if (e.ctrlKey && e.key === 'Enter') {
@@ -399,7 +460,7 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [finalVerdict, hasNextProblem]);
+  }, [finalVerdict, hasNextProblem, isHintDrawerOpen]);
 
   return (
     <div className="h-screen flex flex-col bg-slate-900 text-slate-100 overflow-hidden font-sans">
@@ -528,30 +589,32 @@ export const WorkbenchView: React.FC<WorkbenchViewProps> = ({
               onRunCustomTest={handleRunCustomTest}
               onJumpToLine={handleJumpToLine}
               pedagogicalDiagnosis={pedagogicalDiagnosis}
+              onOpenAIMentor={handleOpenMentorFromConsole}
             />
           </div>
         )}
       </div>
 
-      {/* Right Slide-Over Progressive Hint Drawer */}
-      {isHintDrawerOpen && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-[2px] animate-fadeIn"
-          onClick={() => setIsHintDrawerOpen(false)}
-        >
-          <div
-            className="w-full max-w-lg h-full bg-slate-900 border-l border-amber-500/30 shadow-2xl overflow-y-auto p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ProgressiveHintDrawer
-              hints={progressiveHints}
-              unlockedTier={unlockedHintTier}
-              onUnlockTier={handleUnlockHintTier}
-              onClose={() => setIsHintDrawerOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* Right Slide-Over AI Mentor & Progressive Hint Drawer */}
+      <WorkbenchSlideOverDrawer
+        isOpen={isHintDrawerOpen}
+        drawerTab={drawerTab}
+        onSetDrawerTab={setDrawerTab}
+        onClose={() => setIsHintDrawerOpen(false)}
+        problemTitle={problem.title}
+        selectedLang={selectedLang}
+        verdict={finalVerdict}
+        mentorResponse={mentorResponse}
+        isMentorLoading={isMentorLoading}
+        hasCodeBackup={codeBackupBeforeAI !== null}
+        onRunMentor={handleRunAIMentor}
+        onApplyCode={handleApplyAICode}
+        onUndoApplyCode={handleUndoAICode}
+        onJumpToLine={handleJumpToLine}
+        progressiveHints={progressiveHints}
+        unlockedHintTier={unlockedHintTier}
+        onUnlockHintTier={handleUnlockHintTier}
+      />
     </div>
   );
 };

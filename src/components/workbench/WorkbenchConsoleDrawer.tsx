@@ -8,7 +8,8 @@ import {
   XCircle,
   Clock,
   Lock,
-  Play
+  Play,
+  Bot
 } from 'lucide-react';
 import type { SampleCase, TestResult, Verdict } from '../../types/index.ts';
 import type { PedagogicalDiagnosis } from '../../services/executionManager.ts';
@@ -38,6 +39,7 @@ export interface WorkbenchConsoleDrawerProps {
   onRunCustomTest: () => void;
   onJumpToLine: (line: number, col?: number) => void;
   pedagogicalDiagnosis: PedagogicalDiagnosis | null;
+  onOpenAIMentor?: () => void;
   storagePrefix?: string;
 }
 
@@ -62,6 +64,7 @@ export const WorkbenchConsoleDrawer: React.FC<WorkbenchConsoleDrawerProps> = ({
   onRunCustomTest,
   onJumpToLine,
   pedagogicalDiagnosis,
+  onOpenAIMentor,
   storagePrefix = 'ahtest_workbench',
 }) => {
   return (
@@ -267,6 +270,24 @@ export const WorkbenchConsoleDrawer: React.FC<WorkbenchConsoleDrawerProps> = ({
           {/* RESULTS TAB */}
           {consoleTab === 'results' && (
             <div className="space-y-4">
+              {finalVerdict && finalVerdict !== 'AC' && onOpenAIMentor && (
+                <div className="p-3 rounded-xl bg-indigo-950/50 border border-indigo-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2 text-xs text-indigo-200">
+                    <Bot className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <span>
+                      Bài làm đang gặp lỗi <strong>{finalVerdict}</strong>. Bạn muốn AI Mentor soi dòng lỗi và đề xuất nhiều phương án sửa theo đúng ngôn ngữ?
+                    </span>
+                  </div>
+                  <button
+                    onClick={onOpenAIMentor}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-sm shadow-indigo-600/30"
+                  >
+                    <Bot className="w-3.5 h-3.5" />
+                    <span>Nhờ AI Mentor sửa lỗi</span>
+                  </button>
+                </div>
+              )}
+
               {pedagogicalDiagnosis && (
                 <PedagogicalDiagnosisCard
                   diagnosis={pedagogicalDiagnosis}

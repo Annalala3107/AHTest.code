@@ -227,10 +227,17 @@ test('9. Academy Java and SQL courses are unlocked and every lesson solution pas
   }
 });
 
-test('10. WorkbenchView renders ProgressiveHintDrawer as a visible right slide-over drawer', () => {
+test('10. WorkbenchView renders WorkbenchSlideOverDrawer containing AI Mentor and ProgressiveHintDrawer', () => {
   const workbenchSrc = fs.readFileSync(path.resolve('src/components/WorkbenchView.tsx'), 'utf-8');
+  const drawerSrc = fs.readFileSync(
+    path.resolve('src/components/workbench/WorkbenchSlideOverDrawer.tsx'),
+    'utf-8'
+  );
   assert.ok(
-    workbenchSrc.includes('<ProgressiveHintDrawer') && workbenchSrc.includes('justify-end'),
-    'WorkbenchView must render ProgressiveHintDrawer inside a right slide-over overlay drawer'
+    workbenchSrc.includes('<WorkbenchSlideOverDrawer') &&
+      drawerSrc.includes('<ProgressiveHintDrawer') &&
+      drawerSrc.includes('<AIMentorDrawerContent') &&
+      drawerSrc.includes('justify-end'),
+    'WorkbenchView must delegate right slide-over drawer to WorkbenchSlideOverDrawer'
   );
 });
